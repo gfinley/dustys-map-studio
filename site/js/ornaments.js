@@ -636,7 +636,7 @@ function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFa
     ctx.stroke();
   }
 
-  if (globeSpec.showExtentBox !== false && spec?.projection !== 'orthographic') {
+  if (globeSpec.showExtentBox !== false) {
     const lonDeg = Number(spec?.span?.lonDeg) || 24;
     const latDeg = Number(spec?.span?.latDeg) || 14;
     const canFillPoly = lonDeg < 150 && latDeg < 120;
@@ -1007,7 +1007,7 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
         );
       }
     }
-    if (spec?.ornaments?.locatorGlobe?.showExtentBox !== false && spec?.projection !== 'orthographic') {
+    if (spec?.ornaments?.locatorGlobe?.showExtentBox !== false) {
       const lonDeg = Number(spec?.span?.lonDeg) || 24;
       const latDeg = Number(spec?.span?.latDeg) || 14;
       const canFillPoly = lonDeg < 150 && latDeg < 120;

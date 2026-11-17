@@ -6,20 +6,21 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=5';
+} from './schema.js?v=6';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
   getCitiesInBounds,
   getCountryCatalog,
+  resolveAdmin1Scale,
   resolveResolution,
-} from './data-loader.js?v=5';
+} from './data-loader.js?v=6';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=5';
+} from './cartography.js?v=6';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -28,9 +29,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=5';
-import { REGION_PRESETS } from './presets.js?v=5';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=5';
+} from './exporter.js?v=6';
+import { REGION_PRESETS } from './presets.js?v=6';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=6';
 import {
   populateCountryCatalog,
   renderControls,
@@ -39,7 +40,7 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=5';
+} from './controls.js?v=6';
 
 const STORAGE_KEY = 'dusty_mapmaker_last_spec';
 const MAX_HISTORY = 40;
@@ -257,6 +258,7 @@ function updateFastDatasetsCache(loaded) {
     lakes: loaded.lakes || prev?.lakes || null,
     rivers: loaded.rivers || prev?.rivers || null,
     admin1: loaded.admin1 || prev?.admin1 || null,
+    admin1Resolution: loaded.admin1 ? loaded.admin1Resolution : (prev?.admin1Resolution || null),
     populatedPlaces: loaded.populatedPlaces || prev?.populatedPlaces || null,
   };
 }
@@ -329,6 +331,9 @@ function getActiveRenderDatasets() {
         ...state.fastDatasets,
         rivers: state.fastDatasets.rivers || null,
         admin1: state.fastDatasets.admin1 || state.datasets?.admin1 || null,
+        admin1Resolution: state.fastDatasets.admin1
+          ? state.fastDatasets.admin1Resolution
+          : (state.datasets?.admin1Resolution || null),
         populatedPlaces: state.fastDatasets.populatedPlaces || state.datasets?.populatedPlaces || null,
       };
     }
@@ -379,7 +384,10 @@ function datasetSatisfiesSpec(datasets, spec, needPlaces) {
   if (needFineHydro && !datasets.fineHydrology) return false;
   if (spec.layers?.showLakes !== false && !datasets.lakes) return false;
   if (spec.layers?.showRivers && !datasets.rivers) return false;
-  if (spec.layers?.showAdmin1 && !datasets.admin1) return false;
+  if (spec.layers?.showAdmin1) {
+    if (!datasets.admin1) return false;
+    if (datasets.admin1Resolution !== resolveAdmin1Scale(spec)) return false;
+  }
   if (needPlaces && !datasets.populatedPlaces) return false;
   return true;
 }
@@ -391,6 +399,7 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
   const needLakes = spec.layers?.showLakes !== false;
   const needRivers = Boolean(spec.layers?.showRivers);
   const needAdmin1 = Boolean(spec.layers?.showAdmin1);
+  const admin1Scale = resolveAdmin1Scale(spec);
   const needPlaces = Boolean(forcePlaces || state.refPeek || state.datasets?.populatedPlaces);
   const fineHydrology =
     spec.detailLevel === '10m' &&
@@ -422,6 +431,7 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
       needAdmin1,
       needPlaces,
       fineHydrology,
+      admin1Scale,
       onProgress: ({ label, completed, total }) => {
         if (token !== state.loadRequestToken) return;
         setLoadingProgress(true, `${label} (${completed}/${total})`);

@@ -121,6 +121,14 @@ def resolve_scale(spec: MapSpec) -> str:
     return "110m"
 
 
+def resolve_admin1_scale(spec: MapSpec) -> str:
+    """Resolve Natural Earth Admin-1 dataset scale ('10m' or '50m') from MapSpec."""
+    if spec.layers.admin1Scale in ("10m", "50m"):
+        return spec.layers.admin1Scale
+    max_span = max(spec.span.lonDeg, spec.span.latDeg)
+    return "10m" if max_span <= 35.0 else "50m"
+
+
 def _valid_color(value: str | None, fallback: str) -> str:
     """Return value when it is a valid non-none Matplotlib color, else fallback."""
     if not value:
@@ -1382,14 +1390,15 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
         )
 
     if spec.layers.showAdmin1:
+        admin1_scale = resolve_admin1_scale(spec)
         _add_ne_layer(
             ax,
             "cultural",
             "admin_1_states_provinces_lines",
-            scale,
+            admin1_scale,
             facecolor="none",
             edgecolor=admin1_color,
-            linewidth=0.6,
+            linewidth=spec.layers.admin1Width,
             linestyle=":",
             alpha=0.85,
             zorder=3.5,

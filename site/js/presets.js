@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=5';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=6';
 
 function makePresetSpec(overrides) {
   const base = createDefaultMapSpec();
@@ -367,7 +367,7 @@ export const REGION_PRESETS = [
       ],
       ornaments: {
         scaleBar: { enabled: false, units: 'km', position: 'bottom-left' },
-        locatorGlobe: { enabled: false, position: 'top-right', sizePct: 20, showExtentBox: false },
+        locatorGlobe: { enabled: false, position: 'top-right', sizePct: 20, showExtentBox: true },
       },
     }),
   },

@@ -12,8 +12,8 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=5';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=5';
+} from './ornaments.js?v=6';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=6';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -143,7 +143,7 @@ export function buildProjection(spec, width, height, options = {}) {
   if (projId === 'orthographic') {
     const pad = Math.min(width, height) * 0.04;
     proj.fitExtent([[pad, pad], [width - pad, height - pad]], { type: 'Sphere' });
-    const zoom = Math.max(0.8, Math.min(8.0, 120 / Math.max(10, lonDeg)));
+    const zoom = Math.max(0.8, Math.min(45.0, 120 / Math.max(1.5, lonDeg)));
     proj.scale(proj.scale() * zoom).translate([width / 2, height / 2]);
   } else {
     const boxRing = buildBoundingRing(spec);
@@ -721,6 +721,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
 
   // 7. Admin-1 lines
   if (layers.showAdmin1 && datasets?.admin1 && colors.admin1 && colors.admin1 !== 'none') {
+    const admin1W = Math.max(0.2, (Number(layers.admin1Width) || 0.7) * scaleFactor);
     ctx.save();
     ctx.beginPath();
     drawCulledCollection(
@@ -731,8 +732,8 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
       skipCull,
     );
     ctx.strokeStyle = colors.admin1;
-    ctx.lineWidth = Math.max(0.3, 0.65 * scaleFactor);
-    ctx.setLineDash([4 * scaleFactor, 3 * scaleFactor]);
+    ctx.lineWidth = admin1W;
+    ctx.setLineDash([Math.max(2, 4 * scaleFactor), Math.max(1.5, 3 * scaleFactor)]);
     ctx.lineJoin = 'round';
     ctx.stroke();
     ctx.restore();
@@ -965,8 +966,9 @@ export function renderMapToSvgString(spec, datasets) {
   if (layers.showAdmin1 && datasets?.admin1 && colors.admin1 && colors.admin1 !== 'none') {
     const adminD = svgPath(datasets.admin1) || '';
     if (adminD) {
+      const admin1W = Math.max(0.2, (Number(layers.admin1Width) || 0.7) * scaleFactor);
       mapParts.push(
-        `<path d="${adminD}" fill="none" stroke="${escapeXml(colors.admin1)}" stroke-width="${Math.max(0.3, 0.65 * scaleFactor).toFixed(2)}" stroke-dasharray="${(4 * scaleFactor).toFixed(1)},${(3 * scaleFactor).toFixed(1)}" stroke-linejoin="round" />`,
+        `<path d="${adminD}" fill="none" stroke="${escapeXml(colors.admin1)}" stroke-width="${admin1W.toFixed(2)}" stroke-dasharray="${Math.max(2, 4 * scaleFactor).toFixed(1)},${Math.max(1.5, 3 * scaleFactor).toFixed(1)}" stroke-linejoin="round" />`,
       );
     }
   }

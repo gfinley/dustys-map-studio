@@ -148,6 +148,8 @@ export const PROJECTION_LABELS = {
 
 export const DETAIL_LEVELS = ['auto', '10m', '50m', '110m'];
 
+export const ADMIN1_SCALES = ['auto', '50m', '10m'];
+
 export const HATCH_STYLES = ['none', 'diagonal', 'backdiagonal', 'cross', 'dots'];
 
 export const BORDER_STYLES = ['solid', 'dashed', 'dotted'];
@@ -216,6 +218,8 @@ export function createDefaultMapSpec() {
       showRivers: false,
       riverWidth: 0.75,
       showAdmin1: false,
+      admin1Width: 0.7,
+      admin1Scale: 'auto',
       showGraticule: false,
       graticuleStepDeg: 10,
     },
@@ -350,6 +354,8 @@ export function normalizeMapSpec(partial) {
       showRivers: typeof layersRaw.showRivers === 'boolean' ? layersRaw.showRivers : def.layers.showRivers,
       riverWidth: clamp(layersRaw.riverWidth, 0.1, 8.0, def.layers.riverWidth),
       showAdmin1: typeof layersRaw.showAdmin1 === 'boolean' ? layersRaw.showAdmin1 : def.layers.showAdmin1,
+      admin1Width: clamp(layersRaw.admin1Width, 0.1, 8.0, def.layers.admin1Width),
+      admin1Scale: ADMIN1_SCALES.includes(layersRaw.admin1Scale) ? layersRaw.admin1Scale : def.layers.admin1Scale,
       showGraticule: typeof layersRaw.showGraticule === 'boolean' ? layersRaw.showGraticule : def.layers.showGraticule,
       graticuleStepDeg: clamp(layersRaw.graticuleStepDeg, 1, 60, def.layers.graticuleStepDeg),
     },

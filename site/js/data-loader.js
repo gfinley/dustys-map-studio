@@ -184,17 +184,22 @@ function decomposeGeometryParts(geojson, singleType, multiType) {
   return parts;
 }
 
-function buildUrls(res, fineHydrology = false) {
+function buildUrls(res, fineHydrology = false, admin1Scale = '50m') {
   const hydroRes = fineHydrology ? res : res === '10m' ? '50m' : res;
   const riverRes = hydroRes === '110m' ? '50m' : hydroRes;
+  const effAdmin1 = admin1Scale === '10m' ? '10m' : '50m';
   return {
     world: `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-${res}.json`,
     lakes: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${hydroRes}_lakes.geojson`,
     rivers: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${riverRes}_rivers_lake_centerlines.geojson`,
-    admin1: 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_admin_1_states_provinces_lines.geojson',
+    admin1:
+      effAdmin1 === '10m'
+        ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_1_states_provinces_lines.geojson'
+        : 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_admin_1_states_provinces_lines.geojson',
     places: 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_populated_places_simple.geojson',
     hydroRes,
     riverRes,
+    admin1Res: effAdmin1,
   };
 }
 
@@ -315,6 +320,18 @@ function emitProgress(onProgress, info) {
   }
 }
 
+export function resolveAdmin1Scale(spec) {
+  const configured = spec?.layers?.admin1Scale;
+  if (configured === '10m' || configured === '50m') {
+    return configured;
+  }
+  const maxSpan = Math.max(
+    Number(spec?.span?.lonDeg) || 24,
+    Number(spec?.span?.latDeg) || 14,
+  );
+  return maxSpan <= 35 ? '10m' : '50m';
+}
+
 export function resolveResolution(spec) {
   if (spec && typeof spec.detailLevel === 'string' && spec.detailLevel !== 'auto') {
     if (VALID_RESOLUTIONS.has(spec.detailLevel)) {
@@ -327,7 +344,7 @@ export function resolveResolution(spec) {
     Number.isFinite(lonDeg) ? lonDeg : 24,
     Number.isFinite(latDeg) ? latDeg : 14,
   );
-  if (maxSpan <= 10 && spec?.projection !== 'orthographic') {
+  if (maxSpan <= 10) {
     return '10m';
   }
   if (maxSpan <= 90) {
@@ -344,11 +361,14 @@ export async function ensureDatasets(
     needAdmin1 = false,
     needPlaces = false,
     fineHydrology = false,
+    admin1Scale = '50m',
     onProgress = null,
   } = {},
 ) {
   const res = VALID_RESOLUTIONS.has(resolution) ? resolution : '50m';
-  const urls = buildUrls(res, fineHydrology);
+  const effAdmin1 = admin1Scale === '10m' ? '10m' : '50m';
+  const urls = buildUrls(res, fineHydrology, effAdmin1);
+  let usedAdmin1Scale = effAdmin1;
 
   const tasks = [
     {
@@ -389,8 +409,20 @@ export async function ensureDatasets(
   if (needAdmin1) {
     tasks.push({
       key: 'admin1',
-      label: 'Loading 50m admin-1 lines',
-      run: async () => attachFeatureBBoxes(await fetchJsonCached(urls.admin1)),
+      label: `Loading ${effAdmin1} state/province lines`,
+      run: async () => {
+        try {
+          return attachFeatureBBoxes(await fetchJsonCached(urls.admin1));
+        } catch (err) {
+          if (effAdmin1 === '10m') {
+            console.warn('Failed to load 10m admin-1 lines; falling back to 50m:', err);
+            usedAdmin1Scale = '50m';
+            const fallbackUrl = buildUrls(res, fineHydrology, '50m').admin1;
+            return attachFeatureBBoxes(await fetchJsonCached(fallbackUrl));
+          }
+          throw err;
+        }
+      },
     });
   }
   if (needPlaces) {
@@ -441,6 +473,7 @@ export async function ensureDatasets(
   return {
     resolution: res,
     fineHydrology: Boolean(fineHydrology),
+    admin1Resolution: needAdmin1 ? usedAdmin1Scale : null,
     land: world.land,
     landParts: world.landParts,
     countries: world.countries,

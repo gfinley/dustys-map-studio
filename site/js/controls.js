@@ -6,9 +6,9 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=5';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=5';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=5';
+} from './schema.js?v=6';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=6';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=6';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -664,6 +664,19 @@ export function renderControls(callbacks) {
   bindColor('color-rivers', 'rivers');
   bindColor('color-text', 'text');
 
+  $('color-admin1')?.addEventListener('input', (e) => {
+    boundCallbacks.onPatchSpec?.(
+      { colors: { admin1: e.target.value } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('color-admin1')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.(
+      { colors: { admin1: e.target.value } },
+      { commitHistory: true },
+    );
+  });
+
   $('color-coastline')?.addEventListener('input', (e) => {
     boundCallbacks.onPatchSpec?.(
       { colors: { coastline: e.target.value }, layers: { showCoastlines: true } },
@@ -706,6 +719,26 @@ export function renderControls(callbacks) {
   bindRange('layer-border-width', 'layer-border-width-val', (v) => ({ layers: { borderWidth: v } }));
   bindRange('layer-river-width', 'layer-river-width-val', (v) => ({ layers: { riverWidth: v } }));
   bindRange('layer-coastline-width', 'layer-coastline-width-val', (v) => ({ layers: { coastlineWidth: v } }));
+
+  $('layer-admin1-scale')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ layers: { admin1Scale: e.target.value } });
+  });
+  $('layer-admin1-width')?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('layer-admin1-width-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onPatchSpec?.(
+      { layers: { admin1Width: val } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('layer-admin1-width')?.addEventListener('change', (e) => {
+    const val = Number(e.target.value);
+    boundCallbacks.onPatchSpec?.(
+      { layers: { admin1Width: val } },
+      { commitHistory: true },
+    );
+  });
 
   $('layer-border-style')?.addEventListener('change', (e) => {
     boundCallbacks.onPatchSpec?.({ layers: { borderStyle: e.target.value } });
@@ -922,6 +955,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   }
   if ($('color-rivers')) $('color-rivers').value = safeHexColor(spec.colors.rivers, '#73a9ca');
   if ($('color-text')) $('color-text').value = safeHexColor(spec.colors.text, '#111111');
+  if ($('color-admin1')) $('color-admin1').value = safeHexColor(spec.colors.admin1, '#737373');
 
   // Layers
   if ($('layer-show-borders')) $('layer-show-borders').checked = Boolean(spec.layers.showBorders);
@@ -935,6 +969,11 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('layer-river-width-val')) $('layer-river-width-val').textContent = Number(spec.layers.riverWidth).toFixed(1);
 
   if ($('layer-show-admin1')) $('layer-show-admin1').checked = Boolean(spec.layers.showAdmin1);
+  if ($('layer-admin1-scale')) $('layer-admin1-scale').value = spec.layers.admin1Scale || 'auto';
+  if ($('layer-admin1-width')) $('layer-admin1-width').value = String(spec.layers.admin1Width ?? 0.7);
+  if ($('layer-admin1-width-val')) {
+    $('layer-admin1-width-val').textContent = Number(spec.layers.admin1Width ?? 0.7).toFixed(1);
+  }
   if ($('layer-show-coastlines')) $('layer-show-coastlines').checked = Boolean(spec.layers.showCoastlines);
   if ($('layer-coastline-width')) $('layer-coastline-width').value = String(spec.layers.coastlineWidth);
   if ($('layer-coastline-width-val')) $('layer-coastline-width-val').textContent = Number(spec.layers.coastlineWidth).toFixed(1);

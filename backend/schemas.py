@@ -73,6 +73,8 @@ class LayersSpec(_BaseSpecModel):
     showRivers: bool = False
     riverWidth: float = Field(default=0.75, ge=0.1, le=8.0)
     showAdmin1: bool = False
+    admin1Width: float = Field(default=0.7, ge=0.1, le=8.0)
+    admin1Scale: Literal["auto", "50m", "10m"] = "auto"
     showGraticule: bool = False
     graticuleStepDeg: float = Field(default=10.0, ge=1.0, le=60.0)
 

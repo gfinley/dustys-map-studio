@@ -712,11 +712,34 @@ select {
   gap: 8px;
 }
 
+.layer-stacked-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.layer-subcontrols,
+.admin1-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-left: 27px;
+  min-width: 0;
+}
+
+.admin1-control-row .mini-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 145px;
+}
+
 .mini-range {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 118px;
+  flex-shrink: 0;
 }
 
 .mini-range input[type='range'] {

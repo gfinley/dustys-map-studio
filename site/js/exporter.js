@@ -3,10 +3,10 @@
  * and optional Python Cartopy Pro backend client.
  */
 
-import { getPixelDimensions, sanitizeFilename } from './schema.js?v=5';
-import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=5';
-import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=5';
-import { ensureDatasets, resolveResolution } from './data-loader.js?v=5';
+import { getPixelDimensions, sanitizeFilename } from './schema.js?v=6';
+import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=6';
+import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=6';
+import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=6';
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -39,6 +39,7 @@ function canvasToBlob(canvas, mime, quality) {
 
 async function resolveExportDatasets(spec, datasets) {
   const neededRes = resolveResolution(spec);
+  const admin1Scale = resolveAdmin1Scale(spec);
   const needLakes = spec?.layers?.showLakes !== false;
   const needRivers = Boolean(spec?.layers?.showRivers);
   const needAdmin1 = Boolean(spec?.layers?.showAdmin1);
@@ -52,7 +53,7 @@ async function resolveExportDatasets(spec, datasets) {
     datasets.locatorLand &&
     (!needLakes || datasets.lakes) &&
     (!needRivers || datasets.rivers) &&
-    (!needAdmin1 || datasets.admin1);
+    (!needAdmin1 || (datasets.admin1 && datasets.admin1Resolution === admin1Scale));
 
   if (hasAllRequired) {
     return datasets;
@@ -63,6 +64,7 @@ async function resolveExportDatasets(spec, datasets) {
     needRivers,
     needAdmin1,
     needPlaces: false,
+    admin1Scale,
   });
 }
 
