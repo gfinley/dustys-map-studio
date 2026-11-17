@@ -48,6 +48,8 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         self.assertAlmostEqual(spec.page.heightIn, 7.0)
         self.assertEqual(spec.page.dpi, 300)
         self.assertTrue(spec.layers.showBorders)
+        self.assertAlmostEqual(spec.layers.cityLabelScale, 1.0)
+        self.assertAlmostEqual(spec.layers.cityIconScale, 1.0)
         self.assertTrue(spec.ornaments.scaleBar.enabled)
         self.assertEqual(spec.ornaments.scaleBar.units, "km")
         self.assertTrue(spec.ornaments.locatorGlobe.enabled)
@@ -105,6 +107,7 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         self.assertEqual(spec.highlightedCountries[0].hatch, "diagonal")
         self.assertEqual([c.name for c in spec.cities], ["Kyiv", "Lviv", "Odesa", "Kharkiv"])
         self.assertEqual(spec.cities[0].style, "capital")
+        self.assertAlmostEqual(spec.cities[0].scale, 1.0)
         self.assertTrue(spec.ornaments.northArrow.enabled)
 
         batch_req = BatchRenderRequest.model_validate(
@@ -112,6 +115,44 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         )
         self.assertTrue(batch_req.includeBorderPair)
         self.assertIsNotNone(batch_req.spec)
+
+    def test_city_label_and_icon_scale_validation(self) -> None:
+        """cityLabelScale, cityIconScale, and cities[].scale default to 1.0 and validate custom values."""
+        default_spec = MapSpec.model_validate(
+            {
+                "cities": [
+                    {
+                        "id": "kyiv",
+                        "name": "Kyiv",
+                        "lat": 50.4501,
+                        "lon": 30.5234,
+                        "style": "capital",
+                    }
+                ]
+            }
+        )
+        self.assertAlmostEqual(default_spec.layers.cityLabelScale, 1.0)
+        self.assertAlmostEqual(default_spec.layers.cityIconScale, 1.0)
+        self.assertAlmostEqual(default_spec.cities[0].scale, 1.0)
+
+        custom_spec = MapSpec.model_validate(
+            {
+                "layers": {"cityLabelScale": 2.2, "cityIconScale": 1.8},
+                "cities": [
+                    {
+                        "id": "kyiv",
+                        "name": "Kyiv",
+                        "lat": 50.4501,
+                        "lon": 30.5234,
+                        "style": "capital",
+                        "scale": 1.5,
+                    }
+                ],
+            }
+        )
+        self.assertAlmostEqual(custom_spec.layers.cityLabelScale, 2.2)
+        self.assertAlmostEqual(custom_spec.layers.cityIconScale, 1.8)
+        self.assertAlmostEqual(custom_spec.cities[0].scale, 1.5)
 
     def test_schema_js_exists_and_exports_contract(self) -> None:
         """site/js/schema.js exists and exports the shared presets, themes, and codec."""

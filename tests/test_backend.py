@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+import xml.etree.ElementTree as ET
 import zipfile
 
 from fastapi.testclient import TestClient
@@ -22,6 +23,7 @@ from backend.renderer import (  # noqa: E402
     _build_projection,
     _compute_viewport_footprint,
     _configure_extent,
+    _draw_cities,
     _unwrap_near,
     render_map,
 )
@@ -272,6 +274,88 @@ class TestBackendAPI(unittest.TestCase):
         )
         bering_png = render_map(bering_spec, "png")
         self.assertTrue(bering_png.startswith(b"\x89PNG"))
+
+    def test_city_label_and_icon_scaling_render(self) -> None:
+        """PNG and SVG render cleanly with global cityLabelScale/cityIconScale and per-city scale."""
+        spec = MapSpec.model_validate(
+            {
+                "title": "Scaled City Labels and Icons",
+                "projection": "mercator",
+                "center": {"lat": 48.5, "lon": 31.2},
+                "span": {"lonDeg": 24.0, "latDeg": 14.0},
+                "page": {"widthIn": 4.6, "heightIn": 7.0, "dpi": 100},
+                "layers": {"cityLabelScale": 2.2, "cityIconScale": 2.0},
+                "cities": [
+                    {
+                        "id": "kyiv",
+                        "name": "Kyiv",
+                        "lat": 50.4501,
+                        "lon": 30.5234,
+                        "style": "capital",
+                        "dx": 6,
+                        "dy": -6,
+                        "scale": 1.5,
+                    },
+                    {
+                        "id": "lviv",
+                        "name": "Lviv",
+                        "lat": 49.8397,
+                        "lon": 24.0297,
+                        "style": "dot",
+                        "dx": 6,
+                        "dy": -5,
+                        "scale": 0.6,
+                    },
+                ],
+            }
+        )
+
+        # Verify scaled marker and text artist sizes directly
+        fig = Figure(figsize=(spec.page.widthIn, spec.page.heightIn), dpi=100)
+        proj = _build_projection(spec)
+        ax = fig.add_axes([0.0, 0.0, 1.0, 1.0], projection=proj)
+        limits = _configure_extent(ax, spec, proj)
+        _draw_cities(fig, ax, spec, proj, limits)
+
+        self.assertEqual([t.get_text() for t in ax.texts], ["Kyiv", "Lviv"])
+        self.assertAlmostEqual(ax.texts[0].get_fontsize(), 9.0 * 2.2 * 1.5)
+        self.assertAlmostEqual(ax.texts[1].get_fontsize(), 8.0 * 2.2 * 0.6)
+        self.assertEqual(len(ax.lines), 3)
+        self.assertAlmostEqual(ax.lines[0].get_markersize(), 6.8 * 2.0 * 1.5)
+        self.assertAlmostEqual(ax.lines[1].get_markersize(), 2.6 * 2.0 * 1.5)
+        self.assertAlmostEqual(ax.lines[2].get_markersize(), 4.8 * 2.0 * 0.6)
+
+        # Verify PNG export header and pixel dimensions
+        png_bytes = render_map(spec, "png")
+        self.assertTrue(png_bytes.startswith(b"\x89PNG"))
+        with Image.open(BytesIO(png_bytes)) as img:
+            self.assertEqual(img.format, "PNG")
+            self.assertEqual(img.size, (460, 700))
+
+        # Verify valid <svg XML and city label vector text groups (Matplotlib renders
+        # haloed path_effects text as <g id="text_N"> <path/> groups rather than <text> tags)
+        svg_bytes = render_map(spec, "svg")
+        svg_text = svg_bytes.decode("utf-8")
+        self.assertIn("<svg", svg_text)
+        svg_root = ET.fromstring(svg_bytes)
+        self.assertTrue(svg_root.tag.endswith("svg"))
+
+        text_groups = [
+            el for el in svg_root.iter() if (el.attrib.get("id") or "").startswith("text_")
+        ]
+        baseline_svg = render_map(spec.model_copy(update={"cities": []}), "svg")
+        baseline_root = ET.fromstring(baseline_svg)
+        baseline_text_groups = [
+            el for el in baseline_root.iter() if (el.attrib.get("id") or "").startswith("text_")
+        ]
+        self.assertEqual(len(text_groups), len(baseline_text_groups) + 2)
+        for city_group_id in ("text_1", "text_2"):
+            group_el = svg_root.find(f".//*[@id='{city_group_id}']")
+            self.assertIsNotNone(group_el, f"Missing city label SVG group {city_group_id}")
+            self.assertTrue(
+                any(child.tag.endswith("path") for child in group_el.iter()),
+                f"Expected vector path glyphs inside {city_group_id}",
+            )
 
 
 if __name__ == "__main__":

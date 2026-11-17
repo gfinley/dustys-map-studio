@@ -222,6 +222,8 @@ export function createDefaultMapSpec() {
       admin1Scale: 'auto',
       showGraticule: false,
       graticuleStepDeg: 10,
+      cityLabelScale: 1.0,
+      cityIconScale: 1.0,
     },
     highlightedCountries: [
       {
@@ -233,10 +235,10 @@ export function createDefaultMapSpec() {
       },
     ],
     cities: [
-      { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -6 },
-      { id: 'lviv', name: 'Lviv', lat: 49.8397, lon: 24.0297, style: 'dot', dx: 6, dy: -5 },
-      { id: 'odesa', name: 'Odesa', lat: 46.4825, lon: 30.7233, style: 'dot', dx: 6, dy: 8 },
-      { id: 'kharkiv', name: 'Kharkiv', lat: 49.9935, lon: 36.2304, style: 'dot', dx: 6, dy: -5 },
+      { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -6, scale: 1.0 },
+      { id: 'lviv', name: 'Lviv', lat: 49.8397, lon: 24.0297, style: 'dot', dx: 6, dy: -5, scale: 1.0 },
+      { id: 'odesa', name: 'Odesa', lat: 46.4825, lon: 30.7233, style: 'dot', dx: 6, dy: 8, scale: 1.0 },
+      { id: 'kharkiv', name: 'Kharkiv', lat: 49.9935, lon: 36.2304, style: 'dot', dx: 6, dy: -5, scale: 1.0 },
     ],
     customGeoJsonLayers: [],
     ornaments: {
@@ -358,6 +360,8 @@ export function normalizeMapSpec(partial) {
       admin1Scale: ADMIN1_SCALES.includes(layersRaw.admin1Scale) ? layersRaw.admin1Scale : def.layers.admin1Scale,
       showGraticule: typeof layersRaw.showGraticule === 'boolean' ? layersRaw.showGraticule : def.layers.showGraticule,
       graticuleStepDeg: clamp(layersRaw.graticuleStepDeg, 1, 60, def.layers.graticuleStepDeg),
+      cityLabelScale: clamp(layersRaw.cityLabelScale, 0.4, 3.5, def.layers.cityLabelScale),
+      cityIconScale: clamp(layersRaw.cityIconScale, 0.4, 3.5, def.layers.cityIconScale),
     },
     highlightedCountries: Array.isArray(partial.highlightedCountries)
       ? partial.highlightedCountries
@@ -381,6 +385,7 @@ export function normalizeMapSpec(partial) {
             style: PIN_STYLES.includes(c.style) ? c.style : 'dot',
             dx: clamp(c.dx, -80, 80, 6),
             dy: clamp(c.dy, -80, 80, -5),
+            scale: clamp(c.scale, 0.4, 3.0, 1.0),
           }))
       : def.cities.map((c) => ({ ...c })),
     customGeoJsonLayers: Array.isArray(partial.customGeoJsonLayers)

@@ -6,9 +6,9 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=7';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=7';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=7';
+} from './schema.js?v=8';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=8';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=8';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -331,7 +331,43 @@ export function renderCitiesList(spec, callbacks = boundCallbacks) {
     coordSpan.textContent = `${Number(city.lat).toFixed(2)}°, ${Number(city.lon).toFixed(2)}°`;
 
     ctrls.append(styleSelect, offsetWrap, coordSpan);
-    card.append(top, ctrls);
+
+    const scaleRow = document.createElement('div');
+    scaleRow.className = 'pin-scale-row';
+
+    const scaleLabel = document.createElement('span');
+    scaleLabel.className = 'pin-scale-label';
+    scaleLabel.textContent = 'Size';
+
+    const rawScale = Number(city.scale ?? 1.0);
+    const pinScale = Number.isFinite(rawScale) ? rawScale : 1.0;
+
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'range';
+    scaleInput.min = '0.5';
+    scaleInput.max = '2.5';
+    scaleInput.step = '0.1';
+    scaleInput.setAttribute('aria-label', 'Pin and label size');
+    scaleInput.title = 'Pin marker & label size';
+    scaleInput.value = String(pinScale);
+
+    const scaleVal = document.createElement('span');
+    scaleVal.className = 'mini-val';
+    scaleVal.textContent = `${pinScale.toFixed(1)}×`;
+
+    scaleInput.addEventListener('input', (e) => {
+      const val = Number(e.target.value);
+      scaleVal.textContent = `${val.toFixed(1)}×`;
+      callbacks.onUpdateCity?.(idx, { scale: val }, { commitHistory: false, skipDynamicLists: true });
+    });
+    scaleInput.addEventListener('change', (e) => {
+      const val = Number(e.target.value);
+      scaleVal.textContent = `${val.toFixed(1)}×`;
+      callbacks.onUpdateCity?.(idx, { scale: val }, { commitHistory: true });
+    });
+
+    scaleRow.append(scaleLabel, scaleInput, scaleVal);
+    card.append(top, ctrls, scaleRow);
     listEl.appendChild(card);
   });
 }
@@ -768,6 +804,29 @@ export function renderControls(callbacks) {
     boundCallbacks.onAutoAddCities?.();
   });
 
+  const bindCityScaleRange = (id, labelId, key) => {
+    $(id)?.addEventListener('input', (e) => {
+      const val = Number(e.target.value);
+      const lbl = $(labelId);
+      if (lbl) lbl.textContent = `${val.toFixed(1)}×`;
+      boundCallbacks.onPatchSpec?.(
+        { layers: { [key]: val } },
+        { commitHistory: false, skipDynamicLists: true },
+      );
+    });
+    $(id)?.addEventListener('change', (e) => {
+      const val = Number(e.target.value);
+      const lbl = $(labelId);
+      if (lbl) lbl.textContent = `${val.toFixed(1)}×`;
+      boundCallbacks.onPatchSpec?.(
+        { layers: { [key]: val } },
+        { commitHistory: true },
+      );
+    });
+  };
+  bindCityScaleRange('city-label-scale', 'city-label-scale-val', 'cityLabelScale');
+  bindCityScaleRange('city-icon-scale', 'city-icon-scale-val', 'cityIconScale');
+
   $('btn-upload-geojson')?.addEventListener('click', () => $('file-upload-geojson')?.click());
   $('file-upload-geojson')?.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
@@ -991,6 +1050,19 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     stepSelect.value = stepStr;
   }
   if ($('page-show-frame')) $('page-show-frame').checked = Boolean(spec.page.showFrameBorder);
+
+  // Cities & Pins global size scales
+  const cityLabelScale = Number.isFinite(Number(spec.layers?.cityLabelScale))
+    ? Number(spec.layers.cityLabelScale)
+    : 1.0;
+  if ($('city-label-scale')) $('city-label-scale').value = String(cityLabelScale);
+  if ($('city-label-scale-val')) $('city-label-scale-val').textContent = `${cityLabelScale.toFixed(1)}×`;
+
+  const cityIconScale = Number.isFinite(Number(spec.layers?.cityIconScale))
+    ? Number(spec.layers.cityIconScale)
+    : 1.0;
+  if ($('city-icon-scale')) $('city-icon-scale').value = String(cityIconScale);
+  if ($('city-icon-scale-val')) $('city-icon-scale-val').textContent = `${cityIconScale.toFixed(1)}×`;
 
   // Title & Ornaments
   if ($('show-title')) $('show-title').checked = Boolean(spec.showTitle);

@@ -832,6 +832,26 @@ input[type='range'] {
   background: transparent;
 }
 
+.pin-scale-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.pin-scale-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.pin-scale-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .offset-pills {
   display: inline-flex;
   gap: 3px;

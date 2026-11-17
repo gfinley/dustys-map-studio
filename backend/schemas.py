@@ -77,6 +77,8 @@ class LayersSpec(_BaseSpecModel):
     admin1Scale: Literal["auto", "50m", "10m"] = "auto"
     showGraticule: bool = False
     graticuleStepDeg: float = Field(default=10.0, ge=1.0, le=60.0)
+    cityLabelScale: float = Field(default=1.0, ge=0.4, le=3.5)
+    cityIconScale: float = Field(default=1.0, ge=0.4, le=3.5)
 
 
 class HighlightedCountry(_BaseSpecModel):
@@ -95,6 +97,7 @@ class CityPin(_BaseSpecModel):
     style: PinStyleLiteral = "dot"
     dx: float = 6.0
     dy: float = -5.0
+    scale: float = Field(default=1.0, ge=0.4, le=3.0)
 
 
 class CustomGeoJsonLayer(_BaseSpecModel):

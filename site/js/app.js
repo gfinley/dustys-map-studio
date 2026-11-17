@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=7';
+} from './schema.js?v=8';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -14,13 +14,13 @@ import {
   getCountryCatalog,
   resolveAdmin1Scale,
   resolveResolution,
-} from './data-loader.js?v=7';
+} from './data-loader.js?v=8';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=7';
+} from './cartography.js?v=8';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -29,9 +29,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=7';
-import { REGION_PRESETS } from './presets.js?v=7';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=7';
+} from './exporter.js?v=8';
+import { REGION_PRESETS } from './presets.js?v=8';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=8';
 import {
   populateCountryCatalog,
   renderControls,
@@ -40,7 +40,7 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=7';
+} from './controls.js?v=8';
 
 const STORAGE_KEY = 'dusty_mapmaker_last_spec';
 const MAX_HISTORY = 40;
@@ -269,6 +269,10 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
   if (!ctx) return;
 
   const scaleFactor = canvas.width / 900;
+  const clampScale = (v) => Math.min(3.0, Math.max(0.5, Number(v) || 1.0));
+  const labelScale = clampScale(state.spec.layers?.cityLabelScale);
+  const iconScale = clampScale(state.spec.layers?.cityIconScale);
+
   const candidates = pickTopCitiesInExtent(
     datasets,
     state.spec.center,
@@ -282,9 +286,12 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
   );
 
   ctx.save();
-  const fontSize = Math.max(10, Math.round(11.5 * scaleFactor));
+  const fontSize = Math.max(6, Math.round(11.5 * scaleFactor * labelScale));
   ctx.font = `italic 600 ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textBaseline = 'middle';
+
+  const dotRadius = Math.max(1.1, 2.8 * scaleFactor * iconScale);
+  const lxOffset = Math.max(3, (2.8 * iconScale + 3.2 * labelScale) * scaleFactor);
 
   const placedBoxes = [];
   for (const city of candidates) {
@@ -295,7 +302,12 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
     if (x < 12 || x > canvas.width - 12 || y < 12 || y > canvas.height - 12) continue;
 
     const textW = ctx.measureText(city.name).width;
-    const box = { x1: x + 6, y1: y - fontSize * 0.7, x2: x + 12 + textW, y2: y + fontSize * 0.7 };
+    const box = {
+      x1: x + lxOffset,
+      y1: y - fontSize * 0.7,
+      x2: x + lxOffset + 6 * scaleFactor + textW,
+      y2: y + fontSize * 0.7,
+    };
     const overlaps = placedBoxes.some(
       (b) => !(box.x2 < b.x1 || box.x1 > b.x2 || box.y2 < b.y1 || box.y1 > b.y2),
     );
@@ -304,16 +316,16 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
 
     // Subtle amber reference dot + readable translucent tag (preview only)
     ctx.beginPath();
-    ctx.arc(x, y, Math.max(2.2, 2.8 * scaleFactor), 0, Math.PI * 2);
+    ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(245, 158, 11, 0.9)';
     ctx.fill();
-    ctx.lineWidth = Math.max(0.8, 1.0 * scaleFactor);
+    ctx.lineWidth = Math.max(0.6, 1.0 * scaleFactor * Math.min(2.0, iconScale));
     ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.stroke();
 
-    const lx = x + 6 * scaleFactor;
+    const lx = x + lxOffset;
     const ly = y;
-    ctx.lineWidth = Math.max(2.5, 3.2 * scaleFactor);
+    ctx.lineWidth = Math.max(1.8, 3.2 * scaleFactor * Math.min(2.0, labelScale));
     ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.strokeText(city.name, lx, ly);
     ctx.fillStyle = '#fde68a';
@@ -807,6 +819,7 @@ function handlePinMapClick(x, y) {
       style: 'dot',
       dx: 6,
       dy: -5,
+      scale: 1.0,
     },
   ];
   patchSpec({ cities });
@@ -1031,6 +1044,7 @@ function buildCallbacks() {
                 style: item.type?.includes('country') ? 'capital' : 'dot',
                 dx: 6,
                 dy: -5,
+                scale: 1.0,
               },
             ];
             patchSpec({ cities: nextCities });
@@ -1190,6 +1204,7 @@ function buildCallbacks() {
           style: city.style,
           dx: city.dx,
           dy: city.dy,
+          scale: 1.0,
         });
         addedCount += 1;
       }
@@ -1202,11 +1217,11 @@ function buildCallbacks() {
       }
     },
 
-    onUpdateCity: (idx, patch) => {
+    onUpdateCity: (idx, patch, opts = {}) => {
       const next = [...(state.spec.cities || [])];
       if (!next[idx]) return;
       next[idx] = { ...next[idx], ...patch };
-      patchSpec({ cities: next });
+      patchSpec({ cities: next }, opts);
     },
 
     onRemoveCity: (idx) => {

@@ -12,8 +12,8 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=7';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=7';
+} from './ornaments.js?v=8';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=8';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -478,6 +478,8 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
   const colors = spec?.colors || {};
   const textColor = colors.text || '#111111';
   const haloColor = colors.textHalo || '#ffffff';
+  const globalLabelScale = Math.min(3.5, Math.max(0.4, Number(spec?.layers?.cityLabelScale) || 1.0));
+  const globalIconScale = Math.min(3.5, Math.max(0.4, Number(spec?.layers?.cityIconScale) || 1.0));
 
   for (let i = 0; i < cities.length; i += 1) {
     const city = cities[i];
@@ -489,22 +491,28 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
     const pt = projection([lon, lat]);
     if (!pt || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) continue;
     const [x, y] = pt;
-    if (x < -40 * scaleFactor || x > width + 40 * scaleFactor || y < -40 * scaleFactor || y > height + 40 * scaleFactor) {
+
+    const pinScale = Math.min(3.0, Math.max(0.4, Number(city?.scale) || 1.0));
+    const iconMult = globalIconScale * pinScale;
+    const labelMult = globalLabelScale * pinScale;
+    const style = city.style || 'dot';
+    const offsetMult = style === 'label_only' ? labelMult : Math.max(0.5 * (iconMult + labelMult), iconMult * 0.9);
+    const cullMargin = 40 * scaleFactor * Math.max(1, iconMult, labelMult);
+    if (x < -cullMargin || x > width + cullMargin || y < -cullMargin || y > height + cullMargin) {
       continue;
     }
 
-    const style = city.style || 'dot';
     ctx.save();
 
     if (style === 'capital') {
-      const outerR = Math.max(3.5, 5.2 * scaleFactor);
-      const innerR = Math.max(1.6, 2.4 * scaleFactor);
+      const outerR = Math.max(2.0, 5.2 * scaleFactor * iconMult);
+      const innerR = Math.max(0.9, 2.4 * scaleFactor * iconMult);
       ctx.beginPath();
       ctx.arc(x, y, outerR, 0, Math.PI * 2);
       ctx.fillStyle = haloColor !== 'none' ? haloColor : '#ffffff';
       ctx.fill();
       ctx.strokeStyle = textColor;
-      ctx.lineWidth = Math.max(1.0, 1.4 * scaleFactor);
+      ctx.lineWidth = Math.max(0.7, 1.4 * scaleFactor * Math.sqrt(iconMult));
       ctx.stroke();
 
       ctx.beginPath();
@@ -512,22 +520,22 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
       ctx.fillStyle = textColor;
       ctx.fill();
     } else if (style === 'square') {
-      const sz = Math.max(4, 5.8 * scaleFactor);
+      const sz = Math.max(2.2, 5.8 * scaleFactor * iconMult);
       const half = sz / 2;
       if (haloColor && haloColor !== 'none') {
         ctx.strokeStyle = haloColor;
-        ctx.lineWidth = Math.max(1.5, 2.4 * scaleFactor);
+        ctx.lineWidth = Math.max(1.0, 2.4 * scaleFactor * Math.sqrt(iconMult));
         ctx.strokeRect(x - half, y - half, sz, sz);
       }
       ctx.fillStyle = textColor;
       ctx.fillRect(x - half, y - half, sz, sz);
     } else if (style === 'dot') {
-      const r = Math.max(2, 3.2 * scaleFactor);
+      const r = Math.max(1.2, 3.2 * scaleFactor * iconMult);
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       if (haloColor && haloColor !== 'none') {
         ctx.strokeStyle = haloColor;
-        ctx.lineWidth = Math.max(1.4, 2.2 * scaleFactor);
+        ctx.lineWidth = Math.max(0.9, 2.2 * scaleFactor * Math.sqrt(iconMult));
         ctx.stroke();
       }
       ctx.fillStyle = textColor;
@@ -539,9 +547,10 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
       const textScale = Math.max(scaleFactor, (Math.max(width, height * 0.78) / 900));
       const dx = Number.isFinite(Number(city.dx)) ? Number(city.dx) : 6;
       const dy = Number.isFinite(Number(city.dy)) ? Number(city.dy) : -5;
-      const lx = x + dx * textScale;
-      const ly = y + dy * textScale;
-      const fontSize = Math.max(9.5, (style === 'capital' ? 14.5 : 12.8) * textScale);
+      const lx = x + dx * textScale * offsetMult;
+      const ly = y + dy * textScale * offsetMult;
+      const fontSize = Math.max(5.5, (style === 'capital' ? 14.5 : 12.8) * textScale * labelMult);
+      const textHaloW = Math.max(1.5, 3.6 * textScale * Math.pow(labelMult, 0.75));
 
       ctx.font = `${style === 'capital' ? 700 : 600} ${fontSize.toFixed(1)}px ${FONT_FAMILY}`;
       ctx.textAlign = dx < -2 ? 'right' : Math.abs(dx) <= 2 ? 'center' : 'left';
@@ -551,7 +560,7 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
 
       if (haloColor && haloColor !== 'none') {
         ctx.strokeStyle = haloColor;
-        ctx.lineWidth = Math.max(2.4, 3.6 * textScale);
+        ctx.lineWidth = textHaloW;
         ctx.strokeText(label, lx, ly);
       }
       ctx.fillStyle = textColor;
@@ -1059,6 +1068,8 @@ export function renderMapToSvgString(spec, datasets) {
   const cities = Array.isArray(spec?.cities) ? spec.cities : [];
   const textColor = colors.text || '#111111';
   const haloColor = colors.textHalo || '#ffffff';
+  const globalLabelScale = Math.min(3.5, Math.max(0.4, Number(spec?.layers?.cityLabelScale) || 1.0));
+  const globalIconScale = Math.min(3.5, Math.max(0.4, Number(spec?.layers?.cityIconScale) || 1.0));
 
   for (let i = 0; i < cities.length; i += 1) {
     const city = cities[i];
@@ -1070,41 +1081,50 @@ export function renderMapToSvgString(spec, datasets) {
     const pt = projection([lon, lat]);
     if (!pt || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) continue;
     const [x, y] = pt;
+
+    const pinScale = Math.min(3.0, Math.max(0.4, Number(city?.scale) || 1.0));
+    const iconMult = globalIconScale * pinScale;
+    const labelMult = globalLabelScale * pinScale;
+    const style = city.style || 'dot';
+    const offsetMult = style === 'label_only' ? labelMult : Math.max(0.5 * (iconMult + labelMult), iconMult * 0.9);
+    const cullMargin = 40 * scaleFactor * Math.max(1, iconMult, labelMult);
     if (
-      x < -40 * scaleFactor ||
-      x > widthPx + 40 * scaleFactor ||
-      y < -40 * scaleFactor ||
-      y > heightPx + 40 * scaleFactor
+      x < -cullMargin ||
+      x > widthPx + cullMargin ||
+      y < -cullMargin ||
+      y > heightPx + cullMargin
     ) {
       continue;
     }
 
-    const style = city.style || 'dot';
     if (style === 'capital') {
-      const outerR = Math.max(3.5, 5.2 * scaleFactor);
-      const innerR = Math.max(1.6, 2.4 * scaleFactor);
+      const outerR = Math.max(2.0, 5.2 * scaleFactor * iconMult);
+      const innerR = Math.max(0.9, 2.4 * scaleFactor * iconMult);
       const outerFill = haloColor !== 'none' ? haloColor : '#ffffff';
+      const ringStroke = Math.max(0.7, 1.4 * scaleFactor * Math.sqrt(iconMult));
       mapParts.push(
-        `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${outerR.toFixed(2)}" fill="${escapeXml(outerFill)}" stroke="${escapeXml(textColor)}" stroke-width="${Math.max(1.0, 1.4 * scaleFactor).toFixed(2)}" />`,
+        `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${outerR.toFixed(2)}" fill="${escapeXml(outerFill)}" stroke="${escapeXml(textColor)}" stroke-width="${ringStroke.toFixed(2)}" />`,
       );
       mapParts.push(
         `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${innerR.toFixed(2)}" fill="${escapeXml(textColor)}" />`,
       );
     } else if (style === 'square') {
-      const sz = Math.max(4, 5.8 * scaleFactor);
+      const sz = Math.max(2.2, 5.8 * scaleFactor * iconMult);
       const half = sz / 2;
+      const haloStroke = Math.max(1.0, 2.4 * scaleFactor * Math.sqrt(iconMult));
       const haloAttr =
         haloColor && haloColor !== 'none'
-          ? ` stroke="${escapeXml(haloColor)}" stroke-width="${Math.max(1.5, 2.4 * scaleFactor).toFixed(2)}"`
+          ? ` stroke="${escapeXml(haloColor)}" stroke-width="${haloStroke.toFixed(2)}"`
           : '';
       mapParts.push(
         `<rect x="${(x - half).toFixed(2)}" y="${(y - half).toFixed(2)}" width="${sz.toFixed(2)}" height="${sz.toFixed(2)}" fill="${escapeXml(textColor)}"${haloAttr} />`,
       );
     } else if (style === 'dot') {
-      const r = Math.max(2, 3.2 * scaleFactor);
+      const r = Math.max(1.2, 3.2 * scaleFactor * iconMult);
+      const haloStroke = Math.max(0.9, 2.2 * scaleFactor * Math.sqrt(iconMult));
       const haloAttr =
         haloColor && haloColor !== 'none'
-          ? ` stroke="${escapeXml(haloColor)}" stroke-width="${Math.max(1.4, 2.2 * scaleFactor).toFixed(2)}"`
+          ? ` stroke="${escapeXml(haloColor)}" stroke-width="${haloStroke.toFixed(2)}"`
           : '';
       mapParts.push(
         `<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r.toFixed(2)}" fill="${escapeXml(textColor)}"${haloAttr} />`,
@@ -1116,14 +1136,15 @@ export function renderMapToSvgString(spec, datasets) {
       const textScale = Math.max(scaleFactor, (Math.max(widthPx, heightPx * 0.78) / 900));
       const dx = Number.isFinite(Number(city.dx)) ? Number(city.dx) : 6;
       const dy = Number.isFinite(Number(city.dy)) ? Number(city.dy) : -5;
-      const lx = x + dx * textScale;
-      const ly = y + dy * textScale;
-      const fontSize = Math.max(9.5, (style === 'capital' ? 14.5 : 12.8) * textScale);
+      const lx = x + dx * textScale * offsetMult;
+      const ly = y + dy * textScale * offsetMult;
+      const fontSize = Math.max(5.5, (style === 'capital' ? 14.5 : 12.8) * textScale * labelMult);
+      const textHaloW = Math.max(1.5, 3.6 * textScale * Math.pow(labelMult, 0.75));
       const anchor = dx < -2 ? 'end' : Math.abs(dx) <= 2 ? 'middle' : 'start';
       const weight = style === 'capital' ? 700 : 600;
       const strokeAttr =
         haloColor && haloColor !== 'none'
-          ? ` stroke="${escapeXml(haloColor)}" stroke-width="${Math.max(2.4, 3.6 * textScale).toFixed(2)}" stroke-linejoin="round" paint-order="stroke fill" style="paint-order: stroke fill;"`
+          ? ` stroke="${escapeXml(haloColor)}" stroke-width="${textHaloW.toFixed(2)}" stroke-linejoin="round" paint-order="stroke fill" style="paint-order: stroke fill;"`
           : '';
       mapParts.push(
         `<text x="${lx.toFixed(2)}" y="${ly.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize.toFixed(1)}" font-weight="${weight}" fill="${escapeXml(textColor)}" text-anchor="${anchor}" dominant-baseline="central"${strokeAttr}>${escapeXml(label)}</text>`,

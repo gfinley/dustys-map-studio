@@ -649,7 +649,8 @@ def _draw_cities(
     geodetic = ccrs.PlateCarree()
     text_color = _valid_color(spec.colors.text, "#111111")
     halo_color = _valid_color(spec.colors.textHalo, "#ffffff")
-    halo_effect = [patheffects.withStroke(linewidth=2.5, foreground=halo_color)]
+    global_label_scale = float(spec.layers.cityLabelScale)
+    global_icon_scale = float(spec.layers.cityIconScale)
 
     for city in spec.cities:
         px, py = proj.transform_point(city.lon, city.lat, geodetic)
@@ -658,15 +659,24 @@ def _draw_cities(
         if not (xmin <= px <= xmax and ymin <= py <= ymax):
             continue
 
+        pin_scale = float(city.scale)
+        icon_mult = global_icon_scale * pin_scale
+        label_mult = global_label_scale * pin_scale
+        offset_mult = (
+            label_mult
+            if city.style == "label_only"
+            else max(0.5 * (icon_mult + label_mult), icon_mult * 0.9)
+        )
+
         if city.style == "capital":
             ax.plot(
                 [px],
                 [py],
                 marker="o",
-                markersize=6.8,
+                markersize=max(2.0, 6.8 * icon_mult),
                 markerfacecolor=halo_color,
                 markeredgecolor=text_color,
-                markeredgewidth=1.4,
+                markeredgewidth=max(0.6, 1.4 * math.sqrt(icon_mult)),
                 transform=ax.transData,
                 clip_on=True,
                 zorder=7,
@@ -675,7 +685,7 @@ def _draw_cities(
                 [px],
                 [py],
                 marker="o",
-                markersize=2.6,
+                markersize=max(1.0, 2.6 * icon_mult),
                 markerfacecolor=text_color,
                 markeredgecolor="none",
                 transform=ax.transData,
@@ -687,10 +697,10 @@ def _draw_cities(
                 [px],
                 [py],
                 marker="s",
-                markersize=4.8,
+                markersize=max(2.0, 4.8 * icon_mult),
                 markerfacecolor=text_color,
                 markeredgecolor=halo_color,
-                markeredgewidth=0.8,
+                markeredgewidth=max(0.5, 0.8 * math.sqrt(icon_mult)),
                 transform=ax.transData,
                 clip_on=True,
                 zorder=7,
@@ -700,10 +710,10 @@ def _draw_cities(
                 [px],
                 [py],
                 marker="o",
-                markersize=4.8,
+                markersize=max(2.0, 4.8 * icon_mult),
                 markerfacecolor=text_color,
                 markeredgecolor=halo_color,
-                markeredgewidth=0.8,
+                markeredgewidth=max(0.5, 0.8 * math.sqrt(icon_mult)),
                 transform=ax.transData,
                 clip_on=True,
                 zorder=7,
@@ -716,8 +726,18 @@ def _draw_cities(
                 ha = "left"
             else:
                 ha = "right"
+            city_halo = [
+                patheffects.withStroke(
+                    linewidth=max(1.0, 2.5 * (label_mult ** 0.75)),
+                    foreground=halo_color,
+                )
+            ]
             label_transform = offset_copy(
-                ax.transData, fig=fig, x=city.dx, y=-city.dy, units="points"
+                ax.transData,
+                fig=fig,
+                x=city.dx * offset_mult,
+                y=-city.dy * offset_mult,
+                units="points",
             )
             ax.text(
                 px,
@@ -726,10 +746,10 @@ def _draw_cities(
                 transform=label_transform,
                 ha=ha,
                 va="center",
-                fontsize=9.0 if city.style == "capital" else 8.0,
+                fontsize=max(4.0, (9.0 if city.style == "capital" else 8.0) * label_mult),
                 fontweight="bold" if city.style == "capital" else "medium",
                 color=text_color,
-                path_effects=halo_effect,
+                path_effects=city_halo,
                 clip_on=True,
                 zorder=7.5,
             )
