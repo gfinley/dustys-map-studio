@@ -6,20 +6,20 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js';
+} from './schema.js?v=4';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
   getCitiesInBounds,
   getCountryCatalog,
   resolveResolution,
-} from './data-loader.js';
+} from './data-loader.js?v=4';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js';
+} from './cartography.js?v=4';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -28,9 +28,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js';
-import { REGION_PRESETS } from './presets.js';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js';
+} from './exporter.js?v=4';
+import { REGION_PRESETS } from './presets.js?v=4';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=4';
 import {
   populateCountryCatalog,
   renderControls,
@@ -39,7 +39,7 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js';
+} from './controls.js?v=4';
 
 const STORAGE_KEY = 'dusty_mapmaker_last_spec';
 const MAX_HISTORY = 40;
@@ -373,6 +373,10 @@ function datasetSatisfiesSpec(datasets, spec, needPlaces) {
   if (!datasets) return false;
   const neededRes = resolveResolution(spec);
   if (datasets.resolution !== neededRes) return false;
+  const needFineHydro =
+    spec.detailLevel === '10m' &&
+    Math.max(Number(spec.span?.lonDeg) || 24, Number(spec.span?.latDeg) || 14) <= 4;
+  if (needFineHydro && !datasets.fineHydrology) return false;
   if (spec.layers?.showLakes !== false && !datasets.lakes) return false;
   if (spec.layers?.showRivers && !datasets.rivers) return false;
   if (spec.layers?.showAdmin1 && !datasets.admin1) return false;
@@ -388,6 +392,9 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
   const needRivers = Boolean(spec.layers?.showRivers);
   const needAdmin1 = Boolean(spec.layers?.showAdmin1);
   const needPlaces = Boolean(forcePlaces || state.refPeek || state.datasets?.populatedPlaces);
+  const fineHydrology =
+    spec.detailLevel === '10m' &&
+    Math.max(Number(spec.span?.lonDeg) || 24, Number(spec.span?.latDeg) || 14) <= 4;
 
   if (datasetSatisfiesSpec(state.datasets, spec, needPlaces)) {
     state.loadRequestToken += 1;
@@ -414,6 +421,7 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
       needRivers,
       needAdmin1,
       needPlaces,
+      fineHydrology,
       onProgress: ({ label, completed, total }) => {
         if (token !== state.loadRequestToken) return;
         setLoadingProgress(true, `${label} (${completed}/${total})`);
@@ -659,7 +667,10 @@ function setupCanvasInteractions() {
       e.preventDefault();
       if (!state.spec) return;
       state.isInteracting = true;
-      const factor = e.deltaY < 0 ? 0.84 : 1.18;
+      const rawDelta =
+        e.deltaMode === 1 ? e.deltaY * 28 : e.deltaMode === 2 ? e.deltaY * 240 : e.deltaY;
+      const clampedDelta = Math.max(-120, Math.min(120, rawDelta));
+      const factor = Math.exp(clampedDelta * 0.0015);
       applyZoomFactor(factor, { commitHistory: false });
       clearTimeout(state.wheelCommitTimer);
       state.wheelCommitTimer = setTimeout(() => {
@@ -673,10 +684,23 @@ function setupCanvasInteractions() {
 }
 
 function applyZoomFactor(factor, { commitHistory = true } = {}) {
-  const curLon = Number(state.spec.span.lonDeg) || 24;
-  const curLat = Number(state.spec.span.latDeg) || 14;
-  const nextLon = Math.max(0.5, Math.min(360, Number((curLon * factor).toFixed(2))));
-  const nextLat = Math.max(0.5, Math.min(175, Number((curLat * factor).toFixed(2))));
+  const MIN_SPAN_DEG = 1.5;
+  const MAX_LON_DEG = 360;
+  const MAX_LAT_DEG = 175;
+  const curLon = Math.max(0.05, Number(state.spec.span.lonDeg) || 24);
+  const curLat = Math.max(0.05, Number(state.spec.span.latDeg) || 14);
+  const minFactor = Math.max(MIN_SPAN_DEG / curLon, MIN_SPAN_DEG / curLat);
+  const maxFactor = Math.min(MAX_LON_DEG / curLon, MAX_LAT_DEG / curLat);
+  const clampedFactor =
+    minFactor <= maxFactor ? Math.max(minFactor, Math.min(maxFactor, factor)) : factor;
+  const nextLon = Math.max(
+    MIN_SPAN_DEG,
+    Math.min(MAX_LON_DEG, Number((curLon * clampedFactor).toFixed(3))),
+  );
+  const nextLat = Math.max(
+    MIN_SPAN_DEG,
+    Math.min(MAX_LAT_DEG, Number((curLat * clampedFactor).toFixed(3))),
+  );
 
   if (commitHistory) {
     patchSpec({ span: { lonDeg: nextLon, latDeg: nextLat } }, { commitHistory: true });

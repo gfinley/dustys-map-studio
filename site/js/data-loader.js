@@ -4,8 +4,16 @@
  */
 
 import * as topojson from 'https://cdn.jsdelivr.net/npm/topojson-client@3/+esm';
+import { geoArea } from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 
-const CACHE_NAME = 'dusty-mapmaker-v1';
+const CACHE_NAME = 'dusty-mapmaker-v2';
+try {
+  if (typeof caches !== 'undefined') {
+    void caches.delete('dusty-mapmaker-v1');
+  }
+} catch {
+  // Ignore CacheStorage errors on restricted origins
+}
 const VALID_RESOLUTIONS = new Set(['110m', '50m', '10m']);
 
 const VALID_GEOJSON_TYPES = new Set([
@@ -105,51 +113,11 @@ function attachFeatureBBoxes(fc) {
   return fc;
 }
 
-const DEG_TO_RAD = Math.PI / 180;
-const QUARTER_PI = Math.PI / 4;
-
-// Cagnoli spherical excess with Neumaier compensated sum to detect inverted outer rings (< 0 => 4*PI complement)
-function sphericalRingSignedSum(ring) {
-  if (!Array.isArray(ring) || ring.length < 4) return 0;
-  let sum = 0;
-  let comp = 0;
-  let lambda0 = ring[0][0] * DEG_TO_RAD;
-  let phi0 = (ring[0][1] * DEG_TO_RAD) / 2 + QUARTER_PI;
-  let cosPhi0 = Math.cos(phi0);
-  let sinPhi0 = Math.sin(phi0);
-  const n = ring.length;
-  const isClosed = ring[n - 1][0] === ring[0][0] && ring[n - 1][1] === ring[0][1];
-  const count = isClosed ? n - 1 : n;
-
-  for (let i = 1; i <= count; i += 1) {
-    const pt = ring[i % count];
-    const lambda = pt[0] * DEG_TO_RAD;
-    const phi = (pt[1] * DEG_TO_RAD) / 2 + QUARTER_PI;
-    const dLambda = lambda - lambda0;
-    const sdLambda = dLambda >= 0 ? 1 : -1;
-    const adLambda = sdLambda * dLambda;
-    const cosPhi = Math.cos(phi);
-    const sinPhi = Math.sin(phi);
-    const k = sinPhi0 * sinPhi;
-    const u = cosPhi0 * cosPhi + k * Math.cos(adLambda);
-    const v = k * sdLambda * Math.sin(adLambda);
-    const x = Math.atan2(v, u);
-    const t = sum + x;
-    comp += Math.abs(sum) >= Math.abs(x) ? (sum - t) + x : (x - t) + sum;
-    sum = t;
-    lambda0 = lambda;
-    cosPhi0 = cosPhi;
-    sinPhi0 = sinPhi;
-  }
-  return sum + comp;
-}
-
-function fixInvertedSmallOuterRing(polyCoords, bbox) {
+function fixInvertedOuterRing(polyCoords) {
   if (!Array.isArray(polyCoords) || polyCoords.length === 0) return;
   const ring = polyCoords[0];
   if (!Array.isArray(ring) || ring.length < 4) return;
-  if (!bbox || bbox[4] || bbox[2] - bbox[0] >= 10 || bbox[3] - bbox[1] >= 10) return;
-  if (sphericalRingSignedSum(ring) < 0) {
+  if (geoArea({ type: 'Polygon', coordinates: [ring] }) > 2 * Math.PI) {
     ring.reverse();
   }
 }
@@ -162,11 +130,10 @@ function sanitizePolygonFeatureCollection(fc) {
     const geom = f?.geometry;
     if (!geom) continue;
     if (geom.type === 'Polygon') {
-      fixInvertedSmallOuterRing(geom.coordinates, f._bbox);
+      fixInvertedOuterRing(geom.coordinates);
     } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
       for (let j = 0; j < geom.coordinates.length; j += 1) {
-        const polyCoords = geom.coordinates[j];
-        fixInvertedSmallOuterRing(polyCoords, computeCoordsBBox(polyCoords));
+        fixInvertedOuterRing(geom.coordinates[j]);
       }
     }
   }
@@ -175,10 +142,10 @@ function sanitizePolygonFeatureCollection(fc) {
 function decomposeGeometryParts(geojson, singleType, multiType) {
   const parts = [];
   function pushPart(partCoords) {
-    const bbox = computeCoordsBBox(partCoords);
     if (singleType === 'Polygon') {
-      fixInvertedSmallOuterRing(partCoords, bbox);
+      fixInvertedOuterRing(partCoords);
     }
+    const bbox = computeCoordsBBox(partCoords);
     parts.push({
       type: singleType,
       coordinates: partCoords,
@@ -217,14 +184,17 @@ function decomposeGeometryParts(geojson, singleType, multiType) {
   return parts;
 }
 
-function buildUrls(res) {
-  const riverRes = res === '110m' ? '50m' : res;
+function buildUrls(res, fineHydrology = false) {
+  const hydroRes = fineHydrology ? res : res === '10m' ? '50m' : res;
+  const riverRes = hydroRes === '110m' ? '50m' : hydroRes;
   return {
     world: `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-${res}.json`,
-    lakes: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${res}_lakes.geojson`,
+    lakes: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${hydroRes}_lakes.geojson`,
     rivers: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${riverRes}_rivers_lake_centerlines.geojson`,
     admin1: 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_admin_1_states_provinces_lines.geojson',
     places: 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_populated_places_simple.geojson',
+    hydroRes,
+    riverRes,
   };
 }
 
@@ -313,14 +283,14 @@ async function loadWorldAtlas(res) {
   return parsed;
 }
 
-async function loadFilteredRivers(res) {
-  const riverRes = res === '110m' ? '50m' : res;
+async function loadFilteredRivers(res, fineHydrology = false) {
+  const urls = buildUrls(res, fineHydrology);
+  const riverRes = urls.riverRes;
   if (filteredRiversCache.has(riverRes)) {
     return filteredRiversCache.get(riverRes);
   }
 
-  const { rivers } = buildUrls(res);
-  const raw = await fetchJsonCached(rivers);
+  const raw = await fetchJsonCached(urls.rivers);
   const features = Array.isArray(raw?.features)
     ? raw.features.filter((f) => {
         const cls = String(f?.properties?.featurecla || '').trim().toLowerCase();
@@ -373,11 +343,12 @@ export async function ensureDatasets(
     needRivers = false,
     needAdmin1 = false,
     needPlaces = false,
+    fineHydrology = false,
     onProgress = null,
   } = {},
 ) {
   const res = VALID_RESOLUTIONS.has(resolution) ? resolution : '50m';
-  const urls = buildUrls(res);
+  const urls = buildUrls(res, fineHydrology);
 
   const tasks = [
     {
@@ -397,15 +368,19 @@ export async function ensureDatasets(
   if (needLakes) {
     tasks.push({
       key: 'lakes',
-      label: `Loading ${res} lakes`,
-      run: async () => attachFeatureBBoxes(await fetchJsonCached(urls.lakes)),
+      label: `Loading ${urls.hydroRes} lakes`,
+      run: async () => {
+        const fc = attachFeatureBBoxes(await fetchJsonCached(urls.lakes));
+        sanitizePolygonFeatureCollection(fc);
+        return fc;
+      },
     });
   }
   if (needRivers) {
     tasks.push({
       key: 'rivers',
-      label: `Loading ${res === '110m' ? '50m' : res} rivers`,
-      run: () => loadFilteredRivers(res),
+      label: `Loading ${urls.riverRes} rivers`,
+      run: () => loadFilteredRivers(res, fineHydrology),
     });
   }
   if (needAdmin1) {
@@ -454,6 +429,7 @@ export async function ensureDatasets(
 
   return {
     resolution: res,
+    fineHydrology: Boolean(fineHydrology),
     land: world.land,
     landParts: world.landParts,
     countries: world.countries,

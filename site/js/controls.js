@@ -6,8 +6,8 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js';
+} from './schema.js?v=4';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=4';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
