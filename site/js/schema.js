@@ -154,7 +154,7 @@ export const HATCH_STYLES = ['none', 'diagonal', 'backdiagonal', 'cross', 'dots'
 
 export const BORDER_STYLES = ['solid', 'dashed', 'dotted'];
 
-export const PIN_STYLES = ['dot', 'capital', 'square', 'label_only'];
+export const PIN_STYLES = ['dot', 'capital', 'bullseye', 'square', 'label_only'];
 
 export const CORNER_POSITIONS = [
   'bottom-left',

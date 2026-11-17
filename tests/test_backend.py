@@ -306,6 +306,16 @@ class TestBackendAPI(unittest.TestCase):
                         "dy": -5,
                         "scale": 0.6,
                     },
+                    {
+                        "id": "odesa",
+                        "name": "Odesa",
+                        "lat": 46.4825,
+                        "lon": 30.7233,
+                        "style": "bullseye",
+                        "dx": 6,
+                        "dy": 8,
+                        "scale": 1.0,
+                    },
                 ],
             }
         )
@@ -317,13 +327,24 @@ class TestBackendAPI(unittest.TestCase):
         limits = _configure_extent(ax, spec, proj)
         _draw_cities(fig, ax, spec, proj, limits)
 
-        self.assertEqual([t.get_text() for t in ax.texts], ["Kyiv", "Lviv"])
+        self.assertEqual([t.get_text() for t in ax.texts], ["Kyiv", "Lviv", "Odesa"])
         self.assertAlmostEqual(ax.texts[0].get_fontsize(), 9.0 * 2.2 * 1.5)
+        self.assertEqual(ax.texts[0].get_fontweight(), "bold")
         self.assertAlmostEqual(ax.texts[1].get_fontsize(), 8.0 * 2.2 * 0.6)
-        self.assertEqual(len(ax.lines), 3)
-        self.assertAlmostEqual(ax.lines[0].get_markersize(), 6.8 * 2.0 * 1.5)
-        self.assertAlmostEqual(ax.lines[1].get_markersize(), 2.6 * 2.0 * 1.5)
+        self.assertEqual(ax.texts[1].get_fontweight(), "medium")
+        self.assertAlmostEqual(ax.texts[2].get_fontsize(), 9.0 * 2.2 * 1.0)
+        self.assertEqual(ax.texts[2].get_fontweight(), "bold")
+        self.assertEqual(len(ax.lines), 5)
+        self.assertEqual(ax.lines[0].get_marker(), "*")
+        self.assertEqual(ax.lines[1].get_marker(), "*")
+        self.assertAlmostEqual(ax.lines[0].get_markersize(), 10.5 * 2.0 * 1.5)
+        self.assertAlmostEqual(ax.lines[1].get_markersize(), 10.5 * 2.0 * 1.5)
+        self.assertEqual(ax.lines[2].get_marker(), "o")
         self.assertAlmostEqual(ax.lines[2].get_markersize(), 4.8 * 2.0 * 0.6)
+        self.assertEqual(ax.lines[3].get_marker(), "o")
+        self.assertEqual(ax.lines[4].get_marker(), "o")
+        self.assertAlmostEqual(ax.lines[3].get_markersize(), 6.8 * 2.0 * 1.0)
+        self.assertAlmostEqual(ax.lines[4].get_markersize(), 2.6 * 2.0 * 1.0)
 
         # Verify PNG export header and pixel dimensions
         png_bytes = render_map(spec, "png")
@@ -348,8 +369,8 @@ class TestBackendAPI(unittest.TestCase):
         baseline_text_groups = [
             el for el in baseline_root.iter() if (el.attrib.get("id") or "").startswith("text_")
         ]
-        self.assertEqual(len(text_groups), len(baseline_text_groups) + 2)
-        for city_group_id in ("text_1", "text_2"):
+        self.assertEqual(len(text_groups), len(baseline_text_groups) + len(spec.cities))
+        for city_group_id in ("text_1", "text_2", "text_3"):
             group_el = svg_root.find(f".//*[@id='{city_group_id}']")
             self.assertIsNotNone(group_el, f"Missing city label SVG group {city_group_id}")
             self.assertTrue(

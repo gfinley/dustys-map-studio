@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=8';
+} from './schema.js?v=9';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -14,13 +14,13 @@ import {
   getCountryCatalog,
   resolveAdmin1Scale,
   resolveResolution,
-} from './data-loader.js?v=8';
+} from './data-loader.js?v=9';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=8';
+} from './cartography.js?v=9';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -29,9 +29,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=8';
-import { REGION_PRESETS } from './presets.js?v=8';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=8';
+} from './exporter.js?v=9';
+import { REGION_PRESETS } from './presets.js?v=9';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=9';
 import {
   populateCountryCatalog,
   renderControls,
@@ -40,7 +40,7 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=8';
+} from './controls.js?v=9';
 
 const STORAGE_KEY = 'dusty_mapmaker_last_spec';
 const MAX_HISTORY = 40;

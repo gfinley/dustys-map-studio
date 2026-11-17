@@ -17,7 +17,7 @@ ProjectionLiteral = Literal[
 DetailLevelLiteral = Literal["auto", "10m", "50m", "110m"]
 HatchLiteral = Literal["none", "diagonal", "backdiagonal", "cross", "dots"]
 BorderStyleLiteral = Literal["solid", "dashed", "dotted"]
-PinStyleLiteral = Literal["dot", "capital", "square", "label_only"]
+PinStyleLiteral = Literal["dot", "capital", "bullseye", "square", "label_only"]
 CornerLiteral = Literal["bottom-left", "bottom-right", "top-left", "top-right"]
 BasemapLiteral = Literal[
     "none",

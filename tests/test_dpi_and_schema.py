@@ -146,13 +146,24 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
                         "lon": 30.5234,
                         "style": "capital",
                         "scale": 1.5,
-                    }
+                    },
+                    {
+                        "id": "odesa",
+                        "name": "Odesa",
+                        "lat": 46.4825,
+                        "lon": 30.7233,
+                        "style": "bullseye",
+                        "scale": 1.0,
+                    },
                 ],
             }
         )
         self.assertAlmostEqual(custom_spec.layers.cityLabelScale, 2.2)
         self.assertAlmostEqual(custom_spec.layers.cityIconScale, 1.8)
         self.assertAlmostEqual(custom_spec.cities[0].scale, 1.5)
+        self.assertEqual(custom_spec.cities[0].style, "capital")
+        self.assertEqual(custom_spec.cities[1].style, "bullseye")
+        self.assertAlmostEqual(custom_spec.cities[1].scale, 1.0)
 
     def test_schema_js_exists_and_exports_contract(self) -> None:
         """site/js/schema.js exists and exports the shared presets, themes, and codec."""

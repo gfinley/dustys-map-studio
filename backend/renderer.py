@@ -662,13 +662,42 @@ def _draw_cities(
         pin_scale = float(city.scale)
         icon_mult = global_icon_scale * pin_scale
         label_mult = global_label_scale * pin_scale
+        min_icon_clear = icon_mult * 1.12 if city.style == "capital" else icon_mult * 0.9
         offset_mult = (
             label_mult
             if city.style == "label_only"
-            else max(0.5 * (icon_mult + label_mult), icon_mult * 0.9)
+            else max(0.5 * (icon_mult + label_mult), min_icon_clear)
         )
 
         if city.style == "capital":
+            if (
+                _valid_color(spec.colors.textHalo, "#ffffff")
+                and str(spec.colors.textHalo).lower() != "none"
+            ):
+                ax.plot(
+                    [px],
+                    [py],
+                    marker="*",
+                    markersize=max(4.0, 10.5 * icon_mult),
+                    markerfacecolor=halo_color,
+                    markeredgecolor=halo_color,
+                    markeredgewidth=max(1.0, 2.2 * math.sqrt(icon_mult)),
+                    transform=ax.transData,
+                    clip_on=True,
+                    zorder=7,
+                )
+            ax.plot(
+                [px],
+                [py],
+                marker="*",
+                markersize=max(4.0, 10.5 * icon_mult),
+                markerfacecolor=text_color,
+                markeredgecolor="none",
+                transform=ax.transData,
+                clip_on=True,
+                zorder=7.1,
+            )
+        elif city.style == "bullseye":
             ax.plot(
                 [px],
                 [py],
@@ -746,8 +775,11 @@ def _draw_cities(
                 transform=label_transform,
                 ha=ha,
                 va="center",
-                fontsize=max(4.0, (9.0 if city.style == "capital" else 8.0) * label_mult),
-                fontweight="bold" if city.style == "capital" else "medium",
+                fontsize=max(
+                    4.0,
+                    (9.0 if city.style in ("capital", "bullseye") else 8.0) * label_mult,
+                ),
+                fontweight="bold" if city.style in ("capital", "bullseye") else "medium",
                 color=text_color,
                 path_effects=city_halo,
                 clip_on=True,

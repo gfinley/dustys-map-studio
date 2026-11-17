@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=8';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=9';
 
 function makePresetSpec(overrides) {
   const base = createDefaultMapSpec();

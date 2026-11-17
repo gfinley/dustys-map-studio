@@ -6,9 +6,9 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=8';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=8';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=8';
+} from './schema.js?v=9';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=9';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=9';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -21,6 +21,7 @@ const HATCH_LABELS = {
 const PIN_STYLE_LABELS = {
   dot: 'City Dot',
   capital: 'Capital Star',
+  bullseye: 'Bullseye Ring',
   square: 'Square Pin',
   label_only: 'Text Only',
 };

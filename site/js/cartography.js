@@ -12,8 +12,8 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=8';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=8';
+} from './ornaments.js?v=9';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=9';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -471,6 +471,19 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor) {
   }
 }
 
+/**
+ * Builds the 10 alternating [x, y] vertices of an upright 5-pointed star.
+ */
+function buildStarVertices(cx, cy, outerR, innerR) {
+  const verts = [];
+  for (let k = 0; k < 10; k += 1) {
+    const angle = -Math.PI / 2 + (k * Math.PI) / 5;
+    const r = k % 2 === 0 ? outerR : innerR;
+    verts.push([cx + Math.cos(angle) * r, cy + Math.sin(angle) * r]);
+  }
+  return verts;
+}
+
 function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
   const cities = Array.isArray(spec?.cities) ? spec.cities : [];
   if (cities.length === 0) return;
@@ -496,7 +509,9 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
     const iconMult = globalIconScale * pinScale;
     const labelMult = globalLabelScale * pinScale;
     const style = city.style || 'dot';
-    const offsetMult = style === 'label_only' ? labelMult : Math.max(0.5 * (iconMult + labelMult), iconMult * 0.9);
+    const minIconClear = style === 'capital' ? iconMult * 1.12 : iconMult * 0.9;
+    const offsetMult =
+      style === 'label_only' ? labelMult : Math.max(0.5 * (iconMult + labelMult), minIconClear);
     const cullMargin = 40 * scaleFactor * Math.max(1, iconMult, labelMult);
     if (x < -cullMargin || x > width + cullMargin || y < -cullMargin || y > height + cullMargin) {
       continue;
@@ -505,6 +520,25 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
     ctx.save();
 
     if (style === 'capital') {
+      const outerR = Math.max(3.0, 6.6 * scaleFactor * iconMult);
+      const innerR = outerR * 0.42;
+      const verts = buildStarVertices(x, y, outerR, innerR);
+      ctx.beginPath();
+      ctx.moveTo(verts[0][0], verts[0][1]);
+      for (let v = 1; v < verts.length; v += 1) {
+        ctx.lineTo(verts[v][0], verts[v][1]);
+      }
+      ctx.closePath();
+      if (haloColor && haloColor !== 'none') {
+        ctx.strokeStyle = haloColor;
+        ctx.lineWidth = Math.max(1.2, 2.5 * scaleFactor * Math.sqrt(iconMult));
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.stroke();
+      }
+      ctx.fillStyle = textColor;
+      ctx.fill();
+    } else if (style === 'bullseye') {
       const outerR = Math.max(2.0, 5.2 * scaleFactor * iconMult);
       const innerR = Math.max(0.9, 2.4 * scaleFactor * iconMult);
       ctx.beginPath();
@@ -549,10 +583,11 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
       const dy = Number.isFinite(Number(city.dy)) ? Number(city.dy) : -5;
       const lx = x + dx * textScale * offsetMult;
       const ly = y + dy * textScale * offsetMult;
-      const fontSize = Math.max(5.5, (style === 'capital' ? 14.5 : 12.8) * textScale * labelMult);
+      const isBoldPin = style === 'capital' || style === 'bullseye';
+      const fontSize = Math.max(5.5, (isBoldPin ? 14.5 : 12.8) * textScale * labelMult);
       const textHaloW = Math.max(1.5, 3.6 * textScale * Math.pow(labelMult, 0.75));
 
-      ctx.font = `${style === 'capital' ? 700 : 600} ${fontSize.toFixed(1)}px ${FONT_FAMILY}`;
+      ctx.font = `${isBoldPin ? 700 : 600} ${fontSize.toFixed(1)}px ${FONT_FAMILY}`;
       ctx.textAlign = dx < -2 ? 'right' : Math.abs(dx) <= 2 ? 'center' : 'left';
       ctx.textBaseline = 'middle';
       ctx.lineJoin = 'round';
@@ -1086,7 +1121,9 @@ export function renderMapToSvgString(spec, datasets) {
     const iconMult = globalIconScale * pinScale;
     const labelMult = globalLabelScale * pinScale;
     const style = city.style || 'dot';
-    const offsetMult = style === 'label_only' ? labelMult : Math.max(0.5 * (iconMult + labelMult), iconMult * 0.9);
+    const minIconClear = style === 'capital' ? iconMult * 1.12 : iconMult * 0.9;
+    const offsetMult =
+      style === 'label_only' ? labelMult : Math.max(0.5 * (iconMult + labelMult), minIconClear);
     const cullMargin = 40 * scaleFactor * Math.max(1, iconMult, labelMult);
     if (
       x < -cullMargin ||
@@ -1098,6 +1135,20 @@ export function renderMapToSvgString(spec, datasets) {
     }
 
     if (style === 'capital') {
+      const outerR = Math.max(3.0, 6.6 * scaleFactor * iconMult);
+      const innerR = outerR * 0.42;
+      const pts = buildStarVertices(x, y, outerR, innerR)
+        .map(([px, py]) => `${px.toFixed(2)},${py.toFixed(2)}`)
+        .join(' ');
+      let haloAttr = '';
+      if (haloColor && haloColor !== 'none') {
+        const haloStroke = Math.max(1.2, 2.5 * scaleFactor * Math.sqrt(iconMult));
+        haloAttr = ` stroke="${escapeXml(haloColor)}" stroke-width="${haloStroke.toFixed(2)}" stroke-linejoin="round" paint-order="stroke fill" style="paint-order: stroke fill;"`;
+      }
+      mapParts.push(
+        `<polygon points="${pts}" fill="${escapeXml(textColor)}"${haloAttr} />`,
+      );
+    } else if (style === 'bullseye') {
       const outerR = Math.max(2.0, 5.2 * scaleFactor * iconMult);
       const innerR = Math.max(0.9, 2.4 * scaleFactor * iconMult);
       const outerFill = haloColor !== 'none' ? haloColor : '#ffffff';
@@ -1138,10 +1189,11 @@ export function renderMapToSvgString(spec, datasets) {
       const dy = Number.isFinite(Number(city.dy)) ? Number(city.dy) : -5;
       const lx = x + dx * textScale * offsetMult;
       const ly = y + dy * textScale * offsetMult;
-      const fontSize = Math.max(5.5, (style === 'capital' ? 14.5 : 12.8) * textScale * labelMult);
+      const isBoldPin = style === 'capital' || style === 'bullseye';
+      const fontSize = Math.max(5.5, (isBoldPin ? 14.5 : 12.8) * textScale * labelMult);
       const textHaloW = Math.max(1.5, 3.6 * textScale * Math.pow(labelMult, 0.75));
       const anchor = dx < -2 ? 'end' : Math.abs(dx) <= 2 ? 'middle' : 'start';
-      const weight = style === 'capital' ? 700 : 600;
+      const weight = isBoldPin ? 700 : 600;
       const strokeAttr =
         haloColor && haloColor !== 'none'
           ? ` stroke="${escapeXml(haloColor)}" stroke-width="${textHaloW.toFixed(2)}" stroke-linejoin="round" paint-order="stroke fill" style="paint-order: stroke fill;"`
