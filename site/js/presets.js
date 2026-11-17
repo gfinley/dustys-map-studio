@@ -278,6 +278,56 @@ export const REGION_PRESETS = [
     }),
   },
   {
+    id: 'philippines',
+    label: 'Philippines Archipelago',
+    description: 'High-detail 10m archipelago framing of Luzon, Visayas, Palawan, and Mindanao on a 4.6×7" book page.',
+    spec: makePresetSpec({
+      title: 'Philippines',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: '10m',
+      center: { lat: 12.6, lon: 121.8 },
+      span: { lonDeg: 13.0, latDeg: 18.5 },
+      page: {
+        preset: 'book_4_6x7',
+        widthIn: 4.6,
+        heightIn: 7.0,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.0,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: false,
+      },
+      highlightedCountries: [
+        {
+          id: '608',
+          name: 'Philippines',
+          fill: '#7a7d7a',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+      ],
+      cities: [
+        { id: 'manila', name: 'Manila', lat: 14.5995, lon: 120.9842, style: 'capital', dx: -8, dy: -4 },
+        { id: 'cebu', name: 'Cebu City', lat: 10.3157, lon: 123.8854, style: 'dot', dx: 7, dy: 2 },
+        { id: 'davao', name: 'Davao', lat: 7.1907, lon: 125.4553, style: 'dot', dx: 7, dy: 4 },
+        { id: 'zamboanga', name: 'Zamboanga', lat: 6.9214, lon: 122.079, style: 'dot', dx: -8, dy: 5 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
+      },
+    }),
+  },
+  {
     id: 'europe_globe',
     label: 'European 3D Globe',
     description: 'Orthographic 3D sphere centered over Europe with graticule lines.',
@@ -385,5 +435,9 @@ export const GEOJSON_EXAMPLES = [
   {
     label: 'Taiwan Boundary (World GeoJSON)',
     url: 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries/TWN.geo.json',
+  },
+  {
+    label: 'Philippines Boundary (World GeoJSON)',
+    url: 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries/PHL.geo.json',
   },
 ];
