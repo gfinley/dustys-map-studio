@@ -6,8 +6,9 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=4';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=4';
+} from './schema.js?v=5';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=5';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=5';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -772,6 +773,24 @@ export function renderControls(callbacks) {
   $('orn-globe-size')?.addEventListener('change', (e) => {
     boundCallbacks.onPatchSpec?.({ ornaments: { locatorGlobe: { sizePct: Number(e.target.value) } } }, { commitHistory: true });
   });
+  $('orn-globe-zoom-mode')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ ornaments: { locatorGlobe: { zoomMode: e.target.value } } });
+  });
+  $('orn-globe-zoom')?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('orn-globe-zoom-val');
+    if (lbl) lbl.textContent = `${val.toFixed(1)}×`;
+    boundCallbacks.onPatchSpec?.(
+      { ornaments: { locatorGlobe: { zoomMode: 'custom', zoom: val } } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('orn-globe-zoom')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.(
+      { ornaments: { locatorGlobe: { zoomMode: 'custom', zoom: Number(e.target.value) } } },
+      { commitHistory: true },
+    );
+  });
   bindCheck('orn-globe-box', (v) => boundCallbacks.onPatchSpec?.({ ornaments: { locatorGlobe: { showExtentBox: v } } }));
 
   bindCheck('orn-north-enabled', (v) => boundCallbacks.onPatchSpec?.({ ornaments: { northArrow: { enabled: v } } }));
@@ -947,6 +966,21 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('orn-globe-pos')) $('orn-globe-pos').value = locatorGlobe.position;
   if ($('orn-globe-size')) $('orn-globe-size').value = String(locatorGlobe.sizePct);
   if ($('orn-globe-size-val')) $('orn-globe-size-val').textContent = `${Math.round(locatorGlobe.sizePct)}%`;
+  const globeZoomMode = spec.ornaments?.locatorGlobe?.zoomMode || 'auto';
+  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+  if ($('orn-globe-zoom-mode')) $('orn-globe-zoom-mode').value = globeZoomMode;
+  if ($('orn-globe-zoom')) $('orn-globe-zoom').value = effectiveZoom.toFixed(1);
+  if ($('orn-globe-zoom-val')) {
+    if (globeZoomMode === 'auto') {
+      $('orn-globe-zoom-val').textContent = `Auto (${effectiveZoom.toFixed(1)}×)`;
+    } else if (globeZoomMode === 'nearside') {
+      $('orn-globe-zoom-val').textContent = '1.8× (3,578 km)';
+    } else if (globeZoomMode === 'hemisphere') {
+      $('orn-globe-zoom-val').textContent = '1.0×';
+    } else {
+      $('orn-globe-zoom-val').textContent = `${Number(spec.ornaments?.locatorGlobe?.zoom || effectiveZoom).toFixed(1)}×`;
+    }
+  }
   if ($('orn-globe-box')) $('orn-globe-box').checked = Boolean(locatorGlobe.showExtentBox);
 
   if ($('orn-north-enabled')) $('orn-north-enabled').checked = Boolean(northArrow.enabled);

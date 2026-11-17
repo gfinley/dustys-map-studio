@@ -161,6 +161,8 @@ export const CORNER_POSITIONS = [
   'top-right',
 ];
 
+export const GLOBE_ZOOM_MODES = ['auto', 'nearside', 'hemisphere', 'custom'];
+
 export const BASEMAP_PROVIDERS = [
   'none',
   'CartoDB.VoyagerNoLabels',
@@ -244,6 +246,8 @@ export function createDefaultMapSpec() {
         position: 'top-right',
         sizePct: 22,
         showExtentBox: true,
+        zoomMode: 'auto',
+        zoom: 2.0,
       },
       northArrow: {
         enabled: false,
@@ -400,6 +404,8 @@ export function normalizeMapSpec(partial) {
         position: CORNER_POSITIONS.includes(globeRaw.position) ? globeRaw.position : def.ornaments.locatorGlobe.position,
         sizePct: clamp(globeRaw.sizePct, 10, 40, def.ornaments.locatorGlobe.sizePct),
         showExtentBox: typeof globeRaw.showExtentBox === 'boolean' ? globeRaw.showExtentBox : def.ornaments.locatorGlobe.showExtentBox,
+        zoomMode: GLOBE_ZOOM_MODES.includes(globeRaw.zoomMode) ? globeRaw.zoomMode : def.ornaments.locatorGlobe.zoomMode,
+        zoom: clamp(globeRaw.zoom, 1.0, 6.0, def.ornaments.locatorGlobe.zoom),
       },
       northArrow: {
         enabled: typeof northRaw.enabled === 'boolean' ? northRaw.enabled : def.ornaments.northArrow.enabled,

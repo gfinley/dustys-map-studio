@@ -1,9 +1,10 @@
 /**
  * Cartographic map ornaments for both Canvas 2D and standalone SVG output:
- * scale bar, orthographic locator globe, north arrow, legend, and title banner.
+ * scale bar, orthographic/satellite locator globe, north arrow, legend, and title banner.
  */
 
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+import { geoSatellite } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4/+esm';
 
 const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
@@ -331,7 +332,10 @@ function getOrnamentSizes(spec, projection, datasets, width, height, scaleFactor
     };
   }
 
-  if (orn.locatorGlobe?.enabled && (datasets === undefined || datasets?.locatorLand || datasets?.land)) {
+  if (
+    orn.locatorGlobe?.enabled &&
+    (datasets === undefined || datasets?.locatorDetailLand || datasets?.locatorLand || datasets?.land)
+  ) {
     const sizePct = Math.max(10, Math.min(40, Number(orn.locatorGlobe.sizePct) || 22));
     const diameter = width * (sizePct / 100);
     sizes.locatorGlobe = {
@@ -528,23 +532,77 @@ export function drawScaleBar(ctx, spec, projection, width, height, scaleFactor) 
   ctx.restore();
 }
 
+export function resolveLocatorGlobeZoom(spec) {
+  const globeSpec = spec?.ornaments?.locatorGlobe || {};
+  const mode = globeSpec.zoomMode || 'auto';
+  if (mode === 'hemisphere') return 1.0;
+  if (mode === 'nearside') return 1.8;
+  if (mode === 'custom') {
+    return Math.min(6.0, Math.max(1.0, Number(globeSpec.zoom) || 2.0));
+  }
+  const maxSpan = Math.max(Number(spec?.span?.lonDeg) || 24, Number(spec?.span?.latDeg) || 14);
+  return Math.min(4.2, Math.max(1.0, 56 / Math.max(6, maxSpan)));
+}
+
+export function buildLocatorGlobeProjection(spec, cx, cy, globeRadius) {
+  const centerLon = Number(spec?.center?.lon) || 0;
+  const centerLat = Number(spec?.center?.lat) || 0;
+  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+  if (effectiveZoom <= 1.03) {
+    return d3
+      .geoOrthographic()
+      .rotate([-centerLon, -centerLat])
+      .translate([cx, cy])
+      .scale(globeRadius)
+      .clipAngle(90)
+      .precision(0);
+  }
+  const thetaH = Math.PI / (2 * effectiveZoom);
+  const pDist = 1 / Math.cos(thetaH);
+  const thetaClip = thetaH - 0.0005;
+  const clipDeg = (thetaClip * 180) / Math.PI;
+  const rClip = ((pDist - 1) * Math.sin(thetaClip)) / (pDist - Math.cos(thetaClip));
+  return geoSatellite()
+    .distance(pDist)
+    .tilt(0)
+    .rotate([-centerLon, -centerLat, 0])
+    .translate([cx, cy])
+    .scale((globeRadius + 0.5) / rClip)
+    .clipAngle(clipDeg)
+    .precision(0);
+}
+
+function selectLocatorDatasets(datasets, effectiveZoom) {
+  if (effectiveZoom >= 1.35) {
+    return {
+      land:
+        datasets?.locatorDetailLand ||
+        (datasets?.resolution === '50m' ? datasets.land : null) ||
+        datasets?.locatorLand ||
+        datasets?.land ||
+        null,
+      borders:
+        datasets?.locatorDetailBorders ||
+        (datasets?.resolution === '50m' ? datasets.internalBorders : null) ||
+        datasets?.locatorBorders ||
+        (!datasets?.locatorLand ? datasets?.internalBorders : null) ||
+        null,
+    };
+  }
+  return {
+    land: datasets?.locatorLand || datasets?.land || null,
+    borders:
+      datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null) || null,
+  };
+}
+
 function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFactor) {
-  const locatorLand = datasets?.locatorLand || datasets?.land;
-  const locatorBorders =
-    datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null);
+  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+  const { land: locatorLand, borders: locatorBorders } = selectLocatorDatasets(datasets, effectiveZoom);
   if (!locatorLand) return;
 
   const globeRadius = Math.max(4, radius - 2 * scaleFactor);
-  const centerLon = Number(spec?.center?.lon) || 0;
-  const centerLat = Number(spec?.center?.lat) || 0;
-  const globeProj = d3
-    .geoOrthographic()
-    .rotate([-centerLon, -centerLat])
-    .translate([cx, cy])
-    .scale(globeRadius)
-    .clipAngle(90)
-    .precision(0);
-
+  const globeProj = buildLocatorGlobeProjection(spec, cx, cy, globeRadius);
   const path = d3.geoPath(globeProj, ctx);
   const colors = spec?.colors || {};
   const globeSpec = spec?.ornaments?.locatorGlobe || {};
@@ -561,7 +619,7 @@ function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFa
   ctx.clip();
 
   ctx.beginPath();
-  path({ type: 'Sphere' });
+  ctx.arc(cx, cy, globeRadius, 0, Math.PI * 2);
   ctx.fillStyle = colors.water || '#d1cfcf';
   ctx.fill();
 
@@ -623,7 +681,8 @@ function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFa
 }
 
 export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor) {
-  const locatorLand = datasets?.locatorLand || datasets?.land;
+  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+  const { land: locatorLand, borders: locatorBorders } = selectLocatorDatasets(datasets, effectiveZoom);
   if (!spec?.ornaments?.locatorGlobe?.enabled || !locatorLand) return;
   const { placements } = computeCornerPositions(spec, null, datasets, width, height, scaleFactor, ctx);
   const slot = placements.locatorGlobe;
@@ -642,8 +701,8 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   const colors = spec?.colors || {};
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
-  const locatorBorders =
-    datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null);
+  const hasDetail =
+    effectiveZoom >= 1.35 && Boolean(datasets?.locatorDetailLand || datasets?.resolution === '50m');
 
   const ctxTransform = typeof ctx.getTransform === 'function' ? ctx.getTransform() : null;
   const ctxScale = ctxTransform ? Math.hypot(ctxTransform.a, ctxTransform.b) : 1;
@@ -654,7 +713,7 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   const dpr = Math.max(1, Math.min(2, Math.max(ctxScale || 1, winDpr)));
   const pixelSize = Math.max(1, Math.round(diameter * dpr));
 
-  const cacheKey = `${Math.round(centerLon * 4)}|${Math.round(centerLat * 4)}|${(Number(spec?.span?.lonDeg) || 24).toFixed(1)}|${(Number(spec?.span?.latDeg) || 14).toFixed(1)}|${Math.round(diameter)}|${colors.water}|${colors.land}|${colors.borders}|${colors.highlightStroke}|${globeSpec.showExtentBox !== false}|${spec?.projection}|${Boolean(locatorBorders)}|${pixelSize}|${scaleFactor.toFixed(2)}`;
+  const cacheKey = `${Math.round(centerLon * 4)}|${Math.round(centerLat * 4)}|${(Number(spec?.span?.lonDeg) || 24).toFixed(1)}|${(Number(spec?.span?.latDeg) || 14).toFixed(1)}|${Math.round(diameter)}|${colors.water}|${colors.land}|${colors.borders}|${colors.highlightStroke}|${globeSpec.showExtentBox !== false}|${spec?.projection}|${Boolean(locatorBorders)}|${pixelSize}|${scaleFactor.toFixed(2)}|${effectiveZoom.toFixed(2)}|${hasDetail}`;
 
   if (locatorGlobeCache.key === cacheKey && locatorGlobeCache.canvas) {
     ctx.drawImage(locatorGlobeCache.canvas, x, y, diameter, diameter);
@@ -909,27 +968,21 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
   }
 
   // 2. Locator Globe
-  const svgLocatorLand = datasets?.locatorLand || datasets?.land;
-  const svgLocatorBorders =
-    datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null);
+  const svgEffectiveZoom = resolveLocatorGlobeZoom(spec);
+  const { land: svgLocatorLand, borders: svgLocatorBorders } = selectLocatorDatasets(
+    datasets,
+    svgEffectiveZoom,
+  );
   if (placements.locatorGlobe && svgLocatorLand) {
     const { x, y, meta } = placements.locatorGlobe;
     const { radius } = meta;
     const cx = x + radius;
     const cy = y + radius;
     const globeRadius = Math.max(4, radius - 2 * scaleFactor);
-    const centerLon = Number(spec?.center?.lon) || 0;
-    const centerLat = Number(spec?.center?.lat) || 0;
-    const globeProj = d3
-      .geoOrthographic()
-      .rotate([-centerLon, -centerLat])
-      .translate([cx, cy])
-      .scale(globeRadius)
-      .clipAngle(90)
-      .precision(0);
+    const globeProj = buildLocatorGlobeProjection(spec, cx, cy, globeRadius);
     const svgPath = d3.geoPath(globeProj);
     const colors = spec?.colors || {};
-    const clipId = 'ornament-locator-clip';
+    const clipId = 'locator-globe-clip';
 
     parts.push('<g class="ornament-locator-globe">');
     parts.push(
@@ -939,10 +992,9 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
       `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}" fill="rgba(255,255,255,0.92)" />`,
     );
     parts.push(`<g clip-path="url(#${clipId})">`);
-    const sphereD = svgPath({ type: 'Sphere' }) || '';
-    if (sphereD) {
-      parts.push(`<path d="${sphereD}" fill="${escapeXml(colors.water || '#d1cfcf')}" />`);
-    }
+    parts.push(
+      `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="${escapeXml(colors.water || '#d1cfcf')}" />`,
+    );
     const landD = svgPath(svgLocatorLand) || '';
     if (landD) {
       parts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}" />`);

@@ -12,8 +12,8 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=4';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=4';
+} from './ornaments.js?v=5';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=5';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;

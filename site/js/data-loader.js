@@ -358,11 +358,14 @@ export async function ensureDatasets(
     },
   ];
 
+  const cached50m = worldAtlasCache.get('50m') || null;
+  const locatorRes = res === '10m' && !cached50m ? '50m' : '110m';
+
   if (res !== '110m') {
     tasks.push({
       key: 'locator',
-      label: 'Loading 110m locator globe',
-      run: () => loadWorldAtlas('110m'),
+      label: `Loading ${locatorRes} locator globe`,
+      run: () => loadWorldAtlas(locatorRes),
     });
   }
   if (needLakes) {
@@ -426,6 +429,14 @@ export async function ensureDatasets(
 
   const world = results.world;
   const locator = res === '110m' ? world : results.locator;
+  let locatorDetail = null;
+  if (res === '50m') {
+    locatorDetail = world;
+  } else if (res === '10m') {
+    locatorDetail = cached50m || worldAtlasCache.get('50m') || locator;
+  } else {
+    locatorDetail = worldAtlasCache.get('50m') || null;
+  }
 
   return {
     resolution: res,
@@ -437,6 +448,8 @@ export async function ensureDatasets(
     borderParts: world.borderParts,
     locatorLand: locator.land,
     locatorBorders: locator.internalBorders,
+    locatorDetailLand: locatorDetail ? locatorDetail.land : null,
+    locatorDetailBorders: locatorDetail ? locatorDetail.internalBorders : null,
     lakes: results.lakes || null,
     rivers: results.rivers || null,
     admin1: results.admin1 || null,

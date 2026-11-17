@@ -119,6 +119,8 @@ class LocatorGlobeSpec(_BaseSpecModel):
     position: CornerLiteral = "top-right"
     sizePct: float = Field(default=22.0, ge=10.0, le=40.0)
     showExtentBox: bool = True
+    zoomMode: Literal["auto", "nearside", "hemisphere", "custom"] = "auto"
+    zoom: float = Field(default=2.0, ge=1.0, le=6.0)
 
 
 class NorthArrowSpec(_BaseSpecModel):

@@ -916,10 +916,24 @@ def _corner_inset_rect(
     return (x0, y0, w, h)
 
 
+def resolve_locator_globe_zoom(spec: MapSpec) -> float:
+    """Compute effective locator globe zoom factor matching site/js/ornaments.js."""
+    cfg = spec.ornaments.locatorGlobe
+    mode = cfg.zoomMode
+    if mode == "hemisphere":
+        return 1.0
+    if mode == "nearside":
+        return 1.8
+    if mode == "custom":
+        return max(1.0, min(6.0, float(cfg.zoom)))
+    max_span = max(float(spec.span.lonDeg), float(spec.span.latDeg))
+    return max(1.0, min(4.2, 56.0 / max(6.0, max_span)))
+
+
 def _draw_locator_globe(
     fig: Figure, spec: MapSpec, scale: str, has_title: bool
 ) -> None:
-    """Render an orthographic inset globe showing the map center and extent box."""
+    """Render an orthographic or nearside satellite inset globe showing center and extent box."""
     cfg = spec.ornaments.locatorGlobe
     if not cfg.enabled:
         return
@@ -927,9 +941,20 @@ def _draw_locator_globe(
     side_in = (cfg.sizePct / 100.0) * min(spec.page.widthIn, spec.page.heightIn)
     x0, y0, w, h = _corner_inset_rect(spec, cfg.position, side_in, has_title)
 
-    globe_proj = ccrs.Orthographic(
-        central_longitude=spec.center.lon, central_latitude=spec.center.lat
-    )
+    effective_zoom = resolve_locator_globe_zoom(spec)
+    if effective_zoom <= 1.03:
+        globe_proj: ccrs.Projection = ccrs.Orthographic(
+            central_longitude=spec.center.lon, central_latitude=spec.center.lat
+        )
+    else:
+        theta_h = math.pi / (2.0 * effective_zoom)
+        p_dist = 1.0 / math.cos(theta_h)
+        sat_height = max(120_000.0, (p_dist - 1.0) * 6_378_137.0)
+        globe_proj = ccrs.NearsidePerspective(
+            central_longitude=spec.center.lon,
+            central_latitude=spec.center.lat,
+            satellite_height=sat_height,
+        )
     inset_ax = fig.add_axes([x0, y0, w, h], projection=globe_proj, zorder=9)
     inset_ax.set_global()
 
@@ -939,7 +964,7 @@ def _draw_locator_globe(
     frame_color = _valid_color(spec.colors.text, "#111111")
 
     inset_ax.set_facecolor(water)
-    globe_scale = "110m" if scale != "10m" else "50m"
+    globe_scale = "50m" if effective_zoom >= 1.35 else "110m"
     _add_ne_layer(inset_ax, "physical", "ocean", globe_scale, facecolor=water, edgecolor="none", zorder=1)
     _add_ne_layer(inset_ax, "physical", "land", globe_scale, facecolor=land, edgecolor="none", zorder=2)
     _add_ne_layer(
@@ -993,22 +1018,72 @@ def _draw_locator_globe(
             ring_lats.append(lat_n - t * (lat_n - lat_s))
 
         if max(spec.span.lonDeg, spec.span.latDeg) < 120.0:
-            inset_ax.fill(
-                ring_lons,
-                ring_lats,
-                transform=ccrs.Geodetic(),
-                facecolor="#e11d48",
-                alpha=0.25,
-                zorder=5,
-            )
-            inset_ax.plot(
-                ring_lons + [ring_lons[0]],
-                ring_lats + [ring_lats[0]],
-                transform=ccrs.Geodetic(),
-                color="#e11d48",
-                linewidth=1.35,
-                zorder=5.5,
-            )
+            try:
+                inset_ax.fill(
+                    ring_lons,
+                    ring_lats,
+                    transform=ccrs.Geodetic(),
+                    facecolor="#e11d48",
+                    alpha=0.25,
+                    zorder=5,
+                )
+                inset_ax.plot(
+                    ring_lons + [ring_lons[0]],
+                    ring_lats + [ring_lats[0]],
+                    transform=ccrs.Geodetic(),
+                    color="#e11d48",
+                    linewidth=1.35,
+                    zorder=5.5,
+                )
+            except Exception as exc:
+                logger.debug("Geodetic extent box fallback on locator globe: %s", exc)
+                pts = globe_proj.transform_points(
+                    ccrs.PlateCarree(),
+                    np.asarray(ring_lons + [ring_lons[0]], dtype=float),
+                    np.asarray(ring_lats + [ring_lats[0]], dtype=float),
+                )
+                xs = pts[:, 0]
+                ys = pts[:, 1]
+                valid = np.isfinite(xs) & np.isfinite(ys)
+                if np.all(valid):
+                    inset_ax.fill(
+                        xs[:-1],
+                        ys[:-1],
+                        facecolor="#e11d48",
+                        alpha=0.25,
+                        zorder=5,
+                    )
+                    inset_ax.plot(
+                        xs,
+                        ys,
+                        color="#e11d48",
+                        linewidth=1.35,
+                        zorder=5.5,
+                    )
+                elif np.any(valid):
+                    # Draw finite contiguous spans without bridging across horizon NaNs
+                    start = None
+                    for idx, is_ok in enumerate(valid):
+                        if is_ok and start is None:
+                            start = idx
+                        elif not is_ok and start is not None:
+                            if idx - start >= 2:
+                                inset_ax.plot(
+                                    xs[start:idx],
+                                    ys[start:idx],
+                                    color="#e11d48",
+                                    linewidth=1.35,
+                                    zorder=5.5,
+                                )
+                            start = None
+                    if start is not None and len(valid) - start >= 2:
+                        inset_ax.plot(
+                            xs[start:],
+                            ys[start:],
+                            color="#e11d48",
+                            linewidth=1.35,
+                            zorder=5.5,
+                        )
 
     inset_ax.spines["geo"].set_edgecolor(frame_color)
     inset_ax.spines["geo"].set_linewidth(1.0)
