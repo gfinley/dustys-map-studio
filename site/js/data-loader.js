@@ -25,6 +25,197 @@ const jsonMemoryCache = new Map();
 const inflightFetches = new Map();
 const worldAtlasCache = new Map();
 const filteredRiversCache = new Map();
+const bboxAttachedCollections = new WeakSet();
+
+/**
+ * Compute `[minLon, minLat, maxLon, maxLat, crossesAntimeridian]` for nested GeoJSON coordinates.
+ */
+export function computeCoordsBBox(coords) {
+  if (!Array.isArray(coords) || coords.length === 0) return null;
+
+  let minLon = Infinity;
+  let minLat = Infinity;
+  let maxLon = -Infinity;
+  let maxLat = -Infinity;
+  let crossesAntimeridian = false;
+  let hasPoint = false;
+
+  function walk(node) {
+    if (!Array.isArray(node) || node.length === 0) return;
+
+    if (typeof node[0] === 'number') {
+      const lon = node[0];
+      const lat = node[1];
+      if (Number.isFinite(lon) && Number.isFinite(lat)) {
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        hasPoint = true;
+      }
+      return;
+    }
+
+    const first = node[0];
+    if (Array.isArray(first) && typeof first[0] === 'number') {
+      let prevLon = NaN;
+      for (let i = 0; i < node.length; i += 1) {
+        const pt = node[i];
+        if (!Array.isArray(pt) || pt.length < 2) continue;
+        const lon = pt[0];
+        const lat = pt[1];
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (Number.isFinite(prevLon) && Math.abs(lon - prevLon) > 180) {
+          crossesAntimeridian = true;
+        }
+        prevLon = lon;
+        hasPoint = true;
+      }
+      return;
+    }
+
+    for (let i = 0; i < node.length; i += 1) {
+      walk(node[i]);
+    }
+  }
+
+  walk(coords);
+  if (!hasPoint) return null;
+  if (maxLon - minLon > 180) {
+    crossesAntimeridian = true;
+  }
+  return [minLon, minLat, maxLon, maxLat, crossesAntimeridian];
+}
+
+function attachFeatureBBoxes(fc) {
+  const features = fc?.features;
+  if (!Array.isArray(features) || bboxAttachedCollections.has(fc)) {
+    return fc;
+  }
+  for (let i = 0; i < features.length; i += 1) {
+    const f = features[i];
+    if (!f) continue;
+    f._bbox = computeCoordsBBox(f.geometry?.coordinates);
+  }
+  bboxAttachedCollections.add(fc);
+  return fc;
+}
+
+const DEG_TO_RAD = Math.PI / 180;
+const QUARTER_PI = Math.PI / 4;
+
+// Cagnoli spherical excess with Neumaier compensated sum to detect inverted outer rings (< 0 => 4*PI complement)
+function sphericalRingSignedSum(ring) {
+  if (!Array.isArray(ring) || ring.length < 4) return 0;
+  let sum = 0;
+  let comp = 0;
+  let lambda0 = ring[0][0] * DEG_TO_RAD;
+  let phi0 = (ring[0][1] * DEG_TO_RAD) / 2 + QUARTER_PI;
+  let cosPhi0 = Math.cos(phi0);
+  let sinPhi0 = Math.sin(phi0);
+  const n = ring.length;
+  const isClosed = ring[n - 1][0] === ring[0][0] && ring[n - 1][1] === ring[0][1];
+  const count = isClosed ? n - 1 : n;
+
+  for (let i = 1; i <= count; i += 1) {
+    const pt = ring[i % count];
+    const lambda = pt[0] * DEG_TO_RAD;
+    const phi = (pt[1] * DEG_TO_RAD) / 2 + QUARTER_PI;
+    const dLambda = lambda - lambda0;
+    const sdLambda = dLambda >= 0 ? 1 : -1;
+    const adLambda = sdLambda * dLambda;
+    const cosPhi = Math.cos(phi);
+    const sinPhi = Math.sin(phi);
+    const k = sinPhi0 * sinPhi;
+    const u = cosPhi0 * cosPhi + k * Math.cos(adLambda);
+    const v = k * sdLambda * Math.sin(adLambda);
+    const x = Math.atan2(v, u);
+    const t = sum + x;
+    comp += Math.abs(sum) >= Math.abs(x) ? (sum - t) + x : (x - t) + sum;
+    sum = t;
+    lambda0 = lambda;
+    cosPhi0 = cosPhi;
+    sinPhi0 = sinPhi;
+  }
+  return sum + comp;
+}
+
+function fixInvertedSmallOuterRing(polyCoords, bbox) {
+  if (!Array.isArray(polyCoords) || polyCoords.length === 0) return;
+  const ring = polyCoords[0];
+  if (!Array.isArray(ring) || ring.length < 4) return;
+  if (!bbox || bbox[4] || bbox[2] - bbox[0] >= 10 || bbox[3] - bbox[1] >= 10) return;
+  if (sphericalRingSignedSum(ring) < 0) {
+    ring.reverse();
+  }
+}
+
+function sanitizePolygonFeatureCollection(fc) {
+  const features = fc?.features;
+  if (!Array.isArray(features)) return;
+  for (let i = 0; i < features.length; i += 1) {
+    const f = features[i];
+    const geom = f?.geometry;
+    if (!geom) continue;
+    if (geom.type === 'Polygon') {
+      fixInvertedSmallOuterRing(geom.coordinates, f._bbox);
+    } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
+      for (let j = 0; j < geom.coordinates.length; j += 1) {
+        const polyCoords = geom.coordinates[j];
+        fixInvertedSmallOuterRing(polyCoords, computeCoordsBBox(polyCoords));
+      }
+    }
+  }
+}
+
+function decomposeGeometryParts(geojson, singleType, multiType) {
+  const parts = [];
+  function pushPart(partCoords) {
+    const bbox = computeCoordsBBox(partCoords);
+    if (singleType === 'Polygon') {
+      fixInvertedSmallOuterRing(partCoords, bbox);
+    }
+    parts.push({
+      type: singleType,
+      coordinates: partCoords,
+      _bbox: bbox,
+    });
+  }
+  function collect(node) {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'FeatureCollection' && Array.isArray(node.features)) {
+      for (let i = 0; i < node.features.length; i += 1) {
+        collect(node.features[i]);
+      }
+      return;
+    }
+    if (node.type === 'Feature') {
+      collect(node.geometry);
+      return;
+    }
+    if (node.type === 'GeometryCollection' && Array.isArray(node.geometries)) {
+      for (let i = 0; i < node.geometries.length; i += 1) {
+        collect(node.geometries[i]);
+      }
+      return;
+    }
+    if (node.type === singleType && Array.isArray(node.coordinates)) {
+      pushPart(node.coordinates);
+      return;
+    }
+    if (node.type === multiType && Array.isArray(node.coordinates)) {
+      for (let i = 0; i < node.coordinates.length; i += 1) {
+        pushPart(node.coordinates[i]);
+      }
+    }
+  }
+  collect(geojson);
+  return parts;
+}
 
 function buildUrls(res) {
   const riverRes = res === '110m' ? '50m' : res;
@@ -111,10 +302,13 @@ async function loadWorldAtlas(res) {
   const land = topo.objects.land
     ? topojson.feature(topo, topo.objects.land)
     : topojson.merge(topo, countriesObj.geometries);
-  const countries = topojson.feature(topo, countriesObj);
+  const countries = attachFeatureBBoxes(topojson.feature(topo, countriesObj));
+  sanitizePolygonFeatureCollection(countries);
   const internalBorders = topojson.mesh(topo, countriesObj, (a, b) => a !== b);
+  const landParts = decomposeGeometryParts(land, 'Polygon', 'MultiPolygon');
+  const borderParts = decomposeGeometryParts(internalBorders, 'LineString', 'MultiLineString');
 
-  const parsed = { land, countries, internalBorders };
+  const parsed = { land, landParts, countries, internalBorders, borderParts };
   worldAtlasCache.set(res, parsed);
   return parsed;
 }
@@ -134,10 +328,10 @@ async function loadFilteredRivers(res) {
       })
     : [];
 
-  const filtered = {
+  const filtered = attachFeatureBBoxes({
     type: 'FeatureCollection',
     features,
-  };
+  });
   filteredRiversCache.set(riverRes, filtered);
   return filtered;
 }
@@ -163,7 +357,7 @@ export function resolveResolution(spec) {
     Number.isFinite(lonDeg) ? lonDeg : 24,
     Number.isFinite(latDeg) ? latDeg : 14,
   );
-  if (maxSpan <= 22 && spec?.projection !== 'orthographic') {
+  if (maxSpan <= 10 && spec?.projection !== 'orthographic') {
     return '10m';
   }
   if (maxSpan <= 90) {
@@ -204,7 +398,7 @@ export async function ensureDatasets(
     tasks.push({
       key: 'lakes',
       label: `Loading ${res} lakes`,
-      run: () => fetchJsonCached(urls.lakes),
+      run: async () => attachFeatureBBoxes(await fetchJsonCached(urls.lakes)),
     });
   }
   if (needRivers) {
@@ -218,7 +412,7 @@ export async function ensureDatasets(
     tasks.push({
       key: 'admin1',
       label: 'Loading 50m admin-1 lines',
-      run: () => fetchJsonCached(urls.admin1),
+      run: async () => attachFeatureBBoxes(await fetchJsonCached(urls.admin1)),
     });
   }
   if (needPlaces) {
@@ -261,8 +455,10 @@ export async function ensureDatasets(
   return {
     resolution: res,
     land: world.land,
+    landParts: world.landParts,
     countries: world.countries,
     internalBorders: world.internalBorders,
+    borderParts: world.borderParts,
     locatorLand: locator.land,
     locatorBorders: locator.internalBorders,
     lakes: results.lakes || null,

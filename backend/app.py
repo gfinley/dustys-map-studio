@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+import logging
 from pathlib import Path
+import threading
 from typing import Any, Literal
 
 import anyio
@@ -12,9 +16,39 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import requests
 
+from backend import renderer
 from backend.batch import render_batch_zip
 from backend.renderer import inspect_geojson, render_map, sanitize_filename
 from backend.schemas import BatchRenderRequest, MapSpec
+
+logger = logging.getLogger(__name__)
+
+
+def _warmup_natural_earth() -> None:
+    """Preload common 50m Natural Earth layers so the first render skips cold shapefile I/O."""
+    steps = (
+        lambda: renderer._load_countries_index("50m"),
+        lambda: renderer._load_ne_feature("physical", "ocean", "50m"),
+        lambda: renderer._load_ne_feature("physical", "land", "50m"),
+        lambda: renderer._load_ne_feature("cultural", "admin_0_boundary_lines_land", "50m"),
+    )
+    for step in steps:
+        try:
+            step()
+        except Exception as exc:
+            logger.debug("Natural Earth warmup step skipped: %s", exc)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Start background Natural Earth 50m cache warmup without blocking startup."""
+    threading.Thread(
+        target=_warmup_natural_earth,
+        name="ne-50m-warmup",
+        daemon=True,
+    ).start()
+    yield
+
 
 _MIME_TYPES: dict[str, str] = {
     "png": "image/png",
@@ -38,6 +72,7 @@ app = FastAPI(
     title="Dusty's Map Studio Pro Engine",
     version="1.0.0",
     description="High-DPI Cartopy + GeoPandas map rendering backend.",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

@@ -61,6 +61,7 @@ const state = {
   history: [],
   historyIndex: -1,
   datasets: null,
+  fastDatasets: null,
   countryCatalog: [],
   lastProjection: null,
   mode: 'pan', // 'pan' | 'country' | 'pin'
@@ -72,6 +73,9 @@ const state = {
   searchAbortController: null,
   wheelCommitTimer: null,
   rafRenderPending: false,
+  isInteracting: false,
+  pendingCoordsEvent: null,
+  coordsRafId: 0,
 };
 
 function loadInitialSpec() {
@@ -216,10 +220,17 @@ function layoutCanvasSize() {
   canvas.style.width = `${roundedCssW}px`;
   canvas.style.height = `${roundedCssH}px`;
 
-  // Keep logical canvas width >= 900 so cartography.js scaleFactor matches 300 DPI proportions cleanly
+  // Keep logical canvas width >= 800 while capping preview max dimension at 1380px (preserving exact aspect)
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const targetW = Math.max(900, Math.round(roundedCssW * dpr));
-  const targetH = Math.max(200, Math.round(targetW / aspect));
+  let targetW = Math.max(800, Math.round(roundedCssW * dpr));
+  let targetH = Math.max(200, Math.round(targetW / aspect));
+
+  const maxDim = Math.max(targetW, targetH);
+  if (maxDim > 1380) {
+    const scale = 1380 / maxDim;
+    targetW = Math.max(200, Math.round(targetW * scale));
+    targetH = Math.max(200, Math.round(targetH * scale));
+  }
 
   if (canvas.width !== targetW || canvas.height !== targetH) {
     canvas.width = targetW;
@@ -227,14 +238,37 @@ function layoutCanvasSize() {
   }
 }
 
-function drawReferencePeekOverlay(canvas, projection) {
-  if (!state.refPeek || !state.datasets?.populatedPlaces || !projection) return;
+function syncCountryCatalog(dataset) {
+  if (!dataset?.countries) return;
+  const nextCatalog = getCountryCatalog(dataset);
+  if (!state.countryCatalog.length || nextCatalog.length >= state.countryCatalog.length) {
+    state.countryCatalog = nextCatalog;
+    const filterText = document.getElementById('country-filter-input')?.value || '';
+    populateCountryCatalog(state.countryCatalog, filterText);
+  }
+}
+
+function updateFastDatasetsCache(loaded) {
+  if (loaded?.resolution !== '50m') return;
+  const prev = state.fastDatasets;
+  state.fastDatasets = {
+    ...(prev || {}),
+    ...loaded,
+    lakes: loaded.lakes || prev?.lakes || null,
+    rivers: loaded.rivers || prev?.rivers || null,
+    admin1: loaded.admin1 || prev?.admin1 || null,
+    populatedPlaces: loaded.populatedPlaces || prev?.populatedPlaces || null,
+  };
+}
+
+function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets) {
+  if (!state.refPeek || !datasets?.populatedPlaces || !projection) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   const scaleFactor = canvas.width / 900;
   const candidates = pickTopCitiesInExtent(
-    state.datasets,
+    datasets,
     state.spec.center,
     state.spec.span,
     24,
@@ -286,6 +320,22 @@ function drawReferencePeekOverlay(canvas, projection) {
   ctx.restore();
 }
 
+function getActiveRenderDatasets() {
+  if (state.isInteracting && state.fastDatasets) {
+    const res = state.datasets?.resolution;
+    const spanLon = Number(state.spec?.span?.lonDeg || 24);
+    if (res === '10m' || (res === '110m' && spanLon <= 95)) {
+      return {
+        ...state.fastDatasets,
+        rivers: state.fastDatasets.rivers || null,
+        admin1: state.fastDatasets.admin1 || state.datasets?.admin1 || null,
+        populatedPlaces: state.fastDatasets.populatedPlaces || state.datasets?.populatedPlaces || null,
+      };
+    }
+  }
+  return state.datasets;
+}
+
 function renderNow() {
   state.rafRenderPending = false;
   const canvas = document.getElementById('map-canvas');
@@ -302,11 +352,14 @@ function renderNow() {
     return;
   }
 
-  const result = renderMapToCanvas(canvas, state.spec, state.datasets);
+  const activeDatasets = getActiveRenderDatasets();
+  const result = renderMapToCanvas(canvas, state.spec, activeDatasets, {
+    interactive: state.isInteracting,
+  });
   state.lastProjection = result?.projection || buildProjection(state.spec, canvas.width, canvas.height);
 
   if (state.refPeek) {
-    drawReferencePeekOverlay(canvas, state.lastProjection);
+    drawReferencePeekOverlay(canvas, state.lastProjection, activeDatasets);
   }
 }
 
@@ -337,6 +390,17 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
   const needPlaces = Boolean(forcePlaces || state.refPeek || state.datasets?.populatedPlaces);
 
   if (datasetSatisfiesSpec(state.datasets, spec, needPlaces)) {
+    state.loadRequestToken += 1;
+    setLoadingProgress(false);
+    return;
+  }
+
+  if (datasetSatisfiesSpec(state.fastDatasets, spec, needPlaces)) {
+    state.loadRequestToken += 1;
+    state.datasets = state.fastDatasets;
+    syncCountryCatalog(state.fastDatasets);
+    setLoadingProgress(false);
+    scheduleRender();
     return;
   }
 
@@ -358,12 +422,8 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
 
     if (token !== state.loadRequestToken) return;
     state.datasets = loaded;
-
-    if (!state.countryCatalog.length || loaded.countries) {
-      state.countryCatalog = getCountryCatalog(loaded);
-      const filterText = document.getElementById('country-filter-input')?.value || '';
-      populateCountryCatalog(state.countryCatalog, filterText);
-    }
+    updateFastDatasetsCache(loaded);
+    syncCountryCatalog(loaded);
 
     setLoadingProgress(false);
     scheduleRender();
@@ -371,6 +431,61 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
     if (token !== state.loadRequestToken) return;
     setLoadingProgress(false);
     showToast(`Map data error: ${err.message}`, 'error', 5000);
+  }
+}
+
+async function boot() {
+  const bootToken = state.loadRequestToken;
+  setLoadingProgress(true, 'Loading fast 110m map...');
+
+  // Stage 1: tiny 110m world dataset so first map + country catalog render immediately
+  try {
+    const fast110m = await ensureDatasets('110m', { needLakes: false });
+    if (!state.datasets) {
+      state.datasets = fast110m;
+      syncCountryCatalog(fast110m);
+      scheduleRender();
+    }
+  } catch {
+    // Continue to 50m / spec dataset load if 110m preview stage fails
+  }
+
+  // Stage 2: preload 50m (with lakes) into fastDatasets for crisp default & 60fps interaction
+  try {
+    if (bootToken === state.loadRequestToken) {
+      setLoadingProgress(true, 'Loading 50m map data...');
+    }
+    const fast50m = await ensureDatasets('50m', { needLakes: true });
+    updateFastDatasetsCache(fast50m);
+
+    const spec = state.spec;
+    const needPlaces = Boolean(state.refPeek || state.datasets?.populatedPlaces);
+    const needsExtra = Boolean(
+      spec?.layers?.showRivers ||
+      spec?.layers?.showAdmin1 ||
+      needPlaces,
+    );
+
+    if (
+      bootToken === state.loadRequestToken &&
+      spec &&
+      resolveResolution(spec) === '50m' &&
+      !needsExtra &&
+      !datasetSatisfiesSpec(state.datasets, spec, needPlaces)
+    ) {
+      state.datasets = state.fastDatasets;
+      syncCountryCatalog(state.fastDatasets);
+      scheduleRender();
+    }
+  } catch {
+    // Fall through to ensureDatasetsForSpec() which handles error reporting
+  }
+
+  if (bootToken === state.loadRequestToken) {
+    await ensureDatasetsForSpec();
+    if (bootToken === state.loadRequestToken) {
+      setLoadingProgress(false);
+    }
   }
 }
 
@@ -393,6 +508,18 @@ function shortestLonDelta(a, b) {
   while (d > 180) d -= 360;
   while (d < -180) d += 360;
   return d;
+}
+
+function setNumericInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = Number(value).toFixed(2);
+}
+
+function clearActivePresetDirect() {
+  if (!state.activePresetId) return;
+  state.activePresetId = '';
+  const presetSelect = document.getElementById('preset-select');
+  if (presetSelect) presetSelect.value = '';
 }
 
 function setupCanvasInteractions() {
@@ -425,8 +552,6 @@ function setupCanvasInteractions() {
   });
 
   canvas.addEventListener('pointermove', (e) => {
-    const pt = getCanvasPointerCoords(canvas, e);
-
     if (pointerDown && startCenter) {
       const dist = Math.hypot(e.clientX - startClientX, e.clientY - startClientY);
       if (dist > 4) {
@@ -435,6 +560,18 @@ function setupCanvasInteractions() {
       }
 
       if (dragging) {
+        state.isInteracting = true;
+        if (state.wheelCommitTimer) {
+          clearTimeout(state.wheelCommitTimer);
+          state.wheelCommitTimer = null;
+        }
+        if (state.coordsRafId) {
+          cancelAnimationFrame(state.coordsRafId);
+          state.coordsRafId = 0;
+          state.pendingCoordsEvent = null;
+        }
+
+        const pt = getCanvasPointerCoords(canvas, e);
         let nextLon;
         let nextLat;
 
@@ -456,26 +593,35 @@ function setupCanvasInteractions() {
           nextLat = Math.max(-85, Math.min(85, startCenter.lat + dyNorm * state.spec.span.latDeg));
         }
 
-        state.spec = normalizeMapSpec({
-          ...state.spec,
-          center: {
-            lat: Number(nextLat.toFixed(3)),
-            lon: Number(nextLon.toFixed(3)),
-          },
-        });
-        state.activePresetId = '';
-        syncAllUi({ skipDynamicLists: true });
+        const latVal = Number(nextLat.toFixed(3));
+        const lonVal = Number(nextLon.toFixed(3));
+        state.spec.center.lat = latVal;
+        state.spec.center.lon = lonVal;
+
+        setNumericInputValue('center-lat', latVal);
+        setNumericInputValue('center-lon', lonVal);
+        clearActivePresetDirect();
         scheduleRender();
         return;
       }
     }
 
     if (state.lastProjection) {
-      const coords = screenToLonLat(state.lastProjection, pt.x, pt.y);
-      if (coords) {
-        updateCursorCoordinates(coords.lat, coords.lon);
-      } else {
-        updateCursorCoordinates(NaN, NaN);
+      state.pendingCoordsEvent = e;
+      if (!state.coordsRafId) {
+        state.coordsRafId = requestAnimationFrame(() => {
+          state.coordsRafId = 0;
+          const ev = state.pendingCoordsEvent;
+          state.pendingCoordsEvent = null;
+          if (!ev || !state.lastProjection || dragging) return;
+          const pt = getCanvasPointerCoords(canvas, ev);
+          const coords = screenToLonLat(state.lastProjection, pt.x, pt.y);
+          if (coords) {
+            updateCursorCoordinates(coords.lat, coords.lon);
+          } else {
+            updateCursorCoordinates(NaN, NaN);
+          }
+        });
       }
     }
   });
@@ -486,17 +632,12 @@ function setupCanvasInteractions() {
     canvas.classList.remove('dragging');
     canvas.releasePointerCapture?.(e.pointerId);
 
-    if (wasCancelled) {
+    if (wasCancelled || dragging) {
       if (dragging) {
+        dragging = false;
+        state.isInteracting = false;
         commitSpec(state.spec, { commitHistory: true });
       }
-      dragging = false;
-      return;
-    }
-
-    if (dragging) {
-      dragging = false;
-      commitSpec(state.spec, { commitHistory: true });
       return;
     }
 
@@ -517,12 +658,15 @@ function setupCanvasInteractions() {
     (e) => {
       e.preventDefault();
       if (!state.spec) return;
+      state.isInteracting = true;
       const factor = e.deltaY < 0 ? 0.84 : 1.18;
       applyZoomFactor(factor, { commitHistory: false });
       clearTimeout(state.wheelCommitTimer);
       state.wheelCommitTimer = setTimeout(() => {
+        state.wheelCommitTimer = null;
+        state.isInteracting = false;
         commitSpec(state.spec, { commitHistory: true });
-      }, 320);
+      }, 180);
     },
     { passive: false },
   );
@@ -537,12 +681,12 @@ function applyZoomFactor(factor, { commitHistory = true } = {}) {
   if (commitHistory) {
     patchSpec({ span: { lonDeg: nextLon, latDeg: nextLat } }, { commitHistory: true });
   } else {
-    state.spec = normalizeMapSpec({
-      ...state.spec,
-      span: { lonDeg: nextLon, latDeg: nextLat },
-    });
-    state.activePresetId = '';
-    syncAllUi({ skipDynamicLists: true });
+    state.isInteracting = true;
+    state.spec.span.lonDeg = nextLon;
+    state.spec.span.latDeg = nextLat;
+    setNumericInputValue('span-lon', nextLon);
+    setNumericInputValue('span-lat', nextLat);
+    clearActivePresetDirect();
     scheduleRender();
   }
 }
@@ -1215,7 +1359,7 @@ function init() {
   layoutCanvasSize();
   scheduleRender();
 
-  void ensureDatasetsForSpec();
+  void boot();
   void hydrateRemoteGeoJsonLayers();
   void initPythonProHealth();
 

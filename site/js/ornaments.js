@@ -9,6 +9,10 @@ const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
 const SCALE_CANDIDATES = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const locatorGlobeCache = {
+  key: '',
+  canvas: null,
+};
 
 function wrapLon(lon) {
   let x = (((lon + 180) % 360) + 360) % 360 - 180;
@@ -327,7 +331,7 @@ function getOrnamentSizes(spec, projection, datasets, width, height, scaleFactor
     };
   }
 
-  if (orn.locatorGlobe?.enabled && (datasets === undefined || datasets?.locatorLand)) {
+  if (orn.locatorGlobe?.enabled && (datasets === undefined || datasets?.locatorLand || datasets?.land)) {
     const sizePct = Math.max(10, Math.min(40, Number(orn.locatorGlobe.sizePct) || 22));
     const diameter = width * (sizePct / 100);
     sizes.locatorGlobe = {
@@ -524,18 +528,13 @@ export function drawScaleBar(ctx, spec, projection, width, height, scaleFactor) 
   ctx.restore();
 }
 
-export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor) {
-  if (!spec?.ornaments?.locatorGlobe?.enabled || !datasets?.locatorLand) return;
-  const { placements } = computeCornerPositions(spec, null, datasets, width, height, scaleFactor, ctx);
-  const slot = placements.locatorGlobe;
-  if (!slot) return;
+function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFactor) {
+  const locatorLand = datasets?.locatorLand || datasets?.land;
+  const locatorBorders =
+    datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null);
+  if (!locatorLand) return;
 
-  const { x, y, meta } = slot;
-  const { diameter, radius } = meta;
-  const cx = x + radius;
-  const cy = y + radius;
   const globeRadius = Math.max(4, radius - 2 * scaleFactor);
-
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
   const globeProj = d3
@@ -543,10 +542,12 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
     .rotate([-centerLon, -centerLat])
     .translate([cx, cy])
     .scale(globeRadius)
-    .clipAngle(90);
+    .clipAngle(90)
+    .precision(0);
 
   const path = d3.geoPath(globeProj, ctx);
   const colors = spec?.colors || {};
+  const globeSpec = spec?.ornaments?.locatorGlobe || {};
 
   ctx.save();
   // Outer white halo so globe separates cleanly from underlying map colors
@@ -565,23 +566,24 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   ctx.fill();
 
   ctx.beginPath();
-  path(datasets.locatorLand);
+  path(locatorLand);
   ctx.fillStyle = colors.land || '#4a4a4a';
   ctx.fill();
 
-  if (datasets.locatorBorders) {
+  if (locatorBorders) {
     ctx.beginPath();
-    path(datasets.locatorBorders);
+    path(locatorBorders);
     ctx.strokeStyle = colors.borders || '#ffffff';
     ctx.lineWidth = Math.max(0.35, 0.55 * scaleFactor);
     ctx.stroke();
   }
 
-  if (spec?.ornaments?.locatorGlobe?.showExtentBox !== false && spec?.projection !== 'orthographic') {
+  if (globeSpec.showExtentBox !== false && spec?.projection !== 'orthographic') {
     const lonDeg = Number(spec?.span?.lonDeg) || 24;
     const latDeg = Number(spec?.span?.latDeg) || 14;
     const canFillPoly = lonDeg < 150 && latDeg < 120;
     const ring = buildExtentRing(spec, canFillPoly);
+    globeProj.precision(0.5);
     const bounds = path.bounds(ring);
     const boxPixelSpan = Math.max(
       Math.abs(bounds[1][0] - bounds[0][0]),
@@ -590,6 +592,7 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
 
     ctx.beginPath();
     path(ring);
+    globeProj.precision(0);
     if (canFillPoly) {
       ctx.fillStyle = 'rgba(220, 38, 38, 0.24)';
       ctx.fill();
@@ -617,6 +620,69 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   ctx.lineWidth = Math.max(0.9, 1.3 * scaleFactor);
   ctx.stroke();
   ctx.restore();
+}
+
+export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor) {
+  const locatorLand = datasets?.locatorLand || datasets?.land;
+  if (!spec?.ornaments?.locatorGlobe?.enabled || !locatorLand) return;
+  const { placements } = computeCornerPositions(spec, null, datasets, width, height, scaleFactor, ctx);
+  const slot = placements.locatorGlobe;
+  if (!slot) return;
+
+  const { x, y, meta } = slot;
+  const { diameter, radius } = meta;
+  if (!(diameter > 0) || !(radius > 0)) return;
+
+  if (typeof document === 'undefined') {
+    renderLocatorGlobeToCanvas(ctx, spec, datasets, x + radius, y + radius, radius, scaleFactor);
+    return;
+  }
+
+  const globeSpec = spec?.ornaments?.locatorGlobe || {};
+  const colors = spec?.colors || {};
+  const centerLon = Number(spec?.center?.lon) || 0;
+  const centerLat = Number(spec?.center?.lat) || 0;
+  const locatorBorders =
+    datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null);
+
+  const ctxTransform = typeof ctx.getTransform === 'function' ? ctx.getTransform() : null;
+  const ctxScale = ctxTransform ? Math.hypot(ctxTransform.a, ctxTransform.b) : 1;
+  const winDpr =
+    typeof window !== 'undefined' && Number.isFinite(window.devicePixelRatio)
+      ? window.devicePixelRatio
+      : 1;
+  const dpr = Math.max(1, Math.min(2, Math.max(ctxScale || 1, winDpr)));
+  const pixelSize = Math.max(1, Math.round(diameter * dpr));
+
+  const cacheKey = `${Math.round(centerLon * 4)}|${Math.round(centerLat * 4)}|${(Number(spec?.span?.lonDeg) || 24).toFixed(1)}|${(Number(spec?.span?.latDeg) || 14).toFixed(1)}|${Math.round(diameter)}|${colors.water}|${colors.land}|${colors.borders}|${colors.highlightStroke}|${globeSpec.showExtentBox !== false}|${spec?.projection}|${Boolean(locatorBorders)}|${pixelSize}|${scaleFactor.toFixed(2)}`;
+
+  if (locatorGlobeCache.key === cacheKey && locatorGlobeCache.canvas) {
+    ctx.drawImage(locatorGlobeCache.canvas, x, y, diameter, diameter);
+    return;
+  }
+
+  const offscreen = locatorGlobeCache.canvas || document.createElement('canvas');
+  if (offscreen.width !== pixelSize || offscreen.height !== pixelSize) {
+    offscreen.width = pixelSize;
+    offscreen.height = pixelSize;
+  }
+  const octx = offscreen.getContext('2d');
+  if (!octx) {
+    renderLocatorGlobeToCanvas(ctx, spec, datasets, x + radius, y + radius, radius, scaleFactor);
+    return;
+  }
+
+  const renderScale = pixelSize / diameter;
+  octx.save();
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.clearRect(0, 0, pixelSize, pixelSize);
+  octx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+  renderLocatorGlobeToCanvas(octx, spec, datasets, radius, radius, radius, scaleFactor);
+  octx.restore();
+
+  locatorGlobeCache.key = cacheKey;
+  locatorGlobeCache.canvas = offscreen;
+  ctx.drawImage(offscreen, x, y, diameter, diameter);
 }
 
 export function drawNorthArrow(ctx, spec, width, height, scaleFactor) {
@@ -843,7 +909,10 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
   }
 
   // 2. Locator Globe
-  if (placements.locatorGlobe && datasets?.locatorLand) {
+  const svgLocatorLand = datasets?.locatorLand || datasets?.land;
+  const svgLocatorBorders =
+    datasets?.locatorBorders || (!datasets?.locatorLand ? datasets?.internalBorders : null);
+  if (placements.locatorGlobe && svgLocatorLand) {
     const { x, y, meta } = placements.locatorGlobe;
     const { radius } = meta;
     const cx = x + radius;
@@ -856,7 +925,8 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
       .rotate([-centerLon, -centerLat])
       .translate([cx, cy])
       .scale(globeRadius)
-      .clipAngle(90);
+      .clipAngle(90)
+      .precision(0);
     const svgPath = d3.geoPath(globeProj);
     const colors = spec?.colors || {};
     const clipId = 'ornament-locator-clip';
@@ -873,12 +943,12 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
     if (sphereD) {
       parts.push(`<path d="${sphereD}" fill="${escapeXml(colors.water || '#d1cfcf')}" />`);
     }
-    const landD = svgPath(datasets.locatorLand) || '';
+    const landD = svgPath(svgLocatorLand) || '';
     if (landD) {
       parts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}" />`);
     }
-    if (datasets.locatorBorders) {
-      const borderD = svgPath(datasets.locatorBorders) || '';
+    if (svgLocatorBorders) {
+      const borderD = svgPath(svgLocatorBorders) || '';
       if (borderD) {
         parts.push(
           `<path d="${borderD}" fill="none" stroke="${escapeXml(colors.borders || '#ffffff')}" stroke-width="${Math.max(0.35, 0.55 * scaleFactor).toFixed(2)}" />`,
@@ -890,8 +960,10 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
       const latDeg = Number(spec?.span?.latDeg) || 14;
       const canFillPoly = lonDeg < 150 && latDeg < 120;
       const ring = buildExtentRing(spec, canFillPoly);
+      globeProj.precision(0.5);
       const ringD = svgPath(ring) || '';
       const bounds = svgPath.bounds(ring);
+      globeProj.precision(0);
       const boxPixelSpan = Math.max(
         Math.abs(bounds[1][0] - bounds[0][0]),
         Math.abs(bounds[1][1] - bounds[0][1]),

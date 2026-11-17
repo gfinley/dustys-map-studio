@@ -16,6 +16,8 @@ import {
 import { getPixelDimensions, COLOR_THEMES } from './schema.js';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+const MAX_HATCH_CACHE_ENTRIES = 64;
+const hatchPatternCache = new Map();
 
 function wrapLon(lon) {
   let x = (((lon + 180) % 360) + 360) % 360 - 180;
@@ -89,7 +91,7 @@ function buildBoundingRing(spec) {
   };
 }
 
-export function buildProjection(spec, width, height) {
+export function buildProjection(spec, width, height, options = {}) {
   const projId = spec?.projection || 'mercator';
   const centerLat = Number(spec?.center?.lat) || 0;
   const centerLon = Number(spec?.center?.lon) || 0;
@@ -146,8 +148,11 @@ export function buildProjection(spec, width, height) {
   } else {
     const boxRing = buildBoundingRing(spec);
     proj.fitSize([width, height], boxRing);
+    const pad = Math.max(8, Math.round(Math.max(width, height) * 0.02));
+    proj.clipExtent([[-pad, -pad], [width + pad, height + pad]]);
   }
 
+  proj.precision(options.interactive ? 0 : 0.3);
   return proj;
 }
 
@@ -226,6 +231,44 @@ function computeVisibleBounds(spec, projection, width, height) {
   return [minLon, maxLon, Math.max(-90, minLat), Math.min(90, maxLat)];
 }
 
+/**
+ * Coarse O(1) longitude/latitude bounding-box view intersection test with anti-meridian wrap checks.
+ */
+export function bboxMayIntersectView(bbox, viewBounds, skipCull) {
+  if (skipCull || !bbox || bbox[4] || !Array.isArray(viewBounds) || viewBounds.length < 4) {
+    return true;
+  }
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const [viewMinLon, viewMaxLon, viewMinLat, viewMaxLat] = viewBounds;
+
+  if (maxLat < viewMinLat - 2 || minLat > viewMaxLat + 2) {
+    return false;
+  }
+
+  const lo = viewMinLon - 3;
+  const hi = viewMaxLon + 3;
+  return (
+    (maxLon >= lo && minLon <= hi) ||
+    (maxLon - 360 >= lo && minLon - 360 <= hi) ||
+    (maxLon + 360 >= lo && minLon + 360 <= hi)
+  );
+}
+
+function drawCulledCollection(path, items, fallback, viewBounds, skipCull) {
+  if (Array.isArray(items)) {
+    for (let i = 0; i < items.length; i += 1) {
+      const item = items[i];
+      if (item && bboxMayIntersectView(item._bbox, viewBounds, skipCull)) {
+        path(item);
+      }
+    }
+    return;
+  }
+  if (fallback) {
+    path(fallback);
+  }
+}
+
 function matchCountryFeatures(countries, hc) {
   const features = countries?.features;
   if (!Array.isArray(features) || !hc) return [];
@@ -251,14 +294,23 @@ function matchCountryFeatures(countries, hc) {
 function createCanvasHatchPattern(ctx, hatch, color, scaleFactor) {
   if (!hatch || hatch === 'none' || typeof document === 'undefined') return null;
   const size = Math.max(8, Math.round(12 * scaleFactor));
+  const resolvedColor = color || '#111111';
+  const cacheKey = `${hatch}|${resolvedColor}|${size}`;
+  if (hatchPatternCache.has(cacheKey)) {
+    const cached = hatchPatternCache.get(cacheKey);
+    hatchPatternCache.delete(cacheKey);
+    hatchPatternCache.set(cacheKey, cached);
+    return cached;
+  }
+
   const tile = document.createElement('canvas');
   tile.width = size;
   tile.height = size;
   const tctx = tile.getContext('2d');
   if (!tctx) return null;
 
-  tctx.strokeStyle = color || '#111111';
-  tctx.fillStyle = color || '#111111';
+  tctx.strokeStyle = resolvedColor;
+  tctx.fillStyle = resolvedColor;
   tctx.lineWidth = Math.max(0.8, 1.15 * scaleFactor);
   tctx.lineCap = 'square';
 
@@ -290,7 +342,15 @@ function createCanvasHatchPattern(ctx, hatch, color, scaleFactor) {
     tctx.fill();
   }
 
-  return ctx.createPattern(tile, 'repeat');
+  const pattern = ctx.createPattern(tile, 'repeat');
+  if (pattern) {
+    if (hatchPatternCache.size >= MAX_HATCH_CACHE_ENTRIES) {
+      const oldestKey = hatchPatternCache.keys().next().value;
+      hatchPatternCache.delete(oldestKey);
+    }
+    hatchPatternCache.set(cacheKey, pattern);
+  }
+  return pattern;
 }
 
 function collectGeoJsonFeatures(data) {
@@ -515,7 +575,13 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   const layers = spec?.layers || {};
   const themeDef = COLOR_THEMES[spec?.theme] || COLOR_THEMES.dusty_prime;
   const globeBg = colors.globeBg || themeDef?.globeBg || '#111827';
-  const projection = buildProjection(spec, width, height);
+  const basePrecision = options.interactive ? 0 : 0.3;
+  const projection = buildProjection(spec, width, height, options);
+  const viewBounds = computeVisibleBounds(spec, projection, width, height);
+  const skipCull =
+    spec?.projection === 'orthographic' ||
+    spec?.projection === 'azimuthal_equidistant' ||
+    viewBounds[1] - viewBounds[0] >= 170;
   const path = d3.geoPath(projection, ctx);
 
   ctx.save();
@@ -543,6 +609,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   if (layers.showGraticule) {
     const step = Math.max(1, Math.min(60, Number(layers.graticuleStepDeg) || 10));
     const graticule = d3.geoGraticule().step([step, step])();
+    projection.precision(0.5);
     ctx.save();
     ctx.globalAlpha *= 0.4;
     ctx.beginPath();
@@ -553,11 +620,16 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     ctx.restore();
   }
 
+  // Use zero-resample streaming for dense natural datasets while clipExtent keeps bounds tight
+  projection.precision(0);
+
   // 3. Land (+ optional coastline)
-  if (datasets?.land) {
+  const landParts =
+    Array.isArray(datasets?.landParts) && datasets.landParts.length > 0 ? datasets.landParts : null;
+  if (landParts || datasets?.land) {
     ctx.save();
     ctx.beginPath();
-    path(datasets.land);
+    drawCulledCollection(path, landParts, datasets?.land, viewBounds, skipCull);
     ctx.fillStyle = colors.land || '#4a4a4a';
     ctx.fill();
     if (layers.showCoastlines && colors.coastline && colors.coastline !== 'none') {
@@ -584,9 +656,11 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
       const pattern = hatch !== 'none' ? createCanvasHatchPattern(ctx, hatch, stroke, scaleFactor) : null;
 
       for (let j = 0; j < features.length; j += 1) {
+        const feat = features[j];
+        if (!bboxMayIntersectView(feat._bbox, viewBounds, skipCull)) continue;
         ctx.save();
         ctx.beginPath();
-        path(features[j]);
+        path(feat);
         ctx.fillStyle = fill;
         ctx.fill();
         if (pattern) {
@@ -608,7 +682,13 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   if (layers.showLakes && datasets?.lakes) {
     ctx.save();
     ctx.beginPath();
-    path(datasets.lakes);
+    drawCulledCollection(
+      path,
+      Array.isArray(datasets.lakes.features) ? datasets.lakes.features : null,
+      datasets.lakes,
+      viewBounds,
+      skipCull,
+    );
     ctx.fillStyle = colors.water || '#d1cfcf';
     ctx.fill();
     if (layers.showCoastlines && colors.coastline && colors.coastline !== 'none') {
@@ -624,7 +704,13 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   if (layers.showRivers && datasets?.rivers && colors.rivers && colors.rivers !== 'none') {
     ctx.save();
     ctx.beginPath();
-    path(datasets.rivers);
+    drawCulledCollection(
+      path,
+      Array.isArray(datasets.rivers.features) ? datasets.rivers.features : null,
+      datasets.rivers,
+      viewBounds,
+      skipCull,
+    );
     ctx.strokeStyle = colors.rivers;
     ctx.lineWidth = Math.max(0.35, (Number(layers.riverWidth) || 0.75) * scaleFactor);
     ctx.lineCap = 'round';
@@ -637,7 +723,13 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   if (layers.showAdmin1 && datasets?.admin1 && colors.admin1 && colors.admin1 !== 'none') {
     ctx.save();
     ctx.beginPath();
-    path(datasets.admin1);
+    drawCulledCollection(
+      path,
+      Array.isArray(datasets.admin1.features) ? datasets.admin1.features : null,
+      datasets.admin1,
+      viewBounds,
+      skipCull,
+    );
     ctx.strokeStyle = colors.admin1;
     ctx.lineWidth = Math.max(0.3, 0.65 * scaleFactor);
     ctx.setLineDash([4 * scaleFactor, 3 * scaleFactor]);
@@ -647,13 +739,26 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   }
 
   // 8. Custom GeoJSON overlays
-  drawCustomLayersCanvas(ctx, projection, spec, scaleFactor);
+  if (Array.isArray(spec?.customGeoJsonLayers) && spec.customGeoJsonLayers.length > 0) {
+    projection.precision(basePrecision);
+    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor);
+    projection.precision(0);
+  }
 
   // 9. Internal borders
-  if (layers.showBorders && datasets?.internalBorders && colors.borders && colors.borders !== 'none') {
+  const borderParts =
+    Array.isArray(datasets?.borderParts) && datasets.borderParts.length > 0
+      ? datasets.borderParts
+      : null;
+  if (
+    layers.showBorders &&
+    colors.borders &&
+    colors.borders !== 'none' &&
+    (borderParts || datasets?.internalBorders)
+  ) {
     ctx.save();
     ctx.beginPath();
-    path(datasets.internalBorders);
+    drawCulledCollection(path, borderParts, datasets?.internalBorders, viewBounds, skipCull);
     ctx.strokeStyle = colors.borders;
     const bw = Math.max(0.3, (Number(layers.borderWidth) || 1.0) * scaleFactor);
     ctx.lineWidth = bw;
@@ -667,6 +772,8 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     ctx.stroke();
     ctx.restore();
   }
+
+  projection.precision(basePrecision);
 
   // 10. Cities & haloed labels
   drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor);
@@ -709,7 +816,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
 
   return {
     projection,
-    bounds: computeVisibleBounds(spec, projection, width, height),
+    bounds: viewBounds,
   };
 }
 
@@ -1083,10 +1190,23 @@ export function hitTestCountry(projection, datasets, x, y) {
   const features = datasets?.countries?.features;
   if (!Array.isArray(features)) return null;
 
-  const lonLat = [coords[0], coords[1]];
+  const lon = coords[0];
+  const lat = coords[1];
+  const lonLat = [lon, lat];
   for (let i = 0; i < features.length; i += 1) {
     const f = features[i];
     if (!f || !f.geometry) continue;
+    const bbox = f._bbox;
+    if (bbox && !bbox[4]) {
+      if (lat < bbox[1] - 1e-6 || lat > bbox[3] + 1e-6) continue;
+      const minLon = bbox[0] - 1e-6;
+      const maxLon = bbox[2] + 1e-6;
+      const lonMatch =
+        (lon >= minLon && lon <= maxLon) ||
+        (lon - 360 >= minLon && lon - 360 <= maxLon) ||
+        (lon + 360 >= minLon && lon + 360 <= maxLon);
+      if (!lonMatch) continue;
+    }
     if (d3.geoContains(f, lonLat)) {
       return {
         id: f.id != null ? String(f.id) : '',
