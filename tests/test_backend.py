@@ -10,6 +10,7 @@ import unittest
 import zipfile
 
 from fastapi.testclient import TestClient
+from matplotlib.figure import Figure
 from PIL import Image
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -17,6 +18,13 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from backend.app import app  # noqa: E402
+from backend.renderer import (  # noqa: E402
+    _build_projection,
+    _compute_viewport_footprint,
+    _configure_extent,
+    _unwrap_near,
+    render_map,
+)
 from backend.schemas import BatchRenderRequest, MapSpec  # noqa: E402
 
 
@@ -225,6 +233,45 @@ class TestBackendAPI(unittest.TestCase):
             for json_name in json_names:
                 parsed = json.loads(zf.read(json_name).decode("utf-8"))
                 self.assertIsInstance(parsed, (dict, list))
+
+    def test_high_latitude_portrait_viewport_footprint_and_antimeridian(self) -> None:
+        """Portrait high-latitude viewport footprint captures aspect expansion and antimeridian renders cleanly."""
+        alaska_spec = MapSpec.model_validate(
+            {
+                "title": "Portrait Alaska",
+                "projection": "mercator",
+                "center": {"lat": 61.5, "lon": -154.0},
+                "span": {"lonDeg": 15.0, "latDeg": 18.0},
+                "page": {"widthIn": 4.6, "heightIn": 7.0, "dpi": 100},
+            }
+        )
+        fig = Figure(figsize=(alaska_spec.page.widthIn, alaska_spec.page.heightIn), dpi=100)
+        proj = _build_projection(alaska_spec)
+        ax = fig.add_axes([0.0, 0.0, 1.0, 1.0], projection=proj)
+        limits = _configure_extent(ax, alaska_spec, proj)
+        ring_lons, ring_lats, can_fill, _ = _compute_viewport_footprint(
+            alaska_spec, proj, limits
+        )
+        unwrapped = [_unwrap_near(lon, alaska_spec.center.lon) for lon in ring_lons]
+        self.assertGreater(max(unwrapped) - min(unwrapped), 24.0)
+        self.assertTrue(can_fill)
+        self.assertEqual(len(ring_lons), len(ring_lats))
+
+        alaska_png = render_map(alaska_spec, "png")
+        self.assertTrue(alaska_png.startswith(b"\x89PNG"))
+
+        bering_spec = MapSpec.model_validate(
+            {
+                "title": "Bering Strait Antimeridian",
+                "projection": "mercator",
+                "center": {"lat": 63.0, "lon": -172.0},
+                "span": {"lonDeg": 18.0, "latDeg": 16.0},
+                "page": {"widthIn": 4.6, "heightIn": 7.0, "dpi": 100},
+                "ornaments": {"locatorGlobe": {"enabled": True, "showExtentBox": True}},
+            }
+        )
+        bering_png = render_map(bering_spec, "png")
+        self.assertTrue(bering_png.startswith(b"\x89PNG"))
 
 
 if __name__ == "__main__":

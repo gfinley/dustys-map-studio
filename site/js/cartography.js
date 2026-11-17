@@ -12,8 +12,8 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=6';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=6';
+} from './ornaments.js?v=7';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=7';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -797,7 +797,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // 11. Ornaments
   if (!options.skipOrnaments) {
     drawScaleBar(ctx, spec, projection, width, height, scaleFactor);
-    drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor);
+    drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor, projection);
     drawNorthArrow(ctx, spec, width, height, scaleFactor);
     drawLegend(ctx, spec, width, height, scaleFactor);
     drawTitleBanner(ctx, spec, width, height, scaleFactor);

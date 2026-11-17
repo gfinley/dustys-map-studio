@@ -924,7 +924,39 @@ def _corner_inset_rect(
     return (x0, y0, w, h)
 
 
-def resolve_locator_globe_zoom(spec: MapSpec) -> float:
+def _angular_distance_deg(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
+    """Return spherical great-circle angular distance in degrees between two points."""
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    d_phi = phi2 - phi1
+    d_lam = math.radians(lon2 - lon1)
+    a = math.sin(0.5 * d_phi) ** 2 + math.cos(phi1) * math.cos(phi2) * (
+        math.sin(0.5 * d_lam) ** 2
+    )
+    return math.degrees(2.0 * math.asin(min(1.0, math.sqrt(max(0.0, a)))))
+
+
+def _unwrap_near(lon: float, center_lon: float) -> float:
+    """Unwrap longitude into [center_lon - 180, center_lon + 180) near center_lon."""
+    return center_lon + ((lon - center_lon + 180.0) % 360.0 - 180.0)
+
+
+def _estimate_effective_span_deg(spec: MapSpec) -> float:
+    """Estimate effective angular viewport span in degrees accounting for page aspect."""
+    if spec.projection == "orthographic":
+        return max(float(spec.span.lonDeg), float(spec.span.latDeg))
+    cos_lat = max(0.15, math.cos(math.radians(float(spec.center.lat))))
+    page_aspect = max(1.0, float(spec.page.widthIn)) / max(1.0, float(spec.page.heightIn))
+    gc_w = float(spec.span.lonDeg) * cos_lat
+    gc_h = float(spec.span.latDeg)
+    fitted_w = max(gc_w, gc_h * page_aspect)
+    fitted_h = max(gc_h, gc_w / page_aspect)
+    return max(fitted_w, fitted_h)
+
+
+def resolve_locator_globe_zoom(
+    spec: MapSpec, max_corner_dist_deg: float = 0.0
+) -> float:
     """Compute effective locator globe zoom factor matching site/js/ornaments.js."""
     cfg = spec.ornaments.locatorGlobe
     mode = cfg.zoomMode
@@ -934,12 +966,180 @@ def resolve_locator_globe_zoom(spec: MapSpec) -> float:
         return 1.8
     if mode == "custom":
         return max(1.0, min(6.0, float(cfg.zoom)))
-    max_span = max(float(spec.span.lonDeg), float(spec.span.latDeg))
-    return max(1.0, min(4.2, 56.0 / max(6.0, max_span)))
+    base_span = _estimate_effective_span_deg(spec)
+    effective_span = (
+        max(base_span, max_corner_dist_deg * 2.2)
+        if max_corner_dist_deg > 0.0
+        else base_span
+    )
+    return max(1.0, min(4.2, 56.0 / max(6.0, effective_span)))
+
+
+def _sample_span_perimeter(
+    spec: MapSpec, steps: int = 16
+) -> tuple[list[float], list[float]]:
+    """Sample a clockwise lon/lat rectangle from spec.span as a fallback footprint."""
+    dlon = min(float(spec.span.lonDeg) * 0.5, 179.0)
+    dlat = min(float(spec.span.latDeg) * 0.5, 85.0)
+    lon_w = float(spec.center.lon) - dlon
+    lon_e = float(spec.center.lon) + dlon
+    lat_s = max(-85.0, float(spec.center.lat) - dlat)
+    lat_n = min(85.0, float(spec.center.lat) + dlat)
+    if lat_s >= lat_n:
+        clamped_c = max(-84.5, min(84.5, float(spec.center.lat)))
+        lat_s = clamped_c - 0.5
+        lat_n = clamped_c + 0.5
+
+    ring_lons: list[float] = []
+    ring_lats: list[float] = []
+    for i in range(steps):
+        t = i / float(steps)
+        ring_lons.append(lon_w + t * (lon_e - lon_w))
+        ring_lats.append(lat_n)
+    for i in range(steps):
+        t = i / float(steps)
+        ring_lons.append(lon_e)
+        ring_lats.append(lat_n - t * (lat_n - lat_s))
+    for i in range(steps):
+        t = i / float(steps)
+        ring_lons.append(lon_e - t * (lon_e - lon_w))
+        ring_lats.append(lat_s)
+    for i in range(steps):
+        t = i / float(steps)
+        ring_lons.append(lon_w)
+        ring_lats.append(lat_s + t * (lat_n - lat_s))
+    return (ring_lons, ring_lats)
+
+
+def _compute_viewport_footprint(
+    spec: MapSpec,
+    proj: ccrs.Projection | None,
+    limits: tuple[float, float, float, float] | None,
+) -> tuple[list[float], list[float], bool, float]:
+    """Invert the rendered map viewport perimeter into geographic lon/lat samples."""
+    if proj is None or limits is None:
+        ring_lons, ring_lats = _sample_span_perimeter(spec, steps=16)
+        can_fill = max(float(spec.span.lonDeg), float(spec.span.latDeg)) < 120.0
+        return (
+            ring_lons,
+            ring_lats,
+            can_fill,
+            _estimate_effective_span_deg(spec) * 0.5,
+        )
+
+    xmin, xmax, ymin, ymax = limits
+    xc = 0.5 * (xmin + xmax)
+    yc = 0.5 * (ymin + ymax)
+    tol = 0.015 * max(abs(xmax - xmin), abs(ymax - ymin), 1.0)
+    geodetic = ccrs.PlateCarree()
+    center_lon = float(spec.center.lon)
+    center_lat = float(spec.center.lat)
+
+    def _invert_valid(px: float, py: float) -> tuple[float, float] | None:
+        try:
+            lon, lat = geodetic.transform_point(px, py, proj)
+        except Exception:
+            return None
+        if not (math.isfinite(lon) and math.isfinite(lat)):
+            return None
+        if lat < -89.999 or lat > 89.999:
+            return None
+        if spec.projection == "orthographic":
+            if _angular_distance_deg(lon, lat, center_lon, center_lat) > 88.5:
+                return None
+        try:
+            rx, ry = proj.transform_point(lon, lat, geodetic)
+        except Exception:
+            return None
+        if not (math.isfinite(rx) and math.isfinite(ry)):
+            return None
+        if math.hypot(rx - px, ry - py) > tol:
+            return None
+        return (float(lon), float(lat))
+
+    steps = 24
+    boundary_pts: list[tuple[float, float]] = []
+    for i in range(steps):
+        t = i / float(steps)
+        boundary_pts.append((xmin + t * (xmax - xmin), ymax))
+    for i in range(steps):
+        t = i / float(steps)
+        boundary_pts.append((xmax, ymax - t * (ymax - ymin)))
+    for i in range(steps):
+        t = i / float(steps)
+        boundary_pts.append((xmax - t * (xmax - xmin), ymin))
+    for i in range(steps):
+        t = i / float(steps)
+        boundary_pts.append((xmin, ymin + t * (ymax - ymin)))
+
+    center_pt = _invert_valid(xc, yc)
+    all_samples: list[tuple[float, float]] = []
+    unclamped_samples: list[tuple[float, float]] = []
+    clamped_count = 0
+
+    for bx, by in boundary_pts:
+        pt = _invert_valid(bx, by)
+        if pt is not None:
+            all_samples.append(pt)
+            unclamped_samples.append(pt)
+            continue
+        clamped_count += 1
+        if center_pt is not None:
+            lo = 0.0
+            hi = 1.0
+            best = center_pt
+            for _ in range(10):
+                mid = 0.5 * (lo + hi)
+                cand = _invert_valid(xc + mid * (bx - xc), yc + mid * (by - yc))
+                if cand is not None:
+                    best = cand
+                    lo = mid
+                else:
+                    hi = mid
+            all_samples.append(best)
+
+    if len(all_samples) < 16:
+        ring_lons, ring_lats = _sample_span_perimeter(spec, steps=16)
+        can_fill = max(float(spec.span.lonDeg), float(spec.span.latDeg)) < 120.0
+        return (
+            ring_lons,
+            ring_lats,
+            can_fill,
+            _estimate_effective_span_deg(spec) * 0.5,
+        )
+
+    ring_lons = [pt[0] for pt in all_samples]
+    ring_lats = [pt[1] for pt in all_samples]
+    unwrapped_lons = [_unwrap_near(lon, center_lon) for lon in ring_lons]
+    vis_lon_span = max(unwrapped_lons) - min(unwrapped_lons)
+    vis_lat_span = max(ring_lats) - min(ring_lats)
+
+    dist_samples = (
+        unclamped_samples
+        if (spec.projection != "orthographic" and unclamped_samples)
+        else all_samples
+    )
+    max_corner_dist_deg = max(
+        _angular_distance_deg(lon, lat, center_lon, center_lat)
+        for lon, lat in dist_samples
+    )
+
+    can_fill = (
+        max_corner_dist_deg < 72.0
+        and vis_lon_span < 165.0
+        and vis_lat_span < 140.0
+        and not (spec.projection == "orthographic" and clamped_count >= 92)
+    )
+    return (ring_lons, ring_lats, can_fill, max_corner_dist_deg)
 
 
 def _draw_locator_globe(
-    fig: Figure, spec: MapSpec, scale: str, has_title: bool
+    fig: Figure,
+    spec: MapSpec,
+    scale: str,
+    has_title: bool,
+    proj: ccrs.Projection | None = None,
+    limits: tuple[float, float, float, float] | None = None,
 ) -> None:
     """Render an orthographic or nearside satellite inset globe showing center and extent box."""
     cfg = spec.ornaments.locatorGlobe
@@ -949,7 +1149,12 @@ def _draw_locator_globe(
     side_in = (cfg.sizePct / 100.0) * min(spec.page.widthIn, spec.page.heightIn)
     x0, y0, w, h = _corner_inset_rect(spec, cfg.position, side_in, has_title)
 
-    effective_zoom = resolve_locator_globe_zoom(spec)
+    ring_lons, ring_lats, can_fill, max_corner_dist_deg = _compute_viewport_footprint(
+        spec, proj, limits
+    )
+    effective_zoom = resolve_locator_globe_zoom(
+        spec, max_corner_dist_deg=max_corner_dist_deg
+    )
     if effective_zoom <= 1.03:
         globe_proj: ccrs.Projection = ccrs.Orthographic(
             central_longitude=spec.center.lon, central_latitude=spec.center.lat
@@ -1000,98 +1205,77 @@ def _draw_locator_globe(
                     zorder=3.5,
                 )
 
-    if cfg.showExtentBox:
-        dlon = min(spec.span.lonDeg * 0.5, 179.0)
-        dlat = min(spec.span.latDeg * 0.5, 85.0)
-        lon_w = spec.center.lon - dlon
-        lon_e = spec.center.lon + dlon
-        lat_s = max(-85.0, spec.center.lat - dlat)
-        lat_n = min(85.0, spec.center.lat + dlat)
-
-        # Sample polygon perimeter so great-circle edges curve accurately on the globe
-        steps = 12
-        ring_lons: list[float] = []
-        ring_lats: list[float] = []
-        for t in np.linspace(0.0, 1.0, steps, endpoint=False):
-            ring_lons.append(lon_w + t * (lon_e - lon_w))
-            ring_lats.append(lat_s)
-        for t in np.linspace(0.0, 1.0, steps, endpoint=False):
-            ring_lons.append(lon_e)
-            ring_lats.append(lat_s + t * (lat_n - lat_s))
-        for t in np.linspace(0.0, 1.0, steps, endpoint=False):
-            ring_lons.append(lon_e - t * (lon_e - lon_w))
-            ring_lats.append(lat_n)
-        for t in np.linspace(0.0, 1.0, steps, endpoint=False):
-            ring_lons.append(lon_w)
-            ring_lats.append(lat_n - t * (lat_n - lat_s))
-
-        if max(spec.span.lonDeg, spec.span.latDeg) < 120.0:
-            try:
+    if cfg.showExtentBox and ring_lons:
+        closed_lons = np.asarray(ring_lons + [ring_lons[0]], dtype=float)
+        closed_lats = np.asarray(ring_lats + [ring_lats[0]], dtype=float)
+        pts = globe_proj.transform_points(
+            ccrs.PlateCarree(), closed_lons, closed_lats
+        )
+        xs = pts[:, 0]
+        ys = pts[:, 1]
+        valid = np.isfinite(xs) & np.isfinite(ys)
+        if np.all(valid):
+            if can_fill:
                 inset_ax.fill(
-                    ring_lons,
-                    ring_lats,
-                    transform=ccrs.Geodetic(),
-                    facecolor="#e11d48",
-                    alpha=0.25,
+                    xs[:-1],
+                    ys[:-1],
+                    facecolor="#dc2626",
+                    alpha=0.24,
                     zorder=5,
                 )
-                inset_ax.plot(
-                    ring_lons + [ring_lons[0]],
-                    ring_lats + [ring_lats[0]],
-                    transform=ccrs.Geodetic(),
-                    color="#e11d48",
-                    linewidth=1.35,
-                    zorder=5.5,
+            inset_ax.plot(
+                xs,
+                ys,
+                color="#dc2626",
+                linewidth=1.35,
+                zorder=5.5,
+            )
+            globe_xlim = inset_ax.get_xlim()
+            globe_ylim = inset_ax.get_ylim()
+            globe_diameter = max(
+                abs(globe_xlim[1] - globe_xlim[0]),
+                abs(globe_ylim[1] - globe_ylim[0]),
+                1.0,
+            )
+            if max(float(np.ptp(xs)), float(np.ptp(ys))) < 0.04 * globe_diameter:
+                cx_g, cy_g = globe_proj.transform_point(
+                    spec.center.lon, spec.center.lat, ccrs.PlateCarree()
                 )
-            except Exception as exc:
-                logger.debug("Geodetic extent box fallback on locator globe: %s", exc)
-                pts = globe_proj.transform_points(
-                    ccrs.PlateCarree(),
-                    np.asarray(ring_lons + [ring_lons[0]], dtype=float),
-                    np.asarray(ring_lats + [ring_lats[0]], dtype=float),
-                )
-                xs = pts[:, 0]
-                ys = pts[:, 1]
-                valid = np.isfinite(xs) & np.isfinite(ys)
-                if np.all(valid):
-                    inset_ax.fill(
-                        xs[:-1],
-                        ys[:-1],
-                        facecolor="#e11d48",
-                        alpha=0.25,
-                        zorder=5,
-                    )
+                if math.isfinite(cx_g) and math.isfinite(cy_g):
                     inset_ax.plot(
-                        xs,
-                        ys,
-                        color="#e11d48",
-                        linewidth=1.35,
-                        zorder=5.5,
+                        [cx_g],
+                        [cy_g],
+                        marker="o",
+                        markersize=4.5,
+                        markerfacecolor="#dc2626",
+                        markeredgecolor="#ffffff",
+                        markeredgewidth=0.9,
+                        zorder=6,
                     )
-                elif np.any(valid):
-                    # Draw finite contiguous spans without bridging across horizon NaNs
-                    start = None
-                    for idx, is_ok in enumerate(valid):
-                        if is_ok and start is None:
-                            start = idx
-                        elif not is_ok and start is not None:
-                            if idx - start >= 2:
-                                inset_ax.plot(
-                                    xs[start:idx],
-                                    ys[start:idx],
-                                    color="#e11d48",
-                                    linewidth=1.35,
-                                    zorder=5.5,
-                                )
-                            start = None
-                    if start is not None and len(valid) - start >= 2:
+        elif np.any(valid):
+            # Draw finite contiguous spans without bridging across horizon NaNs
+            start = None
+            for idx, is_ok in enumerate(valid):
+                if is_ok and start is None:
+                    start = idx
+                elif not is_ok and start is not None:
+                    if idx - start >= 2:
                         inset_ax.plot(
-                            xs[start:],
-                            ys[start:],
-                            color="#e11d48",
+                            xs[start:idx],
+                            ys[start:idx],
+                            color="#dc2626",
                             linewidth=1.35,
                             zorder=5.5,
                         )
+                    start = None
+            if start is not None and len(valid) - start >= 2:
+                inset_ax.plot(
+                    xs[start:],
+                    ys[start:],
+                    color="#dc2626",
+                    linewidth=1.35,
+                    zorder=5.5,
+                )
 
     inset_ax.spines["geo"].set_edgecolor(frame_color)
     inset_ax.spines["geo"].set_linewidth(1.0)
@@ -1433,7 +1617,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
     # 8. Ornaments & Title Banner
     has_title = _draw_title_banner(fig, spec)
     _draw_scale_bar(fig, ax, spec, proj, limits, has_title)
-    _draw_locator_globe(fig, spec, scale, has_title)
+    _draw_locator_globe(fig, spec, scale, has_title, proj=proj, limits=limits)
     _draw_north_arrow(fig, spec, has_title)
     _draw_legend(fig, ax, spec, has_title)
 

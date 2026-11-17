@@ -21,6 +21,13 @@ function wrapLon(lon) {
   return x;
 }
 
+function unwrapNear(lon, refLon) {
+  let d = lon - refLon;
+  while (d > 180) d -= 360;
+  while (d < -180) d += 360;
+  return refLon + d;
+}
+
 function escapeXml(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
@@ -98,6 +105,199 @@ function buildExtentRing(spec, asPolygon = false) {
     type: 'Feature',
     properties: {},
     geometry: { type: 'LineString', coordinates: coords },
+  };
+}
+
+function estimateEffectiveSpanDeg(spec) {
+  const centerLat = Number(spec?.center?.lat) || 0;
+  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+  if (spec?.projection === 'orthographic') {
+    return Math.max(lonDeg, latDeg);
+  }
+  const cosLat = Math.max(0.15, Math.cos((centerLat * Math.PI) / 180));
+  const pageAspect =
+    Math.max(1, Number(spec?.page?.widthIn) || 7) /
+    Math.max(1, Number(spec?.page?.heightIn) || 5);
+  const gcWidth = lonDeg * cosLat;
+  const gcHeight = latDeg;
+  const fittedGcWidth = Math.max(gcWidth, gcHeight * pageAspect);
+  const fittedGcHeight = Math.max(gcHeight, gcWidth / pageAspect);
+  return Math.max(fittedGcWidth, fittedGcHeight);
+}
+
+function computeTrueViewportFootprint(spec, projection, width, height) {
+  const centerLon = Number(spec?.center?.lon) || 0;
+  const centerLat = Number(spec?.center?.lat) || 0;
+  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+
+  const buildFallbackFootprint = (canFill = lonDeg < 150 && latDeg < 120) => ({
+    feature: buildExtentRing(spec, canFill),
+    canFill,
+    visLonSpan: lonDeg,
+    visLatSpan: latDeg,
+    maxCornerDistDeg: estimateEffectiveSpanDeg(spec) * 0.5,
+  });
+
+  if (!projection || typeof projection.invert !== 'function' || !(width > 0) || !(height > 0)) {
+    return buildFallbackFootprint();
+  }
+
+  const tolPx = Math.max(4, Math.max(width, height) * 0.01);
+  const invertPointSafe = (sx, sy) => {
+    const raw = projection.invert([sx, sy]);
+    if (!raw || !Number.isFinite(raw[0]) || !Number.isFinite(raw[1])) return null;
+    const lat = raw[1];
+    if (Math.abs(lat) > 89.999) return null;
+    const lon = wrapLon(raw[0]);
+    if (spec?.projection === 'orthographic') {
+      if (d3.geoDistance([lon, lat], [centerLon, centerLat]) > Math.PI / 2 - 0.025) {
+        return null;
+      }
+    } else if (spec?.projection === 'azimuthal_equidistant') {
+      if (d3.geoDistance([lon, lat], [centerLon, centerLat]) > (179 * Math.PI) / 180) {
+        return null;
+      }
+    }
+    const back = projection([lon, lat]);
+    if (!back || !Number.isFinite(back[0]) || !Number.isFinite(back[1])) return null;
+    if (Math.hypot(back[0] - sx, back[1] - sy) > tolPx) return null;
+    return [lon, lat];
+  };
+
+  const stepsPerEdge = 24;
+  const perimeter = [];
+  for (let i = 0; i < stepsPerEdge; i += 1) {
+    perimeter.push([(i / stepsPerEdge) * width, 0]);
+  }
+  for (let i = 0; i < stepsPerEdge; i += 1) {
+    perimeter.push([width, (i / stepsPerEdge) * height]);
+  }
+  for (let i = 0; i < stepsPerEdge; i += 1) {
+    perimeter.push([(1 - i / stepsPerEdge) * width, height]);
+  }
+  for (let i = 0; i < stepsPerEdge; i += 1) {
+    perimeter.push([0, (1 - i / stepsPerEdge) * height]);
+  }
+
+  const totalSamples = perimeter.length;
+  const cx = width / 2;
+  const cy = height / 2;
+  const centerPt = invertPointSafe(cx, cy);
+  const pts = [];
+  const unclampedPts = [];
+  let clampedCount = 0;
+
+  for (let i = 0; i < totalSamples; i += 1) {
+    const [bx, by] = perimeter[i];
+    const directPt = invertPointSafe(bx, by);
+    if (directPt) {
+      pts.push(directPt);
+      unclampedPts.push(directPt);
+      continue;
+    }
+
+    let lo = 0;
+    let bestPt = centerPt;
+    if (!bestPt) {
+      const nudgePt = invertPointSafe(cx + (bx - cx) * 0.02, cy + (by - cy) * 0.02);
+      if (!nudgePt) continue;
+      lo = 0.02;
+      bestPt = nudgePt;
+    }
+
+    let hi = 1;
+    for (let step = 0; step < 10; step += 1) {
+      const mid = (lo + hi) * 0.5;
+      const candidate = invertPointSafe(cx + (bx - cx) * mid, cy + (by - cy) * mid);
+      if (candidate) {
+        lo = mid;
+        bestPt = candidate;
+      } else {
+        hi = mid;
+      }
+    }
+    pts.push(bestPt);
+    clampedCount += 1;
+  }
+
+  if (pts.length < 16) {
+    return buildFallbackFootprint();
+  }
+
+  let minLon = Infinity;
+  let maxLon = -Infinity;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  for (let i = 0; i < pts.length; i += 1) {
+    const uLon = unwrapNear(pts[i][0], centerLon);
+    const lat = pts[i][1];
+    if (uLon < minLon) minLon = uLon;
+    if (uLon > maxLon) maxLon = uLon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  const visLonSpan = maxLon - minLon;
+  const visLatSpan = maxLat - minLat;
+
+  const distSource =
+    spec?.projection !== 'orthographic' && unclampedPts.length > 0 ? unclampedPts : pts;
+  let maxCornerDistDeg = 0;
+  for (let i = 0; i < distSource.length; i += 1) {
+    const distDeg = (d3.geoDistance(distSource[i], [centerLon, centerLat]) * 180) / Math.PI;
+    if (distDeg > maxCornerDistDeg) maxCornerDistDeg = distDeg;
+  }
+
+  if (spec?.projection === 'orthographic' && clampedCount >= totalSamples * 0.96) {
+    if (lonDeg < 115 && latDeg < 120) {
+      return buildFallbackFootprint(true);
+    }
+    const horizonCircle = d3.geoCircle().center([centerLon, centerLat]).radius(86)();
+    return {
+      feature: {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates: horizonCircle.coordinates[0] },
+      },
+      canFill: false,
+      visLonSpan,
+      visLatSpan,
+      maxCornerDistDeg,
+    };
+  }
+
+  const canFill =
+    maxCornerDistDeg < 72 &&
+    visLonSpan < 165 &&
+    visLatSpan < 140 &&
+    !(spec?.projection === 'orthographic' && clampedCount >= totalSamples * 0.95);
+
+  const ring = [...pts, [...pts[0]]];
+  let feature;
+  if (canFill) {
+    feature = {
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'Polygon', coordinates: [ring] },
+    };
+    if (d3.geoArea(feature) > 2 * Math.PI) {
+      ring.reverse();
+    }
+  } else {
+    feature = {
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'LineString', coordinates: ring },
+    };
+  }
+
+  return {
+    feature,
+    canFill,
+    visLonSpan,
+    visLatSpan,
+    maxCornerDistDeg,
   };
 }
 
@@ -532,7 +732,7 @@ export function drawScaleBar(ctx, spec, projection, width, height, scaleFactor) 
   ctx.restore();
 }
 
-export function resolveLocatorGlobeZoom(spec) {
+export function resolveLocatorGlobeZoom(spec, footprint = null) {
   const globeSpec = spec?.ornaments?.locatorGlobe || {};
   const mode = globeSpec.zoomMode || 'auto';
   if (mode === 'hemisphere') return 1.0;
@@ -540,14 +740,24 @@ export function resolveLocatorGlobeZoom(spec) {
   if (mode === 'custom') {
     return Math.min(6.0, Math.max(1.0, Number(globeSpec.zoom) || 2.0));
   }
-  const maxSpan = Math.max(Number(spec?.span?.lonDeg) || 24, Number(spec?.span?.latDeg) || 14);
-  return Math.min(4.2, Math.max(1.0, 56 / Math.max(6, maxSpan)));
+  const baseSpan = estimateEffectiveSpanDeg(spec);
+  const effectiveSpan =
+    footprint && Number.isFinite(footprint.maxCornerDistDeg) && footprint.maxCornerDistDeg > 0
+      ? Math.max(baseSpan, footprint.maxCornerDistDeg * 2.2)
+      : baseSpan;
+  return Math.min(4.2, Math.max(1.0, 56 / Math.max(6, effectiveSpan)));
 }
 
-export function buildLocatorGlobeProjection(spec, cx, cy, globeRadius) {
+export function buildLocatorGlobeProjection(
+  spec,
+  cx,
+  cy,
+  globeRadius,
+  effectiveZoomOverride = null,
+) {
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
-  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+  const effectiveZoom = effectiveZoomOverride ?? resolveLocatorGlobeZoom(spec);
   if (effectiveZoom <= 1.03) {
     return d3
       .geoOrthographic()
@@ -596,13 +806,23 @@ function selectLocatorDatasets(datasets, effectiveZoom) {
   };
 }
 
-function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFactor) {
-  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+function renderLocatorGlobeToCanvas(
+  ctx,
+  spec,
+  datasets,
+  cx,
+  cy,
+  radius,
+  scaleFactor,
+  footprint = null,
+) {
+  const fp = footprint || computeTrueViewportFootprint(spec, null, 0, 0);
+  const effectiveZoom = resolveLocatorGlobeZoom(spec, fp);
   const { land: locatorLand, borders: locatorBorders } = selectLocatorDatasets(datasets, effectiveZoom);
   if (!locatorLand) return;
 
   const globeRadius = Math.max(4, radius - 2 * scaleFactor);
-  const globeProj = buildLocatorGlobeProjection(spec, cx, cy, globeRadius);
+  const globeProj = buildLocatorGlobeProjection(spec, cx, cy, globeRadius, effectiveZoom);
   const path = d3.geoPath(globeProj, ctx);
   const colors = spec?.colors || {};
   const globeSpec = spec?.ornaments?.locatorGlobe || {};
@@ -637,10 +857,7 @@ function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFa
   }
 
   if (globeSpec.showExtentBox !== false) {
-    const lonDeg = Number(spec?.span?.lonDeg) || 24;
-    const latDeg = Number(spec?.span?.latDeg) || 14;
-    const canFillPoly = lonDeg < 150 && latDeg < 120;
-    const ring = buildExtentRing(spec, canFillPoly);
+    const ring = fp.feature;
     globeProj.precision(0.5);
     const bounds = path.bounds(ring);
     const boxPixelSpan = Math.max(
@@ -651,7 +868,7 @@ function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFa
     ctx.beginPath();
     path(ring);
     globeProj.precision(0);
-    if (canFillPoly) {
+    if (fp.canFill) {
       ctx.fillStyle = 'rgba(220, 38, 38, 0.24)';
       ctx.fill();
     }
@@ -680,11 +897,21 @@ function renderLocatorGlobeToCanvas(ctx, spec, datasets, cx, cy, radius, scaleFa
   ctx.restore();
 }
 
-export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor) {
-  const effectiveZoom = resolveLocatorGlobeZoom(spec);
+export function drawLocatorGlobe(
+  ctx,
+  spec,
+  datasets,
+  width,
+  height,
+  scaleFactor,
+  projection = null,
+) {
+  if (!spec?.ornaments?.locatorGlobe?.enabled) return;
+  const footprint = computeTrueViewportFootprint(spec, projection, width, height);
+  const effectiveZoom = resolveLocatorGlobeZoom(spec, footprint);
   const { land: locatorLand, borders: locatorBorders } = selectLocatorDatasets(datasets, effectiveZoom);
-  if (!spec?.ornaments?.locatorGlobe?.enabled || !locatorLand) return;
-  const { placements } = computeCornerPositions(spec, null, datasets, width, height, scaleFactor, ctx);
+  if (!locatorLand) return;
+  const { placements } = computeCornerPositions(spec, projection, datasets, width, height, scaleFactor, ctx);
   const slot = placements.locatorGlobe;
   if (!slot) return;
 
@@ -693,7 +920,16 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   if (!(diameter > 0) || !(radius > 0)) return;
 
   if (typeof document === 'undefined') {
-    renderLocatorGlobeToCanvas(ctx, spec, datasets, x + radius, y + radius, radius, scaleFactor);
+    renderLocatorGlobeToCanvas(
+      ctx,
+      spec,
+      datasets,
+      x + radius,
+      y + radius,
+      radius,
+      scaleFactor,
+      footprint,
+    );
     return;
   }
 
@@ -701,6 +937,10 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   const colors = spec?.colors || {};
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
+  const lonDeg = Number(spec?.span?.lonDeg) || 24;
+  const latDeg = Number(spec?.span?.latDeg) || 14;
+  const aspectRatio = (width / Math.max(1, height)).toFixed(3);
+  const zoomMode = globeSpec.zoomMode || 'auto';
   const hasDetail =
     effectiveZoom >= 1.35 && Boolean(datasets?.locatorDetailLand || datasets?.resolution === '50m');
 
@@ -713,7 +953,7 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   const dpr = Math.max(1, Math.min(2, Math.max(ctxScale || 1, winDpr)));
   const pixelSize = Math.max(1, Math.round(diameter * dpr));
 
-  const cacheKey = `${Math.round(centerLon * 4)}|${Math.round(centerLat * 4)}|${(Number(spec?.span?.lonDeg) || 24).toFixed(1)}|${(Number(spec?.span?.latDeg) || 14).toFixed(1)}|${Math.round(diameter)}|${colors.water}|${colors.land}|${colors.borders}|${colors.highlightStroke}|${globeSpec.showExtentBox !== false}|${spec?.projection}|${Boolean(locatorBorders)}|${pixelSize}|${scaleFactor.toFixed(2)}|${effectiveZoom.toFixed(2)}|${hasDetail}`;
+  const cacheKey = `${centerLon.toFixed(2)}|${centerLat.toFixed(2)}|${lonDeg.toFixed(2)}|${latDeg.toFixed(2)}|${aspectRatio}|${zoomMode}|${Math.round(diameter)}|${colors.water}|${colors.land}|${colors.borders}|${colors.highlightStroke}|${globeSpec.showExtentBox !== false}|${spec?.projection}|${Boolean(locatorBorders)}|${pixelSize}|${scaleFactor.toFixed(2)}|${effectiveZoom.toFixed(2)}|${hasDetail}|${Boolean(projection)}`;
 
   if (locatorGlobeCache.key === cacheKey && locatorGlobeCache.canvas) {
     ctx.drawImage(locatorGlobeCache.canvas, x, y, diameter, diameter);
@@ -727,7 +967,16 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   }
   const octx = offscreen.getContext('2d');
   if (!octx) {
-    renderLocatorGlobeToCanvas(ctx, spec, datasets, x + radius, y + radius, radius, scaleFactor);
+    renderLocatorGlobeToCanvas(
+      ctx,
+      spec,
+      datasets,
+      x + radius,
+      y + radius,
+      radius,
+      scaleFactor,
+      footprint,
+    );
     return;
   }
 
@@ -736,7 +985,7 @@ export function drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor
   octx.setTransform(1, 0, 0, 1, 0, 0);
   octx.clearRect(0, 0, pixelSize, pixelSize);
   octx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
-  renderLocatorGlobeToCanvas(octx, spec, datasets, radius, radius, radius, scaleFactor);
+  renderLocatorGlobeToCanvas(octx, spec, datasets, radius, radius, radius, scaleFactor, footprint);
   octx.restore();
 
   locatorGlobeCache.key = cacheKey;
@@ -968,74 +1217,74 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
   }
 
   // 2. Locator Globe
-  const svgEffectiveZoom = resolveLocatorGlobeZoom(spec);
-  const { land: svgLocatorLand, borders: svgLocatorBorders } = selectLocatorDatasets(
-    datasets,
-    svgEffectiveZoom,
-  );
-  if (placements.locatorGlobe && svgLocatorLand) {
-    const { x, y, meta } = placements.locatorGlobe;
-    const { radius } = meta;
-    const cx = x + radius;
-    const cy = y + radius;
-    const globeRadius = Math.max(4, radius - 2 * scaleFactor);
-    const globeProj = buildLocatorGlobeProjection(spec, cx, cy, globeRadius);
-    const svgPath = d3.geoPath(globeProj);
-    const colors = spec?.colors || {};
-    const clipId = 'locator-globe-clip';
+  if (placements.locatorGlobe) {
+    const svgFootprint = computeTrueViewportFootprint(spec, projection, width, height);
+    const svgEffectiveZoom = resolveLocatorGlobeZoom(spec, svgFootprint);
+    const { land: svgLocatorLand, borders: svgLocatorBorders } = selectLocatorDatasets(
+      datasets,
+      svgEffectiveZoom,
+    );
+    if (svgLocatorLand) {
+      const { x, y, meta } = placements.locatorGlobe;
+      const { radius } = meta;
+      const cx = x + radius;
+      const cy = y + radius;
+      const globeRadius = Math.max(4, radius - 2 * scaleFactor);
+      const globeProj = buildLocatorGlobeProjection(spec, cx, cy, globeRadius, svgEffectiveZoom);
+      const svgPath = d3.geoPath(globeProj);
+      const colors = spec?.colors || {};
+      const clipId = 'locator-globe-clip';
 
-    parts.push('<g class="ornament-locator-globe">');
-    parts.push(
-      `<defs><clipPath id="${clipId}"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" /></clipPath></defs>`,
-    );
-    parts.push(
-      `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}" fill="rgba(255,255,255,0.92)" />`,
-    );
-    parts.push(`<g clip-path="url(#${clipId})">`);
-    parts.push(
-      `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="${escapeXml(colors.water || '#d1cfcf')}" />`,
-    );
-    const landD = svgPath(svgLocatorLand) || '';
-    if (landD) {
-      parts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}" />`);
-    }
-    if (svgLocatorBorders) {
-      const borderD = svgPath(svgLocatorBorders) || '';
-      if (borderD) {
-        parts.push(
-          `<path d="${borderD}" fill="none" stroke="${escapeXml(colors.borders || '#ffffff')}" stroke-width="${Math.max(0.35, 0.55 * scaleFactor).toFixed(2)}" />`,
-        );
-      }
-    }
-    if (spec?.ornaments?.locatorGlobe?.showExtentBox !== false) {
-      const lonDeg = Number(spec?.span?.lonDeg) || 24;
-      const latDeg = Number(spec?.span?.latDeg) || 14;
-      const canFillPoly = lonDeg < 150 && latDeg < 120;
-      const ring = buildExtentRing(spec, canFillPoly);
-      globeProj.precision(0.5);
-      const ringD = svgPath(ring) || '';
-      const bounds = svgPath.bounds(ring);
-      globeProj.precision(0);
-      const boxPixelSpan = Math.max(
-        Math.abs(bounds[1][0] - bounds[0][0]),
-        Math.abs(bounds[1][1] - bounds[0][1]),
+      parts.push('<g class="ornament-locator-globe">');
+      parts.push(
+        `<defs><clipPath id="${clipId}"><circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" /></clipPath></defs>`,
       );
-      if (ringD) {
-        parts.push(
-          `<path d="${ringD}" fill="${canFillPoly ? 'rgba(220,38,38,0.24)' : 'none'}" stroke="#dc2626" stroke-width="${Math.max(1.1, 1.8 * scaleFactor).toFixed(2)}" />`,
-        );
+      parts.push(
+        `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${radius.toFixed(2)}" fill="rgba(255,255,255,0.92)" />`,
+      );
+      parts.push(`<g clip-path="url(#${clipId})">`);
+      parts.push(
+        `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="${escapeXml(colors.water || '#d1cfcf')}" />`,
+      );
+      const landD = svgPath(svgLocatorLand) || '';
+      if (landD) {
+        parts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}" />`);
       }
-      if (!Number.isFinite(boxPixelSpan) || boxPixelSpan < 6 * scaleFactor) {
-        parts.push(
-          `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${Math.max(2.5, 3.2 * scaleFactor).toFixed(2)}" fill="#dc2626" stroke="#ffffff" stroke-width="${Math.max(0.8, 1 * scaleFactor).toFixed(2)}" />`,
-        );
+      if (svgLocatorBorders) {
+        const borderD = svgPath(svgLocatorBorders) || '';
+        if (borderD) {
+          parts.push(
+            `<path d="${borderD}" fill="none" stroke="${escapeXml(colors.borders || '#ffffff')}" stroke-width="${Math.max(0.35, 0.55 * scaleFactor).toFixed(2)}" />`,
+          );
+        }
       }
+      if (spec?.ornaments?.locatorGlobe?.showExtentBox !== false) {
+        const ring = svgFootprint.feature;
+        globeProj.precision(0.5);
+        const ringD = svgPath(ring) || '';
+        const bounds = svgPath.bounds(ring);
+        globeProj.precision(0);
+        const boxPixelSpan = Math.max(
+          Math.abs(bounds[1][0] - bounds[0][0]),
+          Math.abs(bounds[1][1] - bounds[0][1]),
+        );
+        if (ringD) {
+          parts.push(
+            `<path d="${ringD}" fill="${svgFootprint.canFill ? 'rgba(220,38,38,0.24)' : 'none'}" stroke="#dc2626" stroke-width="${Math.max(1.1, 1.8 * scaleFactor).toFixed(2)}" />`,
+          );
+        }
+        if (!Number.isFinite(boxPixelSpan) || boxPixelSpan < 6 * scaleFactor) {
+          parts.push(
+            `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${Math.max(2.5, 3.2 * scaleFactor).toFixed(2)}" fill="#dc2626" stroke="#ffffff" stroke-width="${Math.max(0.8, 1 * scaleFactor).toFixed(2)}" />`,
+          );
+        }
+      }
+      parts.push('</g>');
+      parts.push(
+        `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="none" stroke="#111111" stroke-width="${Math.max(0.9, 1.3 * scaleFactor).toFixed(2)}" />`,
+      );
+      parts.push('</g>');
     }
-    parts.push('</g>');
-    parts.push(
-      `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="none" stroke="#111111" stroke-width="${Math.max(0.9, 1.3 * scaleFactor).toFixed(2)}" />`,
-    );
-    parts.push('</g>');
   }
 
   // 3. North Arrow
