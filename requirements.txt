@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+geopandas
+cartopy
+contextily
+matplotlib
+shapely>=2.0
+pyproj
+pillow
+requests
+httpx

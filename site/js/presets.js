@@ -1,0 +1,389 @@
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js';
+
+function makePresetSpec(overrides) {
+  const base = createDefaultMapSpec();
+  const themeId = overrides.theme && COLOR_THEMES[overrides.theme] ? overrides.theme : base.theme;
+  const themeColors = COLOR_THEMES[themeId];
+
+  const merged = {
+    ...base,
+    ...overrides,
+    center: {
+      ...base.center,
+      ...(overrides.center || {}),
+    },
+    span: {
+      ...base.span,
+      ...(overrides.span || {}),
+    },
+    page: {
+      ...base.page,
+      ...(overrides.page || {}),
+    },
+    colors: {
+      ...themeColors,
+      ...(overrides.colors || {}),
+    },
+    layers: {
+      ...base.layers,
+      ...(overrides.layers || {}),
+    },
+    ornaments: {
+      scaleBar: {
+        ...base.ornaments.scaleBar,
+        ...(overrides.ornaments?.scaleBar || {}),
+      },
+      locatorGlobe: {
+        ...base.ornaments.locatorGlobe,
+        ...(overrides.ornaments?.locatorGlobe || {}),
+      },
+      northArrow: {
+        ...base.ornaments.northArrow,
+        ...(overrides.ornaments?.northArrow || {}),
+      },
+      legend: {
+        ...base.ornaments.legend,
+        ...(overrides.ornaments?.legend || {}),
+      },
+    },
+    pro: {
+      ...base.pro,
+      ...(overrides.pro || {}),
+    },
+  };
+
+  return normalizeMapSpec(merged);
+}
+
+export const REGION_PRESETS = [
+  {
+    id: 'ukraine_briefing',
+    label: 'Ukraine Briefing (Book 4.6×7")',
+    description: 'Dusty notebook baseline: Ukraine highlighted with Kyiv, Lviv, Odesa, and Kharkiv on a 4.6×7" book page.',
+    spec: makePresetSpec({
+      title: 'Ukraine Briefing Map',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: 'auto',
+      center: { lat: 48.5, lon: 31.2 },
+      span: { lonDeg: 24.0, latDeg: 14.0 },
+      page: {
+        preset: 'book_4_6x7',
+        widthIn: 4.6,
+        heightIn: 7.0,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.0,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: false,
+      },
+      highlightedCountries: [
+        {
+          id: '804',
+          name: 'Ukraine',
+          fill: '#7a7d7a',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+      ],
+      cities: [
+        { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -6 },
+        { id: 'lviv', name: 'Lviv', lat: 49.8397, lon: 24.0297, style: 'dot', dx: 6, dy: -5 },
+        { id: 'odesa', name: 'Odesa', lat: 46.4825, lon: 30.7233, style: 'dot', dx: 6, dy: 8 },
+        { id: 'kharkiv', name: 'Kharkiv', lat: 49.9935, lon: 36.2304, style: 'dot', dx: 6, dy: -5 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
+        northArrow: { enabled: false, position: 'top-left' },
+        legend: { enabled: false, position: 'bottom-right' },
+      },
+    }),
+  },
+  {
+    id: 'nordic_baltic',
+    label: 'Finland, Sweden & Russia',
+    description: 'Northern Europe & Baltic briefing highlighting Finland and Sweden with Helsinki, Stockholm, and St. Petersburg.',
+    spec: makePresetSpec({
+      title: 'Finland, Sweden & Western Russia',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: 'auto',
+      center: { lat: 63.5, lon: 23.3 },
+      span: { lonDeg: 40.0, latDeg: 18.0 },
+      page: {
+        preset: 'book_4_6x7',
+        widthIn: 4.6,
+        heightIn: 7.0,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.0,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: false,
+      },
+      highlightedCountries: [
+        {
+          id: '246',
+          name: 'Finland',
+          fill: '#7a7d7a',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+        {
+          id: '752',
+          name: 'Sweden',
+          fill: '#686c68',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+      ],
+      cities: [
+        { id: 'helsinki', name: 'Helsinki', lat: 60.1699, lon: 24.9384, style: 'capital', dx: 6, dy: -6 },
+        { id: 'stockholm', name: 'Stockholm', lat: 59.3293, lon: 18.0686, style: 'capital', dx: -8, dy: -7 },
+        { id: 'st_petersburg', name: 'St. Petersburg', lat: 59.9311, lon: 30.3609, style: 'dot', dx: 6, dy: 6 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
+      },
+    }),
+  },
+  {
+    id: 'alaska_russia_dateline',
+    label: 'Alaska & Russia (Date Line)',
+    description: 'Trans-Bering Strait framing across the 180° International Date Line with Anchorage, Nome, and Anadyr.',
+    spec: makePresetSpec({
+      title: 'Alaska & Russian Far East',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: 'auto',
+      center: { lat: 60.0, lon: -168.6 },
+      span: { lonDeg: 80.0, latDeg: 25.0 },
+      page: {
+        preset: 'book_landscape',
+        widthIn: 7.0,
+        heightIn: 4.6,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.0,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: true,
+        showGraticule: true,
+        graticuleStepDeg: 10,
+      },
+      highlightedCountries: [
+        {
+          id: '840',
+          name: 'United States of America',
+          fill: '#7a7d7a',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+        {
+          id: '643',
+          name: 'Russia',
+          fill: '#646464',
+          stroke: '#ffffff',
+          hatch: 'diagonal',
+        },
+      ],
+      cities: [
+        { id: 'anchorage', name: 'Anchorage', lat: 61.2181, lon: -149.9003, style: 'dot', dx: 6, dy: -5 },
+        { id: 'nome', name: 'Nome', lat: 64.5011, lon: -165.4064, style: 'dot', dx: 6, dy: 6 },
+        { id: 'anadyr', name: 'Anadyr', lat: 64.7337, lon: 177.5103, style: 'dot', dx: -8, dy: -6 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
+      },
+    }),
+  },
+  {
+    id: 'korean_peninsula',
+    label: 'Korean Peninsula',
+    description: 'High-detail regional framing of North and South Korea with Seoul, Pyongyang, and Busan.',
+    spec: makePresetSpec({
+      title: 'Korean Peninsula',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: 'auto',
+      center: { lat: 38.5, lon: 127.3 },
+      span: { lonDeg: 9.0, latDeg: 9.0 },
+      page: {
+        preset: 'book_4_6x7',
+        widthIn: 4.6,
+        heightIn: 7.0,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.1,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: false,
+      },
+      highlightedCountries: [
+        {
+          id: '410',
+          name: 'South Korea',
+          fill: '#7e837e',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+        {
+          id: '408',
+          name: 'North Korea',
+          fill: '#656765',
+          stroke: '#ffffff',
+          hatch: 'diagonal',
+        },
+      ],
+      cities: [
+        { id: 'seoul', name: 'Seoul', lat: 37.5665, lon: 126.978, style: 'capital', dx: -8, dy: -6 },
+        { id: 'pyongyang', name: 'Pyongyang', lat: 39.0392, lon: 125.7625, style: 'capital', dx: -8, dy: -6 },
+        { id: 'busan', name: 'Busan', lat: 35.1796, lon: 129.0756, style: 'dot', dx: 6, dy: 6 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
+      },
+    }),
+  },
+  {
+    id: 'europe_globe',
+    label: 'European 3D Globe',
+    description: 'Orthographic 3D sphere centered over Europe with graticule lines.',
+    spec: makePresetSpec({
+      title: 'Europe & North Atlantic',
+      showTitle: false,
+      projection: 'orthographic',
+      detailLevel: '50m',
+      center: { lat: 50.0, lon: 10.0 },
+      span: { lonDeg: 110.0, latDeg: 90.0 },
+      page: {
+        preset: 'square_8x8',
+        widthIn: 8.0,
+        heightIn: 8.0,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 0.9,
+        borderStyle: 'solid',
+        showCoastlines: true,
+        coastlineWidth: 0.75,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: true,
+        graticuleStepDeg: 15,
+      },
+      highlightedCountries: [],
+      cities: [
+        { id: 'london', name: 'London', lat: 51.5072, lon: -0.1276, style: 'capital', dx: -6, dy: -6 },
+        { id: 'paris', name: 'Paris', lat: 48.8566, lon: 2.3522, style: 'capital', dx: 6, dy: 6 },
+        { id: 'berlin', name: 'Berlin', lat: 52.52, lon: 13.405, style: 'capital', dx: 6, dy: -5 },
+        { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -5 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: false, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: false, position: 'top-right', sizePct: 20, showExtentBox: false },
+      },
+    }),
+  },
+  {
+    id: 'united_states',
+    label: 'United States Overview',
+    description: 'Albers Equal-Area projection with state boundaries and major U.S. cities.',
+    spec: makePresetSpec({
+      title: 'United States Overview',
+      showTitle: false,
+      projection: 'albers',
+      detailLevel: 'auto',
+      center: { lat: 38.5, lon: -96.0 },
+      span: { lonDeg: 58.0, latDeg: 32.0 },
+      page: {
+        preset: 'letter_landscape',
+        widthIn: 11.0,
+        heightIn: 8.5,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.0,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: true,
+        showGraticule: false,
+      },
+      highlightedCountries: [
+        {
+          id: '840',
+          name: 'United States of America',
+          fill: '#7a7d7a',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+      ],
+      cities: [
+        { id: 'dc', name: 'Washington, D.C.', lat: 38.9072, lon: -77.0369, style: 'capital', dx: 6, dy: 6 },
+        { id: 'nyc', name: 'New York', lat: 40.7128, lon: -74.006, style: 'dot', dx: 6, dy: -6 },
+        { id: 'chicago', name: 'Chicago', lat: 41.8781, lon: -87.6298, style: 'dot', dx: 6, dy: -5 },
+        { id: 'la', name: 'Los Angeles', lat: 34.0522, lon: -118.2437, style: 'dot', dx: -8, dy: 8 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 20, showExtentBox: true },
+      },
+    }),
+  },
+];
+
+export const GEOJSON_EXAMPLES = [
+  {
+    label: 'Ukraine National Boundary (geoBoundaries)',
+    url: 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/UKR/ADM0/geoBoundaries-UKR-ADM0_simplified.geojson',
+  },
+  {
+    label: 'Finland Boundary (World GeoJSON)',
+    url: 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries/FIN.geo.json',
+  },
+  {
+    label: 'Taiwan Boundary (World GeoJSON)',
+    url: 'https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries/TWN.geo.json',
+  },
+];

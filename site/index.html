@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dusty's Map Studio — AtlasForge</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body>
+  <div id="studio-shell" class="studio-shell">
+    <!-- Top Bar -->
+    <header class="topbar" role="banner">
+      <div class="topbar-brand">
+        <button id="btn-toggle-sidebar" class="icon-btn mobile-only" type="button" title="Toggle controls panel" aria-label="Toggle controls panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="16" cy="16" r="12" />
+            <ellipse cx="16" cy="16" rx="5.5" ry="12" />
+            <path d="M5 12h22M5 20h22" />
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Dusty's Map Studio</h1>
+          <span class="brand-sub">AtlasForge</span>
+        </div>
+        <span id="engine-status" class="engine-badge engine-standalone" title="Map engine mode">
+          Standalone Studio &bull; 300 DPI
+        </span>
+      </div>
+
+      <div class="topbar-center">
+        <label class="inline-select-wrap" for="preset-select">
+          <span class="sr-only">Quick Region Preset</span>
+          <select id="preset-select" title="Load a region preset">
+            <option value="">Load Region Preset...</option>
+          </select>
+        </label>
+
+        <div class="btn-group" role="group" aria-label="History">
+          <button id="btn-undo" class="btn btn-secondary btn-sm" type="button" title="Undo (Ctrl+Z)" disabled>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+            <span>Undo</span>
+          </button>
+          <button id="btn-redo" class="btn btn-secondary btn-sm" type="button" title="Redo (Ctrl+Y)" disabled>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+            <span>Redo</span>
+          </button>
+        </div>
+
+        <div class="btn-group" role="group" aria-label="Project">
+          <button id="btn-share" class="btn btn-secondary btn-sm" type="button" title="Copy shareable studio link">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span>Copy Share Link</span>
+          </button>
+          <button id="btn-save-json" class="btn btn-secondary btn-sm" type="button" title="Save project as .json file">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <span>Save Project</span>
+          </button>
+          <button id="btn-load-json" class="btn btn-secondary btn-sm" type="button" title="Load saved .json project">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>Load Project</span>
+          </button>
+          <input id="file-load-json" type="file" accept=".json,application/json" hidden />
+        </div>
+      </div>
+
+      <div class="topbar-export">
+        <label class="sr-only" for="export-format">Export Format</label>
+        <select id="export-format" title="Export file format">
+          <option value="png">PNG (300/600 DPI)</option>
+          <option value="jpeg">JPEG</option>
+          <option value="svg">Vector SVG</option>
+          <option value="pdf" disabled>PDF (Python Pro Only)</option>
+        </select>
+
+        <button id="btn-export" class="btn btn-primary" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download Map</span>
+        </button>
+
+        <button id="btn-export-pair" class="btn btn-accent" type="button" title="Download two maps: one with borders on, one with borders off">
+          <span>Download With &amp; No Borders</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="studio-workspace">
+      <!-- Left Sidebar -->
+      <aside id="sidebar" class="sidebar" aria-label="Map Controls">
+        <nav class="sidebar-tabs" role="tablist" aria-label="Control sections">
+          <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-tab="area">Area &amp; Page</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="colors">Colors &amp; Layers</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="features">Countries &amp; Pins</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="pro">Scale, Globe &amp; Pro</button>
+        </nav>
+
+        <div class="sidebar-body">
+          <!-- TAB 1: Area & Page -->
+          <section class="tab-panel active" id="tab-area" role="tabpanel">
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Find &amp; Frame Location</h2>
+                <span class="helper-pill">Worldwide</span>
+              </div>
+              <p class="helper-text">Search any city, country, or region, then click <strong>Frame Area</strong> or <strong>+ Pin</strong>.</p>
+              <form id="place-search-form" class="input-row">
+                <input id="place-search-input" type="search" placeholder="Search city, country, or region (e.g. Kyiv, Finland)..." autocomplete="off" />
+                <button id="btn-place-search" class="btn btn-primary btn-sm" type="submit">Search</button>
+              </form>
+              <div id="place-search-results" class="search-results" hidden></div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Page Size &amp; Print Resolution</h2>
+                <span id="pixel-dimensions-badge" class="pixel-badge">1380 &times; 2100 px</span>
+              </div>
+
+              <div class="field">
+                <label for="page-preset">Page Preset</label>
+                <select id="page-preset"></select>
+              </div>
+
+              <div class="field-grid-3">
+                <div class="field">
+                  <label for="page-width-in">Width (in)</label>
+                  <input id="page-width-in" type="number" step="0.1" min="1" max="40" />
+                </div>
+                <div class="field">
+                  <label for="page-height-in">Height (in)</label>
+                  <input id="page-height-in" type="number" step="0.1" min="1" max="40" />
+                </div>
+                <div class="field">
+                  <label for="page-dpi">Print DPI</label>
+                  <select id="page-dpi">
+                    <option value="150">150 DPI (Draft)</option>
+                    <option value="300">300 DPI (Book Print)</option>
+                    <option value="600">600 DPI (Ultra Crisp)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Projection &amp; Framing</h2>
+              </div>
+
+              <div class="field-grid-2">
+                <div class="field">
+                  <label for="map-projection">Map Projection</label>
+                  <select id="map-projection"></select>
+                </div>
+                <div class="field">
+                  <label for="map-detail-level">Coast Detail</label>
+                  <select id="map-detail-level">
+                    <option value="auto">Auto (Smart)</option>
+                    <option value="10m">10m (High Detail)</option>
+                    <option value="50m">50m (Balanced)</option>
+                    <option value="110m">110m (Fast Overview)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-grid-2">
+                <div class="field">
+                  <label for="center-lat">Center Lat (&deg;)</label>
+                  <input id="center-lat" type="number" step="0.1" min="-89.5" max="89.5" />
+                </div>
+                <div class="field">
+                  <label for="center-lon">Center Lon (&deg;)</label>
+                  <input id="center-lon" type="number" step="0.1" min="-180" max="180" />
+                </div>
+                <div class="field">
+                  <label for="span-lon">Width Span (&deg;)</label>
+                  <input id="span-lon" type="number" step="0.5" min="0.05" max="360" />
+                </div>
+                <div class="field">
+                  <label for="span-lat">Height Span (&deg;)</label>
+                  <input id="span-lat" type="number" step="0.5" min="0.05" max="175" />
+                </div>
+              </div>
+              <p class="helper-text subtle">Tip: Drag directly on the map to pan, or scroll to zoom in and out.</p>
+            </div>
+          </section>
+
+          <!-- TAB 2: Colors & Layers -->
+          <section class="tab-panel" id="tab-colors" role="tabpanel" hidden>
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Color Themes</h2>
+              </div>
+              <div id="theme-swatches" class="theme-grid"></div>
+
+              <div class="divider"></div>
+              <h3 class="subhead">Fine-Tune Palette</h3>
+              <div class="color-grid">
+                <label class="color-field" for="color-land">
+                  <span>Land</span>
+                  <input id="color-land" type="color" />
+                </label>
+                <label class="color-field" for="color-water">
+                  <span>Water</span>
+                  <input id="color-water" type="color" />
+                </label>
+                <label class="color-field" for="color-borders">
+                  <span>Borders</span>
+                  <input id="color-borders" type="color" />
+                </label>
+                <label class="color-field" for="color-coastline">
+                  <span>Coastline</span>
+                  <div class="color-combo">
+                    <input id="color-coastline" type="color" />
+                    <button id="btn-coastline-none" class="btn-chip" type="button" title="Toggle no coastline stroke">None</button>
+                  </div>
+                </label>
+                <label class="color-field" for="color-rivers">
+                  <span>Rivers</span>
+                  <input id="color-rivers" type="color" />
+                </label>
+                <label class="color-field" for="color-text">
+                  <span>Labels</span>
+                  <input id="color-text" type="color" />
+                </label>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Map Layers &amp; Borders</h2>
+              </div>
+
+              <div class="layer-block highlight-block">
+                <div class="toggle-row">
+                  <label class="switch-label" for="layer-show-borders">
+                    <input id="layer-show-borders" type="checkbox" />
+                    <span>National Borders (Borders On/Off)</span>
+                  </label>
+                </div>
+                <div class="field-grid-2 compact-row">
+                  <div class="field">
+                    <label for="layer-border-width">Width: <strong id="layer-border-width-val">1.0</strong> px</label>
+                    <input id="layer-border-width" type="range" min="0.2" max="5" step="0.1" />
+                  </div>
+                  <div class="field">
+                    <label for="layer-border-style">Border Style</label>
+                    <select id="layer-border-style">
+                      <option value="solid">Solid</option>
+                      <option value="dashed">Dashed</option>
+                      <option value="dotted">Dotted</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="toggle-list">
+                <label class="switch-label" for="layer-show-lakes">
+                  <input id="layer-show-lakes" type="checkbox" />
+                  <span>Lakes &amp; Inland Seas</span>
+                </label>
+
+                <div class="layer-inline-group">
+                  <label class="switch-label" for="layer-show-rivers">
+                    <input id="layer-show-rivers" type="checkbox" />
+                    <span>Major Rivers</span>
+                  </label>
+                  <div class="mini-range">
+                    <label class="sr-only" for="layer-river-width">River width</label>
+                    <input id="layer-river-width" type="range" min="0.2" max="4" step="0.1" title="River stroke width" />
+                    <span id="layer-river-width-val" class="mini-val">0.8</span>
+                  </div>
+                </div>
+
+                <label class="switch-label" for="layer-show-admin1">
+                  <input id="layer-show-admin1" type="checkbox" />
+                  <span>State / Province Lines (Admin-1)</span>
+                </label>
+
+                <div class="layer-inline-group">
+                  <label class="switch-label" for="layer-show-coastlines">
+                    <input id="layer-show-coastlines" type="checkbox" />
+                    <span>Coastline Stroke</span>
+                  </label>
+                  <div class="mini-range">
+                    <label class="sr-only" for="layer-coastline-width">Coastline width</label>
+                    <input id="layer-coastline-width" type="range" min="0.2" max="4" step="0.1" title="Coastline stroke width" />
+                    <span id="layer-coastline-width-val" class="mini-val">0.8</span>
+                  </div>
+                </div>
+
+                <div class="layer-inline-group">
+                  <label class="switch-label" for="layer-show-graticule">
+                    <input id="layer-show-graticule" type="checkbox" />
+                    <span>Lat / Lon Gridlines</span>
+                  </label>
+                  <select id="layer-graticule-step" class="mini-select" title="Gridline interval">
+                    <option value="5">5&deg;</option>
+                    <option value="10">10&deg;</option>
+                    <option value="15">15&deg;</option>
+                    <option value="30">30&deg;</option>
+                  </select>
+                </div>
+
+                <label class="switch-label" for="page-show-frame">
+                  <input id="page-show-frame" type="checkbox" />
+                  <span>Crisp Page Frame Border</span>
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 3: Countries & Pins -->
+          <section class="tab-panel" id="tab-features" role="tabpanel" hidden>
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Country Highlighter</h2>
+              </div>
+              <button id="btn-mode-country" class="btn btn-mode btn-full" type="button" aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+                <span>Click Map to Highlight Country</span>
+              </button>
+
+              <div class="field-stack">
+                <input id="country-filter-input" type="search" placeholder="Filter country list (e.g. Poland, Norway)..." />
+                <div class="input-row">
+                  <select id="country-select" aria-label="Select country to highlight"></select>
+                  <button id="btn-add-country" class="btn btn-secondary btn-sm" type="button">Add Country</button>
+                </div>
+              </div>
+
+              <div id="highlighted-countries-list" class="item-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Cities &amp; Map Pins</h2>
+              </div>
+              <div class="btn-stack-2">
+                <button id="btn-mode-pin" class="btn btn-mode" type="button" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>Click Map to Drop City Pin</span>
+                </button>
+                <button id="btn-auto-cities" class="btn btn-secondary" type="button">
+                  Auto-Add Major Cities in View
+                </button>
+              </div>
+              <div id="cities-list" class="item-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Custom GeoJSON Overlays</h2>
+              </div>
+              <p class="helper-text">Drop custom boundaries, battle lines, regions, or routes (.geojson / .json or URL).</p>
+              <div class="field-stack">
+                <button id="btn-upload-geojson" class="btn btn-secondary btn-full" type="button">
+                  Upload .geojson / .json File
+                </button>
+                <input id="file-upload-geojson" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden />
+
+                <div class="input-row">
+                  <input id="geojson-url-input" type="url" placeholder="Paste GeoJSON URL (https://...)" />
+                  <button id="btn-load-geojson-url" class="btn btn-secondary btn-sm" type="button">Load URL</button>
+                </div>
+
+                <div id="geojson-examples-row" class="example-chips"></div>
+              </div>
+
+              <div id="geojson-layers-list" class="item-list"></div>
+            </div>
+          </section>
+
+          <!-- TAB 4: Scale, Globe & Pro -->
+          <section class="tab-panel" id="tab-pro" role="tabpanel" hidden>
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Title Banner</h2>
+              </div>
+              <label class="switch-label" for="show-title">
+                <input id="show-title" type="checkbox" />
+                <span>Show Title Banner on Map</span>
+              </label>
+              <div class="field">
+                <label for="map-title">Title Text</label>
+                <input id="map-title" type="text" placeholder="Map title..." />
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Scale Bar</h2>
+              </div>
+              <label class="switch-label" for="orn-scale-enabled">
+                <input id="orn-scale-enabled" type="checkbox" />
+                <span>Show Scale Bar</span>
+              </label>
+              <div class="field-grid-2 compact-row">
+                <div class="field">
+                  <label for="orn-scale-units">Units</label>
+                  <select id="orn-scale-units">
+                    <option value="km">Kilometers (km)</option>
+                    <option value="mi">Miles (mi)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="orn-scale-pos">Corner</label>
+                  <select id="orn-scale-pos">
+                    <option value="bottom-left">Bottom Left</option>
+                    <option value="bottom-right">Bottom Right</option>
+                    <option value="top-left">Top Left</option>
+                    <option value="top-right">Top Right</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>3D Locator Globe Inset</h2>
+              </div>
+              <label class="switch-label" for="orn-globe-enabled">
+                <input id="orn-globe-enabled" type="checkbox" />
+                <span>Show 3D Locator Globe</span>
+              </label>
+              <div class="field-grid-2 compact-row">
+                <div class="field">
+                  <label for="orn-globe-pos">Corner</label>
+                  <select id="orn-globe-pos">
+                    <option value="top-right">Top Right</option>
+                    <option value="top-left">Top Left</option>
+                    <option value="bottom-right">Bottom Right</option>
+                    <option value="bottom-left">Bottom Left</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="orn-globe-size">Size: <strong id="orn-globe-size-val">22%</strong></label>
+                  <input id="orn-globe-size" type="range" min="10" max="40" step="1" />
+                </div>
+              </div>
+              <label class="switch-label compact-top" for="orn-globe-box">
+                <input id="orn-globe-box" type="checkbox" />
+                <span>Show Red/Highlight Region Box on Globe</span>
+              </label>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>North Arrow &amp; Legend</h2>
+              </div>
+              <div class="field-grid-2 compact-row">
+                <label class="switch-label" for="orn-north-enabled">
+                  <input id="orn-north-enabled" type="checkbox" />
+                  <span>North Arrow</span>
+                </label>
+                <select id="orn-north-pos" aria-label="North arrow corner">
+                  <option value="top-left">Top Left</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="bottom-right">Bottom Right</option>
+                </select>
+              </div>
+              <div class="field-grid-2 compact-row">
+                <label class="switch-label" for="orn-legend-enabled">
+                  <input id="orn-legend-enabled" type="checkbox" />
+                  <span>Legend Box</span>
+                </label>
+                <select id="orn-legend-pos" aria-label="Legend corner">
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="top-left">Top Left</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="pro-panel" class="panel-card pro-card">
+              <div class="card-header">
+                <h2>Python Pro Engine</h2>
+                <span id="pro-pill" class="helper-pill">Checking...</span>
+              </div>
+              <p id="pro-status-note" class="helper-text">
+                Standalone Studio runs 100% in your browser with PNG, JPEG, and Vector SVG exports. Connect the optional local Python Cartopy backend to unlock Contextily satellite/shaded-relief basemaps, true Vector PDF, and batch preset ZIP exports.
+              </p>
+              <fieldset id="pro-controls" class="pro-fieldset" disabled>
+                <div class="field">
+                  <label for="pro-basemap">Contextily Basemap Underlay</label>
+                  <select id="pro-basemap">
+                    <option value="none">None (Clean Vector Colors)</option>
+                    <option value="CartoDB.VoyagerNoLabels">CartoDB Voyager (No Labels)</option>
+                    <option value="CartoDB.PositronNoLabels">CartoDB Positron (No Labels)</option>
+                    <option value="Esri.WorldShadedRelief">Esri World Shaded Relief</option>
+                    <option value="Esri.WorldImagery">Esri Satellite Imagery</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="pro-basemap-opacity">Basemap Opacity: <strong id="pro-basemap-opacity-val">85%</strong></label>
+                  <input id="pro-basemap-opacity" type="range" min="0.1" max="1.0" step="0.05" />
+                </div>
+                <div class="btn-stack-vertical">
+                  <button id="btn-render-pro" class="btn btn-primary btn-full" type="button">
+                    Render via Python Pro
+                  </button>
+                  <button id="btn-export-batch-pro" class="btn btn-secondary btn-full" type="button">
+                    Export All Region Presets (.zip)
+                  </button>
+                </div>
+              </fieldset>
+            </div>
+          </section>
+        </div>
+      </aside>
+
+      <!-- Center / Right Map Canvas Stage -->
+      <main class="stage" aria-label="Interactive Map Preview">
+        <div class="stage-toolbar-top">
+          <div id="interaction-mode-badge" class="stage-pill mode-pan">
+            <span class="mode-dot"></span>
+            <span id="interaction-mode-text">Mode: Pan &amp; Zoom</span>
+            <button id="btn-exit-mode" class="btn-pill-exit" type="button" hidden>Done</button>
+          </div>
+
+          <button id="btn-ref-peek" class="stage-pill btn-toggle-pill" type="button" aria-pressed="false" title="Temporarily show reference city labels on screen only (never exported)">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Reference Labels Peek</span>
+          </button>
+        </div>
+
+        <div class="stage-viewport" id="stage-viewport">
+          <div class="paper-frame" id="paper-frame">
+            <canvas id="map-canvas" width="920" height="1400"></canvas>
+          </div>
+        </div>
+
+        <div class="stage-toolbar-bottom">
+          <div id="data-loading-pill" class="stage-pill loading-pill" hidden>
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="data-loading-text">Loading map data...</span>
+          </div>
+
+          <div id="cursor-coords" class="stage-pill coords-pill" title="Cursor coordinates">
+            48.50&deg; N, 31.20&deg; E
+          </div>
+
+          <div class="zoom-controls" role="group" aria-label="Zoom controls">
+            <button id="btn-zoom-in" class="zoom-btn" type="button" title="Zoom In (+)">+</button>
+            <button id="btn-zoom-out" class="zoom-btn" type="button" title="Zoom Out (&minus;)">&minus;</button>
+            <button id="btn-reset-view" class="zoom-btn zoom-reset" type="button" title="Reset framing">Reset View</button>
+          </div>
+        </div>
+
+        <div id="toast-container" class="toast-container" aria-live="polite"></div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
