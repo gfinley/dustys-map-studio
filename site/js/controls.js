@@ -6,9 +6,10 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=9';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=9';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=9';
+} from './schema.js?v=10';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=10';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=10';
+import { formatArea } from './shadow.js?v=10';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -35,6 +36,8 @@ const LABEL_OFFSETS = {
 
 let boundCallbacks = {};
 let fullCountryCatalog = [];
+let fullAdmin1Catalog = [];
+let activeShadowSourceType = 'country';
 
 function $(id) {
   return document.getElementById(id);
@@ -99,6 +102,10 @@ export function updateCursorCoordinates(lat, lon) {
 export function populateCountryCatalog(catalog, filterText = '') {
   if (Array.isArray(catalog)) {
     fullCountryCatalog = catalog;
+    populateGeoBoundariesCountrySelect(catalog);
+    if (activeShadowSourceType === 'country') {
+      populateShadowRegionCatalog(catalog, 'country', $('shadow-filter-input')?.value || '');
+    }
   }
   const select = $('country-select');
   if (!select) return;
@@ -124,6 +131,75 @@ export function populateCountryCatalog(catalog, filterText = '') {
     opt.value = country.id || country.name;
     opt.dataset.name = country.name;
     opt.textContent = country.name;
+    select.appendChild(opt);
+  }
+
+  if (prevVal && Array.from(select.options).some((o) => o.value === prevVal)) {
+    select.value = prevVal;
+  }
+}
+
+function populateGeoBoundariesCountrySelect(catalog) {
+  const select = $('geoboundaries-country');
+  if (!select || !Array.isArray(catalog) || !catalog.length) return;
+  const prevVal = select.value;
+  select.innerHTML = '';
+  for (const country of catalog) {
+    const opt = document.createElement('option');
+    opt.value = country.id || country.name;
+    opt.dataset.name = country.name;
+    opt.textContent = country.name;
+    select.appendChild(opt);
+  }
+  if (prevVal && Array.from(select.options).some((o) => o.value === prevVal)) {
+    select.value = prevVal;
+  } else {
+    const ukrOpt = Array.from(select.options).find((o) => o.value === '804');
+    if (ukrOpt) select.value = '804';
+  }
+}
+
+export function populateShadowRegionCatalog(catalog, sourceType = activeShadowSourceType, filterText = '') {
+  if (sourceType === 'admin1' && Array.isArray(catalog)) {
+    fullAdmin1Catalog = catalog;
+  } else if (sourceType === 'country' && Array.isArray(catalog)) {
+    fullCountryCatalog = catalog;
+  }
+  activeShadowSourceType = sourceType === 'admin1' ? 'admin1' : 'country';
+
+  $('btn-shadow-src-country')?.classList.toggle('active', activeShadowSourceType === 'country');
+  $('btn-shadow-src-admin1')?.classList.toggle('active', activeShadowSourceType === 'admin1');
+
+  const select = $('shadow-region-select');
+  if (!select) return;
+
+  const list = activeShadowSourceType === 'admin1' ? fullAdmin1Catalog : fullCountryCatalog;
+  const query = String(filterText || '').trim().toLowerCase();
+  const prevVal = select.value;
+  select.innerHTML = '';
+
+  const filtered = query
+    ? list.filter((item) => (item.label || item.name || '').toLowerCase().includes(query))
+    : list;
+
+  if (!filtered.length) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = list.length
+      ? 'No matching regions'
+      : activeShadowSourceType === 'admin1'
+        ? 'Loading states & provinces...'
+        : 'Loading country list...';
+    select.appendChild(opt);
+    return;
+  }
+
+  for (const item of filtered) {
+    const opt = document.createElement('option');
+    opt.value = item.id || item.name;
+    opt.dataset.name = item.name;
+    opt.dataset.sourceType = activeShadowSourceType;
+    opt.textContent = item.label || item.name;
     select.appendChild(opt);
   }
 
@@ -178,6 +254,216 @@ export function renderSearchResults(results, { onFrame, onPin } = {}) {
     row.append(title, sub, actions);
     box.appendChild(row);
   }
+}
+
+export function renderRegionShadowsList(spec, callbacks = boundCallbacks, shadowMetrics = null) {
+  const listEl = $('region-shadows-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  const shadows = spec.regionShadows || [];
+  const units = spec?.ornaments?.scaleBar?.units === 'mi' ? 'mi' : 'km';
+  if (!shadows.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent =
+      'No region shadows yet. Pick a country or state above and click + Shadow to compare its true size anywhere on the map.';
+    listEl.appendChild(empty);
+    return;
+  }
+
+  shadows.forEach((shadow, idx) => {
+    const card = document.createElement('div');
+    card.className = 'list-card';
+
+    const top = document.createElement('div');
+    top.className = 'list-card-top';
+
+    const visLabel = document.createElement('label');
+    visLabel.className = 'switch-label';
+    visLabel.style.minWidth = '0';
+    visLabel.style.flex = '1';
+
+    const visCheck = document.createElement('input');
+    visCheck.type = 'checkbox';
+    visCheck.checked = shadow.visible !== false;
+    visCheck.addEventListener('change', (e) => {
+      callbacks.onUpdateShadow?.(idx, { visible: e.target.checked });
+    });
+
+    const title = document.createElement('span');
+    title.className = 'list-card-title';
+    title.textContent = shadow.sourceName || shadow.sourceId || `Shadow ${idx + 1}`;
+    visLabel.append(visCheck, title);
+
+    const actionWrap = document.createElement('div');
+    actionWrap.className = 'shadow-actions-inline';
+
+    const centerBtn = document.createElement('button');
+    centerBtn.type = 'button';
+    centerBtn.className = 'btn-mini-ghost';
+    centerBtn.title = 'Snap this shadow to the current map center';
+    centerBtn.textContent = 'Center';
+    centerBtn.addEventListener('click', () => callbacks.onCenterShadow?.(idx));
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-danger-ghost';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => callbacks.onRemoveShadow?.(idx));
+
+    actionWrap.append(centerBtn, removeBtn);
+    top.append(visLabel, actionWrap);
+
+    // Geodesic area & live comparison ratio badges
+    const metrics = shadowMetrics?.get(shadow.id) || null;
+    if (metrics && metrics.areaKm2 > 0) {
+      const metricsRow = document.createElement('div');
+      metricsRow.className = 'shadow-metrics';
+
+      const areaBadge = document.createElement('span');
+      areaBadge.className = 'shadow-area-badge';
+      areaBadge.textContent = formatArea(metrics.areaKm2, units);
+      metricsRow.appendChild(areaBadge);
+
+      if (metrics.compareName && metrics.compareAreaKm2 > 0) {
+        const ratio = metrics.areaKm2 / metrics.compareAreaKm2;
+        const cmpBadge = document.createElement('span');
+        cmpBadge.className = 'shadow-compare-badge';
+        const ratioStr = ratio >= 10 ? ratio.toFixed(1) : ratio.toFixed(2);
+        cmpBadge.textContent = `${ratioStr}× vs. ${metrics.compareName}`;
+        cmpBadge.title = `${shadow.sourceName} is ${ratioStr}× the true area of ${metrics.compareName} (${formatArea(metrics.compareAreaKm2, units)})`;
+        metricsRow.appendChild(cmpBadge);
+      }
+
+      card.appendChild(metricsRow);
+    }
+
+    // Color, stroke, hatch row
+    const ctrls = document.createElement('div');
+    ctrls.className = 'list-card-controls';
+
+    const fillInput = document.createElement('input');
+    fillInput.type = 'color';
+    fillInput.title = 'Shadow fill color';
+    fillInput.value = safeHexColor(shadow.fill, '#dc2626');
+    fillInput.addEventListener('input', (e) => {
+      callbacks.onUpdateShadow?.(idx, { fill: e.target.value }, { commitHistory: false, skipDynamicLists: true });
+    });
+    fillInput.addEventListener('change', (e) => {
+      callbacks.onUpdateShadow?.(idx, { fill: e.target.value }, { commitHistory: true });
+    });
+
+    const strokeInput = document.createElement('input');
+    strokeInput.type = 'color';
+    strokeInput.title = 'Shadow outline color';
+    strokeInput.value = safeHexColor(shadow.stroke, '#7f1d1d');
+    strokeInput.addEventListener('input', (e) => {
+      callbacks.onUpdateShadow?.(idx, { stroke: e.target.value }, { commitHistory: false, skipDynamicLists: true });
+    });
+    strokeInput.addEventListener('change', (e) => {
+      callbacks.onUpdateShadow?.(idx, { stroke: e.target.value }, { commitHistory: true });
+    });
+
+    const hatchSelect = document.createElement('select');
+    hatchSelect.title = 'Shadow hatch pattern';
+    for (const h of HATCH_STYLES) {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = HATCH_LABELS[h] || h;
+      hatchSelect.appendChild(opt);
+    }
+    hatchSelect.value = HATCH_STYLES.includes(shadow.hatch) ? shadow.hatch : 'none';
+    hatchSelect.addEventListener('change', (e) => {
+      callbacks.onUpdateShadow?.(idx, { hatch: e.target.value });
+    });
+
+    const coordSpan = document.createElement('span');
+    coordSpan.className = 'coord-micro';
+    coordSpan.textContent = `${Number(shadow.targetLat).toFixed(1)}°, ${Number(shadow.targetLon).toFixed(1)}°`;
+
+    ctrls.append(fillInput, strokeInput, hatchSelect, coordSpan);
+
+    // Opacity slider
+    const opRow = document.createElement('div');
+    opRow.className = 'shadow-slider-row';
+    const opLbl = document.createElement('span');
+    opLbl.className = 'shadow-slider-label';
+    opLbl.textContent = 'Opacity';
+    const opInput = document.createElement('input');
+    opInput.type = 'range';
+    opInput.min = '0.05';
+    opInput.max = '0.90';
+    opInput.step = '0.05';
+    opInput.value = String(shadow.opacity ?? 0.35);
+    const opVal = document.createElement('span');
+    opVal.className = 'mini-val';
+    opVal.textContent = `${Math.round((shadow.opacity ?? 0.35) * 100)}%`;
+    opInput.addEventListener('input', (e) => {
+      const val = Number(e.target.value);
+      opVal.textContent = `${Math.round(val * 100)}%`;
+      callbacks.onUpdateShadow?.(idx, { opacity: val }, { commitHistory: false, skipDynamicLists: true });
+    });
+    opInput.addEventListener('change', (e) => {
+      const val = Number(e.target.value);
+      opVal.textContent = `${Math.round(val * 100)}%`;
+      callbacks.onUpdateShadow?.(idx, { opacity: val }, { commitHistory: true });
+    });
+    opRow.append(opLbl, opInput, opVal);
+
+    // Rotation slider
+    const rotRow = document.createElement('div');
+    rotRow.className = 'shadow-slider-row';
+    const rotLbl = document.createElement('span');
+    rotLbl.className = 'shadow-slider-label';
+    rotLbl.textContent = 'Rotate';
+    const rotInput = document.createElement('input');
+    rotInput.type = 'range';
+    rotInput.min = '-180';
+    rotInput.max = '180';
+    rotInput.step = '1';
+    rotInput.value = String(Math.round(Number(shadow.rotationDeg) || 0));
+    const rotVal = document.createElement('span');
+    rotVal.className = 'mini-val';
+    rotVal.textContent = `${Math.round(Number(shadow.rotationDeg) || 0)}°`;
+    rotInput.addEventListener('input', (e) => {
+      const val = Number(e.target.value);
+      rotVal.textContent = `${Math.round(val)}°`;
+      callbacks.onUpdateShadow?.(idx, { rotationDeg: val }, { commitHistory: false, skipDynamicLists: true });
+    });
+    rotInput.addEventListener('change', (e) => {
+      const val = Number(e.target.value);
+      rotVal.textContent = `${Math.round(val)}°`;
+      callbacks.onUpdateShadow?.(idx, { rotationDeg: val }, { commitHistory: true });
+    });
+    rotRow.append(rotLbl, rotInput, rotVal);
+
+    // Compact toggles: Dashed, Label, Area
+    const togglesRow = document.createElement('div');
+    togglesRow.className = 'shadow-toggles-row';
+    const makeMiniToggle = (labelText, checked, key) => {
+      const lbl = document.createElement('label');
+      lbl.className = 'switch-label';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = checked;
+      cb.addEventListener('change', (e) => {
+        callbacks.onUpdateShadow?.(idx, { [key]: e.target.checked });
+      });
+      const sp = document.createElement('span');
+      sp.textContent = labelText;
+      lbl.append(cb, sp);
+      return lbl;
+    };
+    togglesRow.append(
+      makeMiniToggle('Dashed', shadow.dashed !== false, 'dashed'),
+      makeMiniToggle('Label', shadow.showLabel !== false, 'showLabel'),
+      makeMiniToggle('Area', shadow.showArea !== false, 'showArea'),
+    );
+
+    card.append(top, ctrls, opRow, rotRow, togglesRow);
+    listEl.appendChild(card);
+  });
 }
 
 export function renderCountryHighlightsList(spec, callbacks = boundCallbacks) {
@@ -700,6 +986,8 @@ export function renderControls(callbacks) {
   bindColor('color-borders', 'borders');
   bindColor('color-rivers', 'rivers');
   bindColor('color-text', 'text');
+  bindColor('color-bathymetry', 'bathymetry');
+  bindColor('color-urban', 'urban');
 
   $('color-admin1')?.addEventListener('input', (e) => {
     boundCallbacks.onPatchSpec?.(
@@ -734,7 +1022,10 @@ export function renderControls(callbacks) {
     $(id)?.addEventListener('change', (e) => fn(e.target.checked));
   };
   bindCheck('layer-show-borders', (v) => boundCallbacks.onPatchSpec?.({ layers: { showBorders: v } }));
+  bindCheck('layer-show-minor-islands', (v) => boundCallbacks.onPatchSpec?.({ layers: { showMinorIslands: v } }));
   bindCheck('layer-show-lakes', (v) => boundCallbacks.onPatchSpec?.({ layers: { showLakes: v } }));
+  bindCheck('layer-show-bathymetry', (v) => boundCallbacks.onPatchSpec?.({ layers: { showBathymetry: v } }));
+  bindCheck('layer-show-urban', (v) => boundCallbacks.onPatchSpec?.({ layers: { showUrbanAreas: v } }));
   bindCheck('layer-show-rivers', (v) => boundCallbacks.onPatchSpec?.({ layers: { showRivers: v } }));
   bindCheck('layer-show-admin1', (v) => boundCallbacks.onPatchSpec?.({ layers: { showAdmin1: v } }));
   bindCheck('layer-show-coastlines', (v) => boundCallbacks.onPatchSpec?.({ layers: { showCoastlines: v } }));
@@ -784,7 +1075,40 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ layers: { graticuleStepDeg: Number(e.target.value) || 10 } });
   });
 
-  // Tab 3: Countries, Pins & GeoJSON
+  $('btn-load-geoboundaries')?.addEventListener('click', () => {
+    const sel = $('geoboundaries-country');
+    const opt = sel?.selectedOptions?.[0];
+    const level = $('geoboundaries-level')?.value || 'ADM1';
+    if (!opt || !opt.value) return;
+    boundCallbacks.onLoadGeoBoundaries?.(opt.value, opt.dataset.name || opt.textContent, level);
+  });
+
+  // Tab 3: Region Shadows, Countries, Pins & GeoJSON
+  $('btn-shadow-src-country')?.addEventListener('click', () => {
+    populateShadowRegionCatalog(null, 'country', $('shadow-filter-input')?.value || '');
+    boundCallbacks.onSwitchShadowSourceType?.('country');
+  });
+  $('btn-shadow-src-admin1')?.addEventListener('click', () => {
+    populateShadowRegionCatalog(null, 'admin1', $('shadow-filter-input')?.value || '');
+    boundCallbacks.onSwitchShadowSourceType?.('admin1');
+  });
+  $('shadow-filter-input')?.addEventListener('input', (e) => {
+    populateShadowRegionCatalog(null, activeShadowSourceType, e.target.value);
+  });
+  $('btn-add-shadow')?.addEventListener('click', () => {
+    const select = $('shadow-region-select');
+    const opt = select?.selectedOptions?.[0];
+    if (!opt || !opt.value) return;
+    boundCallbacks.onAddShadow?.(
+      opt.dataset.sourceType || activeShadowSourceType,
+      opt.value,
+      opt.dataset.name || opt.textContent,
+    );
+  });
+  $('btn-mode-shadow')?.addEventListener('click', () => {
+    boundCallbacks.onToggleMode?.('shadow');
+  });
+
   $('btn-mode-country')?.addEventListener('click', () => {
     boundCallbacks.onToggleMode?.('country');
   });
@@ -895,6 +1219,9 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ ornaments: { legend: { position: e.target.value } } });
   });
 
+  $('pro-coastline-engine')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ pro: { coastlineEngine: e.target.value } });
+  });
   $('pro-basemap')?.addEventListener('change', (e) => {
     boundCallbacks.onPatchSpec?.({ pro: { basemapProvider: e.target.value } });
   });
@@ -928,6 +1255,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     refPeek = false,
     activePresetId = '',
     skipDynamicLists = false,
+    shadowMetrics = null,
   } = uiState;
 
   // Top bar
@@ -1016,6 +1344,8 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('color-rivers')) $('color-rivers').value = safeHexColor(spec.colors.rivers, '#73a9ca');
   if ($('color-text')) $('color-text').value = safeHexColor(spec.colors.text, '#111111');
   if ($('color-admin1')) $('color-admin1').value = safeHexColor(spec.colors.admin1, '#737373');
+  if ($('color-bathymetry')) $('color-bathymetry').value = safeHexColor(spec.colors.bathymetry, '#bfbdbd');
+  if ($('color-urban')) $('color-urban').value = safeHexColor(spec.colors.urban, '#636363');
 
   // Layers
   if ($('layer-show-borders')) $('layer-show-borders').checked = Boolean(spec.layers.showBorders);
@@ -1023,7 +1353,10 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('layer-border-width-val')) $('layer-border-width-val').textContent = Number(spec.layers.borderWidth).toFixed(1);
   if ($('layer-border-style')) $('layer-border-style').value = spec.layers.borderStyle;
 
+  if ($('layer-show-minor-islands')) $('layer-show-minor-islands').checked = spec.layers.showMinorIslands !== false;
   if ($('layer-show-lakes')) $('layer-show-lakes').checked = Boolean(spec.layers.showLakes);
+  if ($('layer-show-bathymetry')) $('layer-show-bathymetry').checked = Boolean(spec.layers.showBathymetry);
+  if ($('layer-show-urban')) $('layer-show-urban').checked = Boolean(spec.layers.showUrbanAreas);
   if ($('layer-show-rivers')) $('layer-show-rivers').checked = Boolean(spec.layers.showRivers);
   if ($('layer-river-width')) $('layer-river-width').value = String(spec.layers.riverWidth);
   if ($('layer-river-width-val')) $('layer-river-width-val').textContent = Number(spec.layers.riverWidth).toFixed(1);
@@ -1101,6 +1434,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('orn-legend-pos')) $('orn-legend-pos').value = legend.position;
 
   // Pro options
+  if ($('pro-coastline-engine')) $('pro-coastline-engine').value = spec.pro?.coastlineEngine || 'auto';
   if ($('pro-basemap')) $('pro-basemap').value = spec.pro?.basemapProvider || 'none';
   if ($('pro-basemap-opacity')) $('pro-basemap-opacity').value = String(spec.pro?.basemapOpacity ?? 0.85);
   if ($('pro-basemap-opacity-val')) {
@@ -1110,6 +1444,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   // Interaction mode & Reference peek pills
   const countryModeBtn = $('btn-mode-country');
   const pinModeBtn = $('btn-mode-pin');
+  const shadowModeBtn = $('btn-mode-shadow');
   if (countryModeBtn) {
     countryModeBtn.classList.toggle('active', mode === 'country');
     countryModeBtn.setAttribute('aria-pressed', String(mode === 'country'));
@@ -1117,6 +1452,10 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if (pinModeBtn) {
     pinModeBtn.classList.toggle('active', mode === 'pin');
     pinModeBtn.setAttribute('aria-pressed', String(mode === 'pin'));
+  }
+  if (shadowModeBtn) {
+    shadowModeBtn.classList.toggle('active', mode === 'shadow');
+    shadowModeBtn.setAttribute('aria-pressed', String(mode === 'shadow'));
   }
 
   const modeBadge = $('interaction-mode-badge');
@@ -1129,12 +1468,17 @@ export function syncControlsFromSpec(spec, uiState = {}) {
       modeText.textContent = 'Mode: Click Map to Highlight Country';
     } else if (mode === 'pin') {
       modeText.textContent = 'Mode: Click Map to Drop Pin';
+    } else if (mode === 'shadow') {
+      modeText.textContent = 'Mode: Drag Shadow on Map to Compare';
     } else {
       modeText.textContent = 'Mode: Pan & Zoom';
     }
   }
   if (exitBtn) exitBtn.hidden = mode === 'pan';
-  if (canvas) canvas.classList.toggle('mode-crosshair', mode !== 'pan');
+  if (canvas) {
+    canvas.classList.toggle('mode-crosshair', mode === 'country' || mode === 'pin');
+    canvas.classList.toggle('mode-move', mode === 'shadow');
+  }
 
   const peekBtn = $('btn-ref-peek');
   if (peekBtn) {
@@ -1144,6 +1488,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
 
   // Dynamic lists (skip rebuild mid-slider/picker drag to preserve native input capture)
   if (!skipDynamicLists) {
+    renderRegionShadowsList(spec, boundCallbacks, shadowMetrics);
     renderCountryHighlightsList(spec, boundCallbacks);
     renderCitiesList(spec, boundCallbacks);
     renderGeoJsonLayersList(spec, boundCallbacks);

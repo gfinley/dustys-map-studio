@@ -378,6 +378,101 @@ class TestBackendAPI(unittest.TestCase):
                 f"Expected vector path glyphs inside {city_group_id}",
             )
 
+    def test_region_shadow_preserves_true_geodesic_area_and_renders(self) -> None:
+        """Moving Greenland from ~72N to Equator preserves exact geodesic area and renders cleanly."""
+        from backend.renderer import (
+            _load_countries_index,
+            _match_country_geometries,
+            compute_geodesic_area_km2,
+            transform_shadow_geometries,
+        )
+        from backend.schemas import HighlightedCountry
+
+        countries = _load_countries_index("50m")
+        greenland_geoms = _match_country_geometries(
+            HighlightedCountry(id="304", name="Greenland"), countries
+        )
+        self.assertTrue(greenland_geoms, "Expected Greenland geometry in 50m Natural Earth")
+
+        orig_area = compute_geodesic_area_km2(greenland_geoms)
+        transformed, reported_area = transform_shadow_geometries(
+            greenland_geoms, target_lon=20.0, target_lat=0.0, rotation_deg=35.0
+        )
+        new_area = compute_geodesic_area_km2(transformed)
+
+        self.assertGreater(orig_area, 2_000_000.0)
+        self.assertAlmostEqual(reported_area, orig_area, delta=1.0)
+        rel_err = abs(new_area - orig_area) / orig_area
+        self.assertLess(
+            rel_err,
+            0.015,
+            f"Expected geodesic area preservation within 1.5%, got orig={orig_area:.1f} vs new={new_area:.1f}",
+        )
+
+        # Render PNG and SVG with both a Country shadow (Ukraine over Texas) and Admin-1 shadow (Texas over Ukraine)
+        spec = MapSpec.model_validate(
+            {
+                "title": "Ukraine vs Texas True Size",
+                "projection": "mercator",
+                "detailLevel": "50m",
+                "center": {"lat": 32.0, "lon": -99.0},
+                "span": {"lonDeg": 32.0, "latDeg": 22.0},
+                "page": {"widthIn": 7.0, "heightIn": 4.6, "dpi": 100},
+                "layers": {"showAdmin1": True, "showUrbanAreas": True},
+                "regionShadows": [
+                    {
+                        "id": "sh_ukr",
+                        "sourceType": "country",
+                        "sourceId": "804",
+                        "sourceName": "Ukraine",
+                        "targetLat": 31.2,
+                        "targetLon": -99.5,
+                        "rotationDeg": 12.0,
+                        "fill": "#dc2626",
+                        "stroke": "#7f1d1d",
+                        "opacity": 0.4,
+                        "dashed": True,
+                        "showLabel": True,
+                        "showArea": True,
+                    },
+                    {
+                        "id": "sh_tx",
+                        "sourceType": "admin1",
+                        "sourceId": "US-TX",
+                        "sourceName": "Texas",
+                        "targetLat": 33.0,
+                        "targetLon": -85.0,
+                        "rotationDeg": -10.0,
+                        "fill": "#2563eb",
+                        "stroke": "#1e3a8a",
+                        "opacity": 0.35,
+                        "showLabel": True,
+                        "showArea": True,
+                    },
+                ],
+                "ornaments": {
+                    "legend": {"enabled": True, "position": "bottom-right"},
+                    "locatorGlobe": {"enabled": False},
+                },
+            }
+        )
+        png_bytes = render_map(spec, "png")
+        self.assertTrue(png_bytes.startswith(b"\x89PNG"))
+        with Image.open(BytesIO(png_bytes)) as img:
+            self.assertEqual(img.size, (700, 460))
+
+        svg_bytes = render_map(spec, "svg")
+        svg_root = ET.fromstring(svg_bytes)
+        self.assertTrue(svg_root.tag.endswith("svg"))
+
+    def test_health_advertises_fidelity_and_shadow_features(self) -> None:
+        """GET /api/health reports ultra-gshhs fidelity and region-shadows capability."""
+        resp = self.client.get("/api/health")
+        self.assertEqual(resp.status_code, 200)
+        payload = resp.json()
+        self.assertIn("ultra-gshhs", payload.get("fidelity", []))
+        self.assertIn("region-shadows", payload.get("features", []))
+
 
 if __name__ == "__main__":
     unittest.main()

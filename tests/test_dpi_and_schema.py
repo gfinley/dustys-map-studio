@@ -214,6 +214,76 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
                 self.assertEqual(size, (1380, 2100))
                 self.assertEqual(dpi, (300, 300))
 
+    def test_fidelity_and_region_shadow_schema_validation(self) -> None:
+        """Ultra detail level, GSHHS coastline engine, fidelity layers, and regionShadows validate cleanly."""
+        spec = MapSpec.model_validate(
+            {
+                "detailLevel": "ultra",
+                "layers": {
+                    "showMinorIslands": True,
+                    "showBathymetry": True,
+                    "showUrbanAreas": True,
+                },
+                "pro": {
+                    "coastlineEngine": "gshhs_high",
+                    "basemapProvider": "OpenTopoMap",
+                    "basemapOpacity": 0.75,
+                },
+                "regionShadows": [
+                    {
+                        "id": "shadow_ukr_over_tx",
+                        "sourceType": "country",
+                        "sourceId": "804",
+                        "sourceName": "Ukraine",
+                        "targetLat": 31.2,
+                        "targetLon": -99.5,
+                        "rotationDeg": 15.0,
+                        "fill": "#dc2626",
+                        "stroke": "#7f1d1d",
+                        "opacity": 0.4,
+                        "dashed": True,
+                        "hatch": "diagonal",
+                        "showLabel": True,
+                        "showArea": True,
+                    },
+                    {
+                        "id": "shadow_tx_over_ukr",
+                        "sourceType": "admin1",
+                        "sourceId": "US-TX",
+                        "sourceName": "Texas",
+                        "targetLat": 48.5,
+                        "targetLon": 31.2,
+                        "rotationDeg": -20.0,
+                    },
+                ],
+            }
+        )
+        self.assertEqual(spec.detailLevel, "ultra")
+        self.assertTrue(spec.layers.showMinorIslands)
+        self.assertTrue(spec.layers.showBathymetry)
+        self.assertTrue(spec.layers.showUrbanAreas)
+        self.assertEqual(spec.pro.coastlineEngine, "gshhs_high")
+        self.assertEqual(spec.pro.basemapProvider, "OpenTopoMap")
+        self.assertEqual(len(spec.regionShadows), 2)
+        self.assertEqual(spec.regionShadows[0].sourceName, "Ukraine")
+        self.assertAlmostEqual(spec.regionShadows[0].rotationDeg, 15.0)
+        self.assertEqual(spec.regionShadows[1].sourceType, "admin1")
+        self.assertEqual(spec.regionShadows[1].sourceName, "Texas")
+
+    def test_shadow_js_exists_and_exports_contract(self) -> None:
+        """site/js/shadow.js exists and exports spherical rotation and hit-test utilities."""
+        shadow_js = SITE_DIR / "js" / "shadow.js"
+        self.assertTrue(shadow_js.is_file(), f"Missing {shadow_js}")
+        content = shadow_js.read_text(encoding="utf-8")
+        for symbol in (
+            "export function buildSphericalRotationMatrix",
+            "export function computeRegionAreaKm2",
+            "export function buildTransformedShadow",
+            "export function hitTestShadow",
+            "export function findUnderlyingCountryAt",
+        ):
+            self.assertIn(symbol, content)
+
 
 if __name__ == "__main__":
     unittest.main()

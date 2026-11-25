@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - preview
   workflow_dispatch:
 
 permissions:
@@ -22,8 +23,29 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout main (production site)
         uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-repo
+
+      - name: Checkout preview branch (staging site)
+        id: checkout-preview
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: preview
+          path: preview-repo
+
+      - name: Assemble production (/) and preview (/preview/) sites
+        run: |
+          mkdir -p _pages
+          cp -r main-repo/site/. _pages/
+          if [ -d preview-repo/site ]; then
+            mkdir -p _pages/preview
+            cp -r preview-repo/site/. _pages/preview/
+          fi
+          touch _pages/.nojekyll
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -31,7 +53,7 @@ jobs:
       - name: Upload static site artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'site'
+          path: '_pages'
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -6,21 +6,25 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=9';
+} from './schema.js?v=10';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
+  fetchGeoBoundariesLayer,
+  getAdmin1Catalog,
   getCitiesInBounds,
   getCountryCatalog,
+  loadAdmin1Polygons,
   resolveAdmin1Scale,
+  resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=9';
+} from './data-loader.js?v=10';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=9';
+} from './cartography.js?v=10';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -29,21 +33,39 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=9';
-import { REGION_PRESETS } from './presets.js?v=9';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=9';
+} from './exporter.js?v=10';
+import { REGION_PRESETS } from './presets.js?v=10';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=10';
 import {
   populateCountryCatalog,
+  populateShadowRegionCatalog,
   renderControls,
   renderSearchResults,
   setLoadingProgress,
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=9';
+} from './controls.js?v=10';
+import {
+  computeRegionAreaKm2,
+  findUnderlyingCountryAt,
+  hitTestShadow,
+  resolveShadowSourceFeature,
+} from './shadow.js?v=10';
 
-const STORAGE_KEY = 'dusty_mapmaker_last_spec';
+const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
+const STORAGE_KEY = IS_PREVIEW_PATH
+  ? 'dusty_mapmaker_last_spec:preview'
+  : 'dusty_mapmaker_last_spec';
 const MAX_HISTORY = 40;
+
+const SHADOW_PALETTE = [
+  { fill: '#dc2626', stroke: '#7f1d1d' },
+  { fill: '#2563eb', stroke: '#1e3a8a' },
+  { fill: '#d97706', stroke: '#78350f' },
+  { fill: '#059669', stroke: '#064e3b' },
+  { fill: '#7c3aed', stroke: '#4c1d95' },
+];
 
 const VALID_GEOJSON_TYPES = new Set([
   'FeatureCollection',
@@ -63,9 +85,12 @@ const state = {
   historyIndex: -1,
   datasets: null,
   fastDatasets: null,
+  admin1Polygons: null,
   countryCatalog: [],
+  admin1Catalog: [],
   lastProjection: null,
-  mode: 'pan', // 'pan' | 'country' | 'pin'
+  renderedShadows: [],
+  mode: 'pan', // 'pan' | 'country' | 'pin' | 'shadow'
   refPeek: false,
   proAvailable: false,
   proStatusText: '',
@@ -161,6 +186,52 @@ function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynami
   commitSpec(merged, { commitHistory, keepPreset, skipDynamicLists });
 }
 
+function computeShadowMetrics() {
+  const shadows = state.spec?.regionShadows || [];
+  const datasets = state.datasets;
+  if (!shadows.length || !datasets) return null;
+
+  const map = new Map();
+  const activeDs = {
+    ...datasets,
+    admin1Polygons: datasets.admin1Polygons || state.admin1Polygons || null,
+  };
+
+  for (let i = 0; i < shadows.length; i += 1) {
+    const sh = shadows[i];
+    const srcFeat = resolveShadowSourceFeature(sh, activeDs);
+    if (!srcFeat) continue;
+    const areaKm2 = computeRegionAreaKm2(srcFeat);
+    let compareName = '';
+    let compareAreaKm2 = 0;
+
+    // First compare against the country directly beneath the shadow anchor
+    const under = findUnderlyingCountryAt(activeDs, sh.targetLon, sh.targetLat);
+    if (
+      under &&
+      under.areaKm2 > 0 &&
+      under.name.toLowerCase() !== String(sh.sourceName || '').toLowerCase()
+    ) {
+      compareName = under.name;
+      compareAreaKm2 = under.areaKm2;
+    } else if (Array.isArray(state.spec?.highlightedCountries) && state.spec.highlightedCountries.length > 0) {
+      // Otherwise fall back to the first highlighted country if different
+      const hc = state.spec.highlightedCountries[0];
+      const hcFeat = resolveShadowSourceFeature(
+        { sourceType: 'country', sourceId: hc.id, sourceName: hc.name },
+        activeDs,
+      );
+      if (hcFeat && String(hc.name || '').toLowerCase() !== String(sh.sourceName || '').toLowerCase()) {
+        compareName = hc.name || hc.id;
+        compareAreaKm2 = computeRegionAreaKm2(hcFeat);
+      }
+    }
+
+    map.set(sh.id, { areaKm2, compareName, compareAreaKm2 });
+  }
+  return map;
+}
+
 function syncAllUi({ skipDynamicLists = false } = {}) {
   syncControlsFromSpec(state.spec, {
     canUndo: state.historyIndex > 0,
@@ -171,6 +242,7 @@ function syncAllUi({ skipDynamicLists = false } = {}) {
     refPeek: state.refPeek,
     activePresetId: state.activePresetId,
     skipDynamicLists,
+    shadowMetrics: skipDynamicLists ? null : computeShadowMetrics(),
   });
 }
 
@@ -247,6 +319,20 @@ function syncCountryCatalog(dataset) {
     const filterText = document.getElementById('country-filter-input')?.value || '';
     populateCountryCatalog(state.countryCatalog, filterText);
   }
+  if (dataset.admin1Polygons && !state.admin1Polygons) {
+    state.admin1Polygons = dataset.admin1Polygons;
+    syncAdmin1Catalog(dataset.admin1Polygons);
+  }
+}
+
+function syncAdmin1Catalog(admin1Polygons) {
+  if (!admin1Polygons) return;
+  const next = getAdmin1Catalog({ admin1Polygons });
+  if (next.length) {
+    state.admin1Catalog = next;
+    const filterText = document.getElementById('shadow-filter-input')?.value || '';
+    populateShadowRegionCatalog(state.admin1Catalog, 'admin1', filterText);
+  }
 }
 
 function updateFastDatasetsCache(loaded) {
@@ -257,8 +343,12 @@ function updateFastDatasetsCache(loaded) {
     ...loaded,
     lakes: loaded.lakes || prev?.lakes || null,
     rivers: loaded.rivers || prev?.rivers || null,
+    bathymetry200: loaded.bathymetry200 || prev?.bathymetry200 || null,
+    bathymetry1000: loaded.bathymetry1000 || prev?.bathymetry1000 || null,
+    urbanAreas: loaded.urbanAreas || prev?.urbanAreas || null,
     admin1: loaded.admin1 || prev?.admin1 || null,
     admin1Resolution: loaded.admin1 ? loaded.admin1Resolution : (prev?.admin1Resolution || null),
+    admin1Polygons: loaded.admin1Polygons || state.admin1Polygons || prev?.admin1Polygons || null,
     populatedPlaces: loaded.populatedPlaces || prev?.populatedPlaces || null,
   };
 }
@@ -335,22 +425,30 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
 }
 
 function getActiveRenderDatasets() {
+  const admin1Polygons = state.datasets?.admin1Polygons || state.admin1Polygons || null;
   if (state.isInteracting && state.fastDatasets) {
     const res = state.datasets?.resolution;
     const spanLon = Number(state.spec?.span?.lonDeg || 24);
-    if (res === '10m' || (res === '110m' && spanLon <= 95)) {
+    if (res === '10m' || res === 'ultra' || (res === '110m' && spanLon <= 95)) {
       return {
         ...state.fastDatasets,
         rivers: state.fastDatasets.rivers || null,
+        bathymetry200: state.fastDatasets.bathymetry200 || state.datasets?.bathymetry200 || null,
+        bathymetry1000: state.fastDatasets.bathymetry1000 || state.datasets?.bathymetry1000 || null,
+        urbanAreas: state.fastDatasets.urbanAreas || state.datasets?.urbanAreas || null,
         admin1: state.fastDatasets.admin1 || state.datasets?.admin1 || null,
         admin1Resolution: state.fastDatasets.admin1
           ? state.fastDatasets.admin1Resolution
           : (state.datasets?.admin1Resolution || null),
+        admin1Polygons,
         populatedPlaces: state.fastDatasets.populatedPlaces || state.datasets?.populatedPlaces || null,
       };
     }
   }
-  return state.datasets;
+  if (!state.datasets) return null;
+  return admin1Polygons && !state.datasets.admin1Polygons
+    ? { ...state.datasets, admin1Polygons }
+    : state.datasets;
 }
 
 function renderNow() {
@@ -366,6 +464,7 @@ function renderNow() {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     state.lastProjection = buildProjection(state.spec, canvas.width, canvas.height);
+    state.renderedShadows = [];
     return;
   }
 
@@ -374,6 +473,7 @@ function renderNow() {
     interactive: state.isInteracting,
   });
   state.lastProjection = result?.projection || buildProjection(state.spec, canvas.width, canvas.height);
+  state.renderedShadows = Array.isArray(result?.renderedShadows) ? result.renderedShadows : [];
 
   if (state.refPeek) {
     drawReferencePeekOverlay(canvas, state.lastProjection, activeDatasets);
@@ -390,17 +490,28 @@ function datasetSatisfiesSpec(datasets, spec, needPlaces) {
   if (!datasets) return false;
   const neededRes = resolveResolution(spec);
   if (datasets.resolution !== neededRes) return false;
-  const needFineHydro =
-    spec.detailLevel === '10m' &&
-    Math.max(Number(spec.span?.lonDeg) || 24, Number(spec.span?.latDeg) || 14) <= 4;
+  const maxSpan = Math.max(Number(spec.span?.lonDeg) || 24, Number(spec.span?.latDeg) || 14);
+  const needFineHydro = neededRes === 'ultra' || (spec.detailLevel === '10m' && maxSpan <= 4);
   if (needFineHydro && !datasets.fineHydrology) return false;
+  if (spec.layers?.showMinorIslands !== false && (neededRes === '10m' || neededRes === 'ultra') && !datasets.minorIslands) {
+    return false;
+  }
   if (spec.layers?.showLakes !== false && !datasets.lakes) return false;
   if (spec.layers?.showRivers && !datasets.rivers) return false;
+  if (spec.layers?.showBathymetry && !datasets.bathymetry200) return false;
+  if (spec.layers?.showUrbanAreas && !datasets.urbanAreas) return false;
   if (spec.layers?.showAdmin1) {
     if (!datasets.admin1) return false;
     if (datasets.admin1Resolution !== resolveAdmin1Scale(spec)) return false;
   }
-  if (needPlaces && !datasets.populatedPlaces) return false;
+  const needAdmin1Polygons = Array.isArray(spec.regionShadows)
+    && spec.regionShadows.some((s) => s && s.sourceType === 'admin1');
+  if (needAdmin1Polygons && !datasets.admin1Polygons && !state.admin1Polygons) return false;
+  if (needPlaces) {
+    if (!datasets.populatedPlaces) return false;
+    const want10mPlaces = neededRes === 'ultra' || (neededRes === '10m' && maxSpan <= 12);
+    if (want10mPlaces && datasets.placesResolution !== '10m') return false;
+  }
   return true;
 }
 
@@ -408,14 +519,21 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
   const spec = state.spec;
   if (!spec) return;
 
+  const neededRes = resolveResolution(spec);
+  const maxSpan = Math.max(Number(spec.span?.lonDeg) || 24, Number(spec.span?.latDeg) || 14);
+  const needMinorIslands = spec.layers?.showMinorIslands !== false && (neededRes === '10m' || neededRes === 'ultra');
   const needLakes = spec.layers?.showLakes !== false;
   const needRivers = Boolean(spec.layers?.showRivers);
+  const needBathymetry = Boolean(spec.layers?.showBathymetry);
+  const needUrbanAreas = Boolean(spec.layers?.showUrbanAreas);
   const needAdmin1 = Boolean(spec.layers?.showAdmin1);
+  const needAdmin1Polygons = Array.isArray(spec.regionShadows)
+    && spec.regionShadows.some((s) => s && s.sourceType === 'admin1')
+    && !state.admin1Polygons;
   const admin1Scale = resolveAdmin1Scale(spec);
   const needPlaces = Boolean(forcePlaces || state.refPeek || state.datasets?.populatedPlaces);
-  const fineHydrology =
-    spec.detailLevel === '10m' &&
-    Math.max(Number(spec.span?.lonDeg) || 24, Number(spec.span?.latDeg) || 14) <= 4;
+  const fineHydrology = neededRes === 'ultra' || (spec.detailLevel === '10m' && maxSpan <= 4);
+  const finePlaces = neededRes === 'ultra' || (neededRes === '10m' && maxSpan <= 12);
 
   if (datasetSatisfiesSpec(state.datasets, spec, needPlaces)) {
     state.loadRequestToken += 1;
@@ -428,21 +546,26 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
     state.datasets = state.fastDatasets;
     syncCountryCatalog(state.fastDatasets);
     setLoadingProgress(false);
+    syncAllUi();
     scheduleRender();
     return;
   }
 
   const token = ++state.loadRequestToken;
-  const neededRes = resolveResolution(spec);
 
   try {
-    setLoadingProgress(true, `Loading ${neededRes} map data...`);
+    setLoadingProgress(true, `Loading ${neededRes === 'ultra' ? 'Ultra 10m+' : neededRes} map data...`);
     const loaded = await ensureDatasets(neededRes, {
+      needMinorIslands,
       needLakes,
       needRivers,
+      needBathymetry,
+      needUrbanAreas,
       needAdmin1,
+      needAdmin1Polygons,
       needPlaces,
       fineHydrology,
+      finePlaces,
       admin1Scale,
       onProgress: ({ label, completed, total }) => {
         if (token !== state.loadRequestToken) return;
@@ -451,11 +574,17 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
     });
 
     if (token !== state.loadRequestToken) return;
+    if (loaded.admin1Polygons) {
+      state.admin1Polygons = loaded.admin1Polygons;
+    } else if (state.admin1Polygons) {
+      loaded.admin1Polygons = state.admin1Polygons;
+    }
     state.datasets = loaded;
     updateFastDatasetsCache(loaded);
     syncCountryCatalog(loaded);
 
     setLoadingProgress(false);
+    syncAllUi();
     scheduleRender();
   } catch (err) {
     if (token !== state.loadRequestToken) return;
@@ -465,6 +594,19 @@ async function ensureDatasetsForSpec({ forcePlaces = false } = {}) {
 }
 
 async function boot() {
+  if (IS_PREVIEW_PATH) {
+    document.title = "Dusty's Map Studio (Preview)";
+    const engineEl = document.getElementById('engine-status');
+    if (engineEl && !document.getElementById('preview-env-badge')) {
+      const badge = document.createElement('a');
+      badge.id = 'preview-env-badge';
+      badge.className = 'preview-env-badge';
+      badge.href = '../';
+      badge.title = 'Viewing preview build — click to open the main live site';
+      badge.textContent = 'Preview Build \u2197 Main';
+      engineEl.insertAdjacentElement('afterend', badge);
+    }
+  }
   const bootToken = state.loadRequestToken;
   setLoadingProgress(true, 'Loading fast 110m map...');
 
@@ -493,6 +635,9 @@ async function boot() {
     const needsExtra = Boolean(
       spec?.layers?.showRivers ||
       spec?.layers?.showAdmin1 ||
+      spec?.layers?.showBathymetry ||
+      spec?.layers?.showUrbanAreas ||
+      (Array.isArray(spec?.regionShadows) && spec.regionShadows.some((s) => s?.sourceType === 'admin1')) ||
       needPlaces,
     );
 
@@ -505,6 +650,7 @@ async function boot() {
     ) {
       state.datasets = state.fastDatasets;
       syncCountryCatalog(state.fastDatasets);
+      syncAllUi();
       scheduleRender();
     }
   } catch {
@@ -565,11 +711,15 @@ function setupCanvasInteractions() {
   let startCenter = null;
   let startProjection = null;
   let startLonLat = null;
+  let draggingShadowIdx = -1;
+  let startShadowAnchor = null;
 
   canvas.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || !state.spec) return;
     pointerDown = true;
     dragging = false;
+    draggingShadowIdx = -1;
+    startShadowAnchor = null;
     startClientX = e.clientX;
     startClientY = e.clientY;
     const pt = getCanvasPointerCoords(canvas, e);
@@ -578,13 +728,37 @@ function setupCanvasInteractions() {
     startCenter = { ...state.spec.center };
     startProjection = state.lastProjection || buildProjection(state.spec, canvas.width, canvas.height);
     startLonLat = screenToLonLat(startProjection, pt.x, pt.y);
+
+    // Check if grabbing a region shadow (in 'shadow' mode or Shift+Drag in pan mode)
+    const shadows = state.spec.regionShadows || [];
+    if ((state.mode === 'shadow' || e.shiftKey) && shadows.length > 0 && state.renderedShadows.length > 0) {
+      let hit = hitTestShadow(startProjection, state.renderedShadows, pt.x, pt.y);
+      if (!hit && state.mode === 'shadow') {
+        // In shadow mode, pick the nearest visible shadow if only one exists or user clicked near it
+        const visibleEntries = state.renderedShadows.filter((r) => r?.shadow?.visible !== false);
+        if (visibleEntries.length === 1) {
+          hit = visibleEntries[0];
+        }
+      }
+      if (hit) {
+        const idx = shadows.findIndex((s) => s.id === hit.shadow.id);
+        if (idx >= 0) {
+          draggingShadowIdx = idx;
+          startShadowAnchor = {
+            lon: Number(shadows[idx].targetLon) || 0,
+            lat: Number(shadows[idx].targetLat) || 0,
+          };
+        }
+      }
+    }
+
     canvas.setPointerCapture?.(e.pointerId);
   });
 
   canvas.addEventListener('pointermove', (e) => {
     if (pointerDown && startCenter) {
       const dist = Math.hypot(e.clientX - startClientX, e.clientY - startClientY);
-      if (dist > 4) {
+      if (dist > 3) {
         dragging = true;
         canvas.classList.add('dragging');
       }
@@ -602,10 +776,32 @@ function setupCanvasInteractions() {
         }
 
         const pt = getCanvasPointerCoords(canvas, e);
+        const curLonLat = startProjection ? screenToLonLat(startProjection, pt.x, pt.y) : null;
+
+        // Dragging a Region Shadow smoothly across the globe
+        if (draggingShadowIdx >= 0 && startShadowAnchor && state.spec.regionShadows?.[draggingShadowIdx]) {
+          const shadow = state.spec.regionShadows[draggingShadowIdx];
+          let nextLon;
+          let nextLat;
+          if (startLonLat && curLonLat) {
+            const dLon = shortestLonDelta(curLonLat[0], startLonLat[0]);
+            const dLat = curLonLat[1] - startLonLat[1];
+            nextLon = wrapLon(startShadowAnchor.lon + dLon);
+            nextLat = Math.max(-84, Math.min(84, startShadowAnchor.lat + dLat));
+          } else {
+            const dxNorm = (pt.x - startCanvasX) / canvas.width;
+            const dyNorm = (pt.y - startCanvasY) / canvas.height;
+            nextLon = wrapLon(startShadowAnchor.lon + dxNorm * state.spec.span.lonDeg);
+            nextLat = Math.max(-84, Math.min(84, startShadowAnchor.lat - dyNorm * state.spec.span.latDeg));
+          }
+          shadow.targetLon = Number(nextLon.toFixed(3));
+          shadow.targetLat = Number(nextLat.toFixed(3));
+          scheduleRender();
+          return;
+        }
+
         let nextLon;
         let nextLat;
-
-        const curLonLat = startProjection ? screenToLonLat(startProjection, pt.x, pt.y) : null;
         if (
           startLonLat &&
           curLonLat &&
@@ -659,6 +855,9 @@ function setupCanvasInteractions() {
   const finishPointer = (e, wasCancelled = false) => {
     if (!pointerDown) return;
     pointerDown = false;
+    const wasShadowDrag = draggingShadowIdx >= 0;
+    draggingShadowIdx = -1;
+    startShadowAnchor = null;
     canvas.classList.remove('dragging');
     canvas.releasePointerCapture?.(e.pointerId);
 
@@ -666,7 +865,7 @@ function setupCanvasInteractions() {
       if (dragging) {
         dragging = false;
         state.isInteracting = false;
-        commitSpec(state.spec, { commitHistory: true });
+        commitSpec(state.spec, { commitHistory: true, keepPreset: wasShadowDrag });
       }
       return;
     }
@@ -677,6 +876,19 @@ function setupCanvasInteractions() {
       handleCountryMapClick(pt.x, pt.y);
     } else if (state.mode === 'pin') {
       handlePinMapClick(pt.x, pt.y);
+    } else if (state.mode === 'shadow') {
+      // Single click in shadow mode moves the last visible shadow right under the cursor
+      const shadows = [...(state.spec.regionShadows || [])];
+      const targetIdx = shadows.findLastIndex((s) => s.visible !== false);
+      const clickCoords = startProjection ? screenToLonLat(startProjection, pt.x, pt.y) : null;
+      if (targetIdx >= 0 && clickCoords) {
+        shadows[targetIdx] = {
+          ...shadows[targetIdx],
+          targetLon: Number(clickCoords.lon.toFixed(3)),
+          targetLat: Number(Math.max(-84, Math.min(84, clickCoords.lat)).toFixed(3)),
+        };
+        patchSpec({ regionShadows: shadows }, { commitHistory: true });
+      }
     }
   };
 
@@ -706,7 +918,7 @@ function setupCanvasInteractions() {
 }
 
 function applyZoomFactor(factor, { commitHistory = true } = {}) {
-  const MIN_SPAN_DEG = 1.5;
+  const MIN_SPAN_DEG = 0.15;
   const MAX_LON_DEG = 360;
   const MAX_LAT_DEG = 175;
   const curLon = Math.max(0.05, Number(state.spec.span.lonDeg) || 24);
@@ -950,9 +1162,13 @@ function buildCallbacks() {
     onExport: async (format) => {
       const fmt = String(format || 'png').toLowerCase();
       try {
+        const wantsGshhs =
+          state.spec.pro?.coastlineEngine === 'gshhs_high' ||
+          state.spec.pro?.coastlineEngine === 'gshhs_full';
         const usePro =
           fmt === 'pdf' ||
-          (state.proAvailable && state.spec.pro?.basemapProvider && state.spec.pro.basemapProvider !== 'none');
+          (state.proAvailable &&
+            ((state.spec.pro?.basemapProvider && state.spec.pro.basemapProvider !== 'none') || wantsGshhs));
 
         if (usePro) {
           showToast(`Rendering ${fmt.toUpperCase()} via Python Pro...`, 'info', 2500);
@@ -961,15 +1177,16 @@ function buildCallbacks() {
           return;
         }
 
+        const exportDs = getActiveRenderDatasets() || state.datasets;
         if (fmt === 'svg') {
-          const res = await exportBrowserSvg(state.spec, state.datasets);
+          const res = await exportBrowserSvg(state.spec, exportDs);
           showToast(`Downloaded Vector SVG: ${res.filename}`, 'success');
           return;
         }
 
         const dims = getPixelDimensions(state.spec.page);
         showToast(`Exporting ${dims.widthPx}×${dims.heightPx} (${dims.dpi} DPI) ${fmt.toUpperCase()}...`, 'info', 2200);
-        const res = await exportBrowserRaster(state.spec, state.datasets, fmt);
+        const res = await exportBrowserRaster(state.spec, exportDs, fmt);
         showToast(`Downloaded ${res.filename}`, 'success');
       } catch (err) {
         showToast(`Export failed: ${err.message}`, 'error', 5000);
@@ -979,9 +1196,13 @@ function buildCallbacks() {
     onExportPair: async (format) => {
       const fmt = String(format || 'png').toLowerCase();
       try {
+        const wantsGshhs =
+          state.spec.pro?.coastlineEngine === 'gshhs_high' ||
+          state.spec.pro?.coastlineEngine === 'gshhs_full';
         const usePro =
           fmt === 'pdf' ||
-          (state.proAvailable && state.spec.pro?.basemapProvider && state.spec.pro.basemapProvider !== 'none');
+          (state.proAvailable &&
+            ((state.spec.pro?.basemapProvider && state.spec.pro.basemapProvider !== 'none') || wantsGshhs));
 
         if (usePro) {
           showToast('Rendering With & No Borders batch via Python Pro...', 'info', 2600);
@@ -995,7 +1216,8 @@ function buildCallbacks() {
         }
 
         const rasterFmt = fmt === 'jpeg' ? 'jpeg' : 'png';
-        const results = await exportBrowserPairWithWithoutBorders(state.spec, state.datasets, rasterFmt);
+        const exportDs = getActiveRenderDatasets() || state.datasets;
+        const results = await exportBrowserPairWithWithoutBorders(state.spec, exportDs, rasterFmt);
         showToast(`Downloaded pair: ${results.map((r) => r.filename).join(' & ')}`, 'success', 4200);
       } catch (err) {
         showToast(`Pair export failed: ${err.message}`, 'error', 5000);
@@ -1099,6 +1321,8 @@ function buildCallbacks() {
           coastline: theme.coastline,
           rivers: theme.rivers,
           admin1: theme.admin1,
+          bathymetry: theme.bathymetry,
+          urban: theme.urban,
           highlightFill: theme.highlightFill,
           highlightStroke: theme.highlightStroke,
           text: theme.text,
@@ -1131,6 +1355,147 @@ function buildCallbacks() {
     onToggleMode: (targetMode) => {
       state.mode = state.mode === targetMode ? 'pan' : targetMode;
       syncAllUi();
+    },
+
+    onLoadGeoBoundaries: async (countryId, countryName, level = 'ADM1') => {
+      const iso3 = resolveIso3FromNumericId(countryId);
+      if (!iso3) {
+        showToast(`No ISO-3 code mapping found for "${countryName}". Try loading a GeoJSON URL directly.`, 'warn', 4200);
+        return;
+      }
+      try {
+        setLoadingProgress(true, `Fetching OSM ${level} boundaries for ${countryName}...`);
+        const result = await fetchGeoBoundariesLayer(iso3, level);
+        setLoadingProgress(false);
+        const label = `${countryName} (${level} OSM)`;
+        const layer = {
+          id: `gb_${iso3}_${level}_${Date.now()}`,
+          label,
+          url: result.url,
+          data: result.data,
+          visible: true,
+          color: level === 'ADM0' ? '#0284c7' : level === 'ADM2' ? '#64748b' : '#475569',
+          fillOpacity: level === 'ADM0' ? 0.14 : 0.0,
+          strokeWidth: level === 'ADM0' ? 1.6 : level === 'ADM2' ? 0.7 : 1.0,
+          dashed: level === 'ADM2',
+          hatch: 'none',
+        };
+        patchSpec({
+          customGeoJsonLayers: [...(state.spec.customGeoJsonLayers || []), layer],
+        });
+        showToast(
+          `Loaded ${label}${result.admUnitCount ? ` (${result.admUnitCount} units)` : ''}`,
+          'success',
+          3400,
+        );
+      } catch (err) {
+        setLoadingProgress(false);
+        showToast(`geoBoundaries error: ${err.message}`, 'error', 4800);
+      }
+    },
+
+    onSwitchShadowSourceType: async (sourceType) => {
+      if (sourceType !== 'admin1') return;
+      if (state.admin1Polygons) {
+        syncAdmin1Catalog(state.admin1Polygons);
+        return;
+      }
+      try {
+        setLoadingProgress(true, 'Loading global state & province shapes...');
+        const fc = await loadAdmin1Polygons();
+        state.admin1Polygons = fc;
+        if (state.datasets) {
+          state.datasets = { ...state.datasets, admin1Polygons: fc };
+        }
+        if (state.fastDatasets) {
+          state.fastDatasets = { ...state.fastDatasets, admin1Polygons: fc };
+        }
+        syncAdmin1Catalog(fc);
+        setLoadingProgress(false);
+      } catch (err) {
+        setLoadingProgress(false);
+        showToast(`Could not load states/provinces: ${err.message}`, 'error', 4500);
+      }
+    },
+
+    onAddShadow: async (sourceType, sourceId, sourceName) => {
+      if (sourceType === 'admin1' && !state.admin1Polygons) {
+        try {
+          setLoadingProgress(true, 'Loading state & province shapes...');
+          state.admin1Polygons = await loadAdmin1Polygons();
+          if (state.datasets) {
+            state.datasets = { ...state.datasets, admin1Polygons: state.admin1Polygons };
+          }
+          setLoadingProgress(false);
+        } catch (err) {
+          setLoadingProgress(false);
+          showToast(`Could not load state geometry: ${err.message}`, 'error', 4200);
+          return;
+        }
+      }
+
+      const existing = state.spec.regionShadows || [];
+      const palette = SHADOW_PALETTE[existing.length % SHADOW_PALETTE.length];
+      const targetLat = Math.max(-84, Math.min(84, Number(state.spec.center?.lat) || 0));
+      const targetLon = Number(state.spec.center?.lon) || 0;
+
+      const nextShadow = {
+        id: `shadow_${Date.now()}_${existing.length + 1}`,
+        sourceType: sourceType === 'admin1' ? 'admin1' : 'country',
+        sourceId: String(sourceId || ''),
+        sourceName: String(sourceName || sourceId),
+        targetLat: Number(targetLat.toFixed(3)),
+        targetLon: Number(targetLon.toFixed(3)),
+        rotationDeg: 0,
+        fill: palette.fill,
+        stroke: palette.stroke,
+        opacity: 0.35,
+        strokeWidth: 1.6,
+        dashed: true,
+        hatch: 'none',
+        showLabel: true,
+        showArea: true,
+        visible: true,
+      };
+
+      state.mode = 'shadow';
+      patchSpec({ regionShadows: [...existing, nextShadow] });
+      showToast(
+        `Shadowed ${nextShadow.sourceName} at true geodesic scale — drag on map to compare!`,
+        'success',
+        3400,
+      );
+    },
+
+    onUpdateShadow: (idx, patch, opts = {}) => {
+      const next = [...(state.spec.regionShadows || [])];
+      if (!next[idx]) return;
+      next[idx] = { ...next[idx], ...patch };
+      patchSpec({ regionShadows: next }, opts);
+    },
+
+    onCenterShadow: (idx) => {
+      const next = [...(state.spec.regionShadows || [])];
+      if (!next[idx]) return;
+      next[idx] = {
+        ...next[idx],
+        targetLat: Number(Math.max(-84, Math.min(84, Number(state.spec.center?.lat) || 0)).toFixed(3)),
+        targetLon: Number((Number(state.spec.center?.lon) || 0).toFixed(3)),
+      };
+      patchSpec({ regionShadows: next });
+      showToast(`Centered ${next[idx].sourceName} shadow in view`, 'info', 2000);
+    },
+
+    onRemoveShadow: (idx) => {
+      const next = [...(state.spec.regionShadows || [])];
+      const removed = next.splice(idx, 1)[0];
+      if (next.length === 0 && state.mode === 'shadow') {
+        state.mode = 'pan';
+      }
+      patchSpec({ regionShadows: next });
+      if (removed) {
+        showToast(`Removed shadow: ${removed.sourceName}`, 'info', 2000);
+      }
     },
 
     onAddCountry: (id, name) => {

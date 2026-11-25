@@ -34,6 +34,7 @@ import numpy as np
 from PIL import Image
 import pyproj
 import requests
+from shapely import clip_by_rect
 from shapely.geometry import (
     GeometryCollection,
     LineString,
@@ -45,16 +46,23 @@ from shapely.geometry import (
 )
 from shapely.ops import unary_union
 
-from backend.schemas import CustomGeoJsonLayer, HighlightedCountry, MapSpec
+from backend.schemas import CustomGeoJsonLayer, HighlightedCountry, MapSpec, RegionShadow
 
 logger = logging.getLogger(__name__)
 
 _NE_LOCK = threading.RLock()
 _WARMED_NE_FEATURES: set[tuple[str, str, str]] = set()
 _COUNTRIES_CACHE: dict[str, tuple[tuple[Any, dict[str, str]], ...]] = {}
+_ADMIN1_POLYGONS_CACHE: tuple[tuple[Any, dict[str, str]], ...] | None = None
+_GSHHS_CACHE: dict[tuple[str, int], tuple[tuple[Any, tuple[float, float, float, float]], ...]] = {}
+_NE_GEOM_BBOX_CACHE: dict[
+    tuple[str, str, str], tuple[tuple[Any, tuple[float, float, float, float]], ...]
+] = {}
 
 _EARTH_RADIUS_M = 6_370_997.0
+_SQ_KM_PER_SQ_MI = 2.589988110336
 _SCALE_FALLBACK_ORDER: dict[str, tuple[str, ...]] = {
+    "ultra": ("10m", "50m", "110m"),
     "10m": ("10m", "50m", "110m"),
     "50m": ("50m", "110m", "10m"),
     "110m": ("110m", "50m", "10m"),
@@ -110,15 +118,22 @@ def sanitize_filename(name: str | None, fallback: str = "dusty_map") -> str:
 
 
 def resolve_scale(spec: MapSpec) -> str:
-    """Resolve Natural Earth dataset scale ('10m', '50m', or '110m') from MapSpec."""
-    if spec.detailLevel in ("10m", "50m", "110m"):
+    """Resolve dataset scale ('ultra', '10m', '50m', or '110m') from MapSpec."""
+    if spec.detailLevel in ("ultra", "10m", "50m", "110m"):
         return spec.detailLevel
     max_span = max(spec.span.lonDeg, spec.span.latDeg)
-    if max_span <= 22.0 and spec.projection != "orthographic":
+    if max_span <= 5.0 and spec.projection != "orthographic":
+        return "ultra"
+    if max_span <= 16.0 and spec.projection != "orthographic":
         return "10m"
     if max_span <= 90.0:
         return "50m"
     return "110m"
+
+
+def _ne_scale_for(scale: str) -> str:
+    """Map logical detail scale to a valid Natural Earth scale ('10m', '50m', '110m')."""
+    return "10m" if scale == "ultra" else scale
 
 
 def resolve_admin1_scale(spec: MapSpec) -> str:
@@ -232,10 +247,213 @@ def _resolve_basemap_provider(name: str) -> Any | None:
     providers = {
         "CartoDB.VoyagerNoLabels": cx.providers.CartoDB.VoyagerNoLabels,
         "CartoDB.PositronNoLabels": cx.providers.CartoDB.PositronNoLabels,
+        "CartoDB.DarkMatterNoLabels": cx.providers.CartoDB.DarkMatterNoLabels,
         "Esri.WorldShadedRelief": cx.providers.Esri.WorldShadedRelief,
+        "Esri.WorldTerrain": cx.providers.Esri.WorldTerrain,
+        "Esri.OceanBasemap": cx.providers.Esri.OceanBasemap,
         "Esri.WorldImagery": cx.providers.Esri.WorldImagery,
+        "OpenTopoMap": cx.providers.OpenTopoMap,
     }
     return providers.get(name)
+
+
+def _resolve_gshhs_scale(spec: MapSpec, resolved_scale: str) -> str | None:
+    """Determine GSHHS scale ('h' ~200m or 'f' ~40m) when enabled, else None."""
+    engine = spec.pro.coastlineEngine
+    if engine == "natural_earth":
+        return None
+    if engine == "gshhs_full":
+        return "f"
+    if engine == "gshhs_high":
+        return "h"
+    # Auto: activate GSHHG high/full shorelines when in Ultra detail mode
+    if resolved_scale == "ultra" and spec.projection != "orthographic":
+        max_span = max(spec.span.lonDeg, spec.span.latDeg)
+        return "f" if max_span <= 3.0 else "h"
+    return None
+
+
+def _load_gshhs_level(
+    gshhs_scale: str, level: int
+) -> tuple[tuple[Any, tuple[float, float, float, float]], ...]:
+    """Load and cache NOAA/GMT GSHHS geometries with bounding boxes for fast viewport culling."""
+    cache_key = (gshhs_scale, level)
+    with _NE_LOCK:
+        if cache_key in _GSHHS_CACHE:
+            return _GSHHS_CACHE[cache_key]
+        path = shpreader.gshhs(scale=gshhs_scale, level=level)
+        reader = shpreader.Reader(path)
+        items: list[tuple[Any, tuple[float, float, float, float]]] = []
+        for geom in reader.geometries():
+            if geom is None or geom.is_empty:
+                continue
+            items.append((geom, geom.bounds))
+        frozen = tuple(items)
+        _GSHHS_CACHE[cache_key] = frozen
+        return frozen
+
+
+def _bbox_intersects_view(
+    geom_bounds: tuple[float, float, float, float],
+    min_lon: float,
+    max_lon: float,
+    min_lat: float,
+    max_lat: float,
+) -> bool:
+    """Fast O(1) geographic bbox intersection with antimeridian wrap handling."""
+    gx0, gy0, gx1, gy1 = geom_bounds
+    if gy1 < min_lat or gy0 > max_lat:
+        return False
+    if (max_lon - min_lon) >= 350.0 or (gx1 - gx0) > 180.0:
+        return True
+    return (
+        (gx1 >= min_lon and gx0 <= max_lon)
+        or (gx1 - 360.0 >= min_lon and gx0 - 360.0 <= max_lon)
+        or (gx1 + 360.0 >= min_lon and gx0 + 360.0 <= max_lon)
+    )
+
+
+def _padded_viewport_bounds(
+    spec: MapSpec,
+) -> tuple[float, float, float, float, bool]:
+    """Compute aspect- and latitude-aware padded geographic bounds and rect-clip eligibility."""
+    aspect = max(
+        spec.page.widthIn / max(0.5, spec.page.heightIn),
+        spec.page.heightIn / max(0.5, spec.page.widthIn),
+    )
+    cos_lat = max(0.25, math.cos(math.radians(spec.center.lat)))
+    half_lon = 0.5 * spec.span.lonDeg * max(1.0, aspect / cos_lat * 0.75) + max(
+        3.0, spec.span.lonDeg * 0.35
+    )
+    half_lat = 0.5 * spec.span.latDeg * max(1.0, aspect) + max(
+        2.5, spec.span.latDeg * 0.35
+    )
+    min_lon = spec.center.lon - half_lon
+    max_lon = spec.center.lon + half_lon
+    min_lat = max(-89.9, spec.center.lat - half_lat)
+    max_lat = min(89.9, spec.center.lat + half_lat)
+    can_rect_clip = min_lon >= -179.5 and max_lon <= 179.5 and (max_lon - min_lon) < 175.0
+    return min_lon, max_lon, min_lat, max_lat, can_rect_clip
+
+
+def _filter_and_clip_items(
+    items: tuple[tuple[Any, tuple[float, float, float, float]], ...],
+    min_lon: float,
+    max_lon: float,
+    min_lat: float,
+    max_lat: float,
+    can_rect_clip: bool,
+) -> list[Any]:
+    """Filter cached (geom, bounds) items to viewport and clip oversized polygons via GEOS."""
+    geoms: list[Any] = []
+    for geom, bounds in items:
+        if not _bbox_intersects_view(bounds, min_lon, max_lon, min_lat, max_lat):
+            continue
+        if can_rect_clip and (
+            bounds[0] < min_lon
+            or bounds[2] > max_lon
+            or bounds[1] < min_lat
+            or bounds[3] > max_lat
+        ):
+            try:
+                clipped = clip_by_rect(geom, min_lon, min_lat, max_lon, max_lat)
+                if clipped is not None and not clipped.is_empty:
+                    geoms.append(clipped)
+                continue
+            except Exception:
+                pass
+        geoms.append(geom)
+    return geoms
+
+
+def _draw_gshhs_land_and_lakes(
+    ax: Any,
+    spec: MapSpec,
+    gshhs_scale: str,
+    land_color: str,
+    water_color: str,
+    coast_color: str,
+) -> tuple[bool, list[Any], list[Any]]:
+    """Render NOAA/GMT GSHHG high/full-resolution vector land & lakes with GEOS viewport clipping."""
+    try:
+        min_lon, max_lon, min_lat, max_lat, can_rect_clip = _padded_viewport_bounds(spec)
+
+        geodetic = ccrs.PlateCarree()
+        edge = coast_color if spec.layers.showCoastlines else "none"
+        lw = spec.layers.coastlineWidth if spec.layers.showCoastlines else 0.0
+
+        # L1: continents & islands; L5: Antarctica
+        land_levels = (1, 5) if min_lat < -58.0 else (1,)
+        land_geoms: list[Any] = []
+        for lvl in land_levels:
+            land_geoms.extend(
+                _filter_and_clip_items(
+                    _load_gshhs_level(gshhs_scale, lvl),
+                    min_lon,
+                    max_lon,
+                    min_lat,
+                    max_lat,
+                    can_rect_clip,
+                )
+            )
+
+        if land_geoms:
+            ax.add_geometries(
+                land_geoms,
+                crs=geodetic,
+                facecolor=land_color,
+                edgecolor=edge,
+                linewidth=lw,
+                zorder=2,
+            )
+
+        lake_geoms: list[Any] = []
+        island_in_lake_geoms: list[Any] = []
+        if spec.layers.showLakes:
+            lake_geoms = _filter_and_clip_items(
+                _load_gshhs_level(gshhs_scale, 2),
+                min_lon,
+                max_lon,
+                min_lat,
+                max_lat,
+                can_rect_clip,
+            )
+            if lake_geoms:
+                ax.add_geometries(
+                    lake_geoms,
+                    crs=geodetic,
+                    facecolor=water_color,
+                    edgecolor=edge,
+                    linewidth=lw * 0.7,
+                    zorder=2.5,
+                )
+            island_in_lake_geoms = _filter_and_clip_items(
+                _load_gshhs_level(gshhs_scale, 3),
+                min_lon,
+                max_lon,
+                min_lat,
+                max_lat,
+                can_rect_clip,
+            )
+            if island_in_lake_geoms:
+                ax.add_geometries(
+                    island_in_lake_geoms,
+                    crs=geodetic,
+                    facecolor=land_color,
+                    edgecolor=edge,
+                    linewidth=lw * 0.6,
+                    zorder=2.6,
+                )
+
+        all_land_mask = land_geoms + island_in_lake_geoms
+        return True, all_land_mask, lake_geoms
+    except Exception as exc:
+        logger.warning(
+            "GSHHS (%s) shorelines unavailable (%s); falling back to Natural Earth 10m.",
+            gshhs_scale,
+            exc,
+        )
+        return False, [], []
 
 
 def _add_basemap_underlay(ax: Any, spec: MapSpec, proj: ccrs.Projection) -> bool:
@@ -299,6 +517,62 @@ def _add_ne_layer(
     feat = _load_ne_feature(category, name, scale, **kwargs)
     if feat is not None:
         ax.add_feature(feat)
+
+
+def _load_ne_geometries_bbox(
+    category: str, name: str, scale: str
+) -> tuple[tuple[Any, tuple[float, float, float, float]], ...]:
+    """Load and cache Natural Earth geometries with geographic bounding boxes for fast culling."""
+    for candidate_scale in _SCALE_FALLBACK_ORDER.get(scale, (scale, "50m", "10m", "110m")):
+        cache_key = (category, name, candidate_scale)
+        with _NE_LOCK:
+            if cache_key in _NE_GEOM_BBOX_CACHE:
+                return _NE_GEOM_BBOX_CACHE[cache_key]
+            try:
+                path = shpreader.natural_earth(
+                    resolution=candidate_scale, category=category, name=name
+                )
+                reader = shpreader.Reader(path)
+                items: list[tuple[Any, tuple[float, float, float, float]]] = []
+                for geom in reader.geometries():
+                    if geom is None or geom.is_empty:
+                        continue
+                    items.append((geom, geom.bounds))
+                frozen = tuple(items)
+                _NE_GEOM_BBOX_CACHE[cache_key] = frozen
+                return frozen
+            except Exception as exc:
+                logger.warning(
+                    "Natural Earth %s/%s (%s) unavailable: %s",
+                    category,
+                    name,
+                    candidate_scale,
+                    exc,
+                )
+    return ()
+
+
+def _add_ne_layer_bbox(
+    ax: Any,
+    spec: MapSpec,
+    category: str,
+    name: str,
+    scale: str,
+    **kwargs: Any,
+) -> None:
+    """Attach a Natural Earth feature layer pre-filtered and clipped to the padded viewport."""
+    items = _load_ne_geometries_bbox(category, name, scale)
+    if not items:
+        return
+    if spec.projection == "orthographic" or max(spec.span.lonDeg, spec.span.latDeg) >= 170.0:
+        geoms = [geom for geom, _ in items]
+    else:
+        min_lon, max_lon, min_lat, max_lat, can_rect_clip = _padded_viewport_bounds(spec)
+        geoms = _filter_and_clip_items(
+            items, min_lon, max_lon, min_lat, max_lat, can_rect_clip
+        )
+    if geoms:
+        ax.add_geometries(geoms, crs=ccrs.PlateCarree(), **kwargs)
 
 
 def _load_countries_index(scale: str) -> tuple[tuple[Any, dict[str, str]], ...]:
@@ -395,8 +669,14 @@ def _match_country_geometries(
     return matches
 
 
-def _draw_highlighted_countries(ax: Any, spec: MapSpec, scale: str) -> None:
-    """Render highlighted country fills, strokes, and hatches."""
+def _draw_highlighted_countries(
+    ax: Any,
+    spec: MapSpec,
+    scale: str,
+    gshhs_land_geoms: list[Any] | None = None,
+    gshhs_lake_geoms: list[Any] | None = None,
+) -> None:
+    """Render highlighted country fills, strokes, and hatches (clipped to GSHHS shorelines when active)."""
     if not spec.highlightedCountries:
         return
     countries = _load_countries_index(scale)
@@ -405,10 +685,60 @@ def _draw_highlighted_countries(ax: Any, spec: MapSpec, scale: str) -> None:
 
     geodetic = ccrs.PlateCarree()
     target_proj = ax.projection
+
+    gshhs_land_mask = None
+    min_lon = max_lon = min_lat = max_lat = 0.0
+    can_rect_clip = False
+    if gshhs_land_geoms:
+        try:
+            min_lon, max_lon, min_lat, max_lat, can_rect_clip = _padded_viewport_bounds(spec)
+            land_union = unary_union([g.buffer(0) for g in gshhs_land_geoms if not g.is_empty])
+            if gshhs_lake_geoms and spec.layers.showLakes:
+                lake_union = unary_union([g.buffer(0) for g in gshhs_lake_geoms if not g.is_empty])
+                land_union = land_union.difference(lake_union)
+            if land_union is not None and not land_union.is_empty:
+                gshhs_land_mask = land_union
+        except Exception as exc:
+            logger.debug("GSHHS highlight shoreline mask fallback: %s", exc)
+            gshhs_land_mask = None
+
     for hc in spec.highlightedCountries:
         geoms = _match_country_geometries(hc, countries)
         if not geoms:
             continue
+
+        matched_ids = {id(g) for g in geoms}
+        render_geoms = geoms
+
+        if gshhs_land_mask is not None and can_rect_clip:
+            try:
+                hc_view = []
+                for g in geoms:
+                    c = clip_by_rect(g, min_lon, min_lat, max_lon, max_lat)
+                    if c is not None and not c.is_empty:
+                        hc_view.append(c.buffer(0))
+                if hc_view:
+                    hc_union = unary_union(hc_view)
+                    other_view = []
+                    for og, _ in countries:
+                        if id(og) in matched_ids:
+                            continue
+                        if not _bbox_intersects_view(og.bounds, min_lon, max_lon, min_lat, max_lat):
+                            continue
+                        oc = clip_by_rect(og, min_lon, min_lat, max_lon, max_lat)
+                        if oc is not None and not oc.is_empty:
+                            other_view.append(oc.buffer(0))
+                    # Buffer slightly into ocean to capture fine GSHHS capes/islets smoothed by NE 10m,
+                    # while keeping international land borders exact via difference(other_countries).
+                    coastal_env = hc_union.buffer(0.035)
+                    if other_view:
+                        coastal_env = coastal_env.difference(unary_union(other_view))
+                    clipped_hc = gshhs_land_mask.intersection(coastal_env)
+                    if clipped_hc is not None and not clipped_hc.is_empty:
+                        render_geoms = [clipped_hc]
+            except Exception as exc:
+                logger.debug("GSHHS highlight clip fallback for %s: %s", hc.name or hc.id, exc)
+
         fill = _valid_color(hc.fill, _valid_color(spec.colors.highlightFill, "#7a7d7a"))
         stroke = _valid_color(hc.stroke, _valid_color(spec.colors.highlightStroke, "#ffffff"))
         hatch = _HATCH_MAP.get(hc.hatch)
@@ -423,10 +753,10 @@ def _draw_highlighted_countries(ax: Any, spec: MapSpec, scale: str) -> None:
             kwargs["hatch"] = hatch
 
         # Stitch split +/-180 deg polygons in projected space so no antimeridian seam shows
-        if spec.projection != "orthographic":
+        if spec.projection != "orthographic" and gshhs_land_mask is None:
             try:
                 projected = []
-                for g in geoms:
+                for g in render_geoms:
                     pg = target_proj.project_geometry(g, geodetic)
                     if pg is not None and not pg.is_empty:
                         projected.append(pg.buffer(0))
@@ -440,7 +770,371 @@ def _draw_highlighted_countries(ax: Any, spec: MapSpec, scale: str) -> None:
             except Exception as exc:
                 logger.debug("Projected union fallback for %s: %s", hc.name or hc.id, exc)
 
-        ax.add_geometries(geoms, **kwargs)
+        ax.add_geometries(render_geoms, **kwargs)
+
+
+def _load_admin1_polygons_index() -> tuple[tuple[Any, dict[str, str]], ...]:
+    """Load and cache Natural Earth 50m admin_1_states_provinces polygons."""
+    global _ADMIN1_POLYGONS_CACHE
+    with _NE_LOCK:
+        if _ADMIN1_POLYGONS_CACHE is not None:
+            return _ADMIN1_POLYGONS_CACHE
+        try:
+            path = shpreader.natural_earth(
+                resolution="50m",
+                category="cultural",
+                name="admin_1_states_provinces",
+            )
+            reader = shpreader.Reader(path)
+            attr_keys = ("adm1_code", "iso_3166_2", "name", "name_alt", "admin", "postal")
+            entries: list[tuple[Any, dict[str, str]]] = []
+            for record in reader.records():
+                geom = record.geometry
+                if geom is None or geom.is_empty:
+                    continue
+                attrs = record.attributes
+                norm = {
+                    k: str(attrs.get(k) or attrs.get(k.upper()) or "").strip().lower()
+                    for k in attr_keys
+                }
+                entries.append((geom, norm))
+            _ADMIN1_POLYGONS_CACHE = tuple(entries)
+            return _ADMIN1_POLYGONS_CACHE
+        except Exception as exc:
+            logger.warning("Natural Earth admin_1_states_provinces (50m) unavailable: %s", exc)
+            return ()
+
+
+def _match_admin1_geometries(
+    source_id: str,
+    source_name: str,
+    records: tuple[tuple[Any, dict[str, str]], ...],
+) -> list[Any]:
+    """Match an Admin-1 state/province by adm1_code, iso_3166_2, or name."""
+    tid = source_id.strip().lower()
+    tname = source_name.strip().lower()
+    matches: list[Any] = []
+    for geom, attrs in records:
+        if tid and tid in (attrs.get("adm1_code"), attrs.get("iso_3166_2")):
+            matches.append(geom)
+            continue
+        if tname:
+            name = attrs.get("name", "")
+            admin = attrs.get("admin", "")
+            full_label = f"{name} ({admin})" if admin else name
+            if tname in (name, full_label):
+                matches.append(geom)
+    return matches
+
+
+def build_spherical_rotation_matrix(
+    src_lon: float,
+    src_lat: float,
+    dst_lon: float,
+    dst_lat: float,
+    rotation_deg: float = 0.0,
+) -> np.ndarray:
+    """Build a 3x3 SO(3) rotation matrix mapping (src_lon, src_lat) -> (dst_lon, dst_lat)."""
+    lam0 = math.radians(src_lon)
+    phi0 = math.radians(src_lat)
+    lam1 = math.radians(dst_lon)
+    phi1 = math.radians(dst_lat)
+    theta = math.radians(rotation_deg)
+
+    c0, s0 = math.cos(-lam0), math.sin(-lam0)
+    rz0 = np.array([[c0, -s0, 0.0], [s0, c0, 0.0], [0.0, 0.0, 1.0]], dtype=float)
+
+    cp0, sp0 = math.cos(phi0), math.sin(phi0)
+    ry0 = np.array([[cp0, 0.0, sp0], [0.0, 1.0, 0.0], [-sp0, 0.0, cp0]], dtype=float)
+
+    ct, st = math.cos(theta), math.sin(theta)
+    rx = np.array([[1.0, 0.0, 0.0], [0.0, ct, st], [0.0, -st, ct]], dtype=float)
+
+    cp1, sp1 = math.cos(phi1), math.sin(phi1)
+    ry1 = np.array([[cp1, 0.0, -sp1], [0.0, 1.0, 0.0], [sp1, 0.0, cp1]], dtype=float)
+
+    c1, s1 = math.cos(lam1), math.sin(lam1)
+    rz1 = np.array([[c1, -s1, 0.0], [s1, c1, 0.0], [0.0, 0.0, 1.0]], dtype=float)
+
+    return rz1 @ ry1 @ rx @ ry0 @ rz0
+
+
+def compute_geodesic_area_km2(geoms: list[Any]) -> float:
+    """Compute exact WGS84 ellipsoidal geodesic area in square kilometers."""
+    total_m2 = 0.0
+    for g in geoms:
+        if g is None or g.is_empty:
+            continue
+        area_m2, _ = _GEOD.geometry_area_perimeter(g)
+        if math.isfinite(area_m2):
+            total_m2 += abs(area_m2)
+    return total_m2 / 1_000_000.0
+
+
+def _format_area_label(area_km2: float, units: str = "km") -> str:
+    """Format geodesic area cleanly in km² or mi² matching site/js/shadow.js."""
+    if not math.isfinite(area_km2) or area_km2 <= 0.0:
+        return ""
+    if units == "mi":
+        sq_mi = area_km2 / _SQ_KM_PER_SQ_MI
+        val = f"{round(sq_mi):,}" if sq_mi >= 100.0 else f"{sq_mi:.1f}"
+        return f"{val} mi²"
+    val = f"{round(area_km2):,}" if area_km2 >= 100.0 else f"{area_km2:.1f}"
+    return f"{val} km²"
+
+
+def _compute_main_landmass_centroid(geoms: list[Any]) -> tuple[float, float]:
+    """Compute area-weighted spherical centroid of primary landmass parts within 30° of largest."""
+    parts: list[tuple[float, float, float]] = []
+    for g in geoms:
+        polys = [g] if isinstance(g, Polygon) else (list(g.geoms) if isinstance(g, MultiPolygon) else [])
+        for poly in polys:
+            if poly.is_empty:
+                continue
+            area_m2, _ = _GEOD.geometry_area_perimeter(poly)
+            area_km2 = abs(area_m2) / 1_000_000.0
+            if area_km2 <= 0.0:
+                continue
+            pt = poly.representative_point()
+            parts.append((float(pt.x), float(pt.y), area_km2))
+
+    if not parts:
+        return (0.0, 0.0)
+
+    largest = max(parts, key=lambda item: item[2])
+    sx, sy, sz = 0.0, 0.0, 0.0
+    for lon, lat, area in parts:
+        if _angular_distance_deg(lon, lat, largest[0], largest[1]) <= 30.0:
+            lam = math.radians(lon)
+            phi = math.radians(lat)
+            cphi = math.cos(phi)
+            sx += cphi * math.cos(lam) * area
+            sy += cphi * math.sin(lam) * area
+            sz += math.sin(phi) * area
+
+    norm = math.sqrt(sx * sx + sy * sy + sz * sz)
+    if norm <= 1e-12:
+        return (largest[0], largest[1])
+    lat_c = math.degrees(math.asin(max(-1.0, min(1.0, sz / norm))))
+    lon_c = math.degrees(math.atan2(sy, sx))
+    return (lon_c, lat_c)
+
+
+def _densify_ring_coords(coords: Any, max_step_deg: float = 3.5) -> np.ndarray:
+    """Densify long straight polygon edges before spherical rotation."""
+    pts = np.asarray(coords, dtype=float)
+    if pts.ndim != 2 or len(pts) < 3:
+        return np.empty((0, 2), dtype=float)
+    out: list[tuple[float, float]] = []
+    for idx in range(len(pts)):
+        lon1, lat1 = float(pts[idx, 0]), float(pts[idx, 1])
+        if idx > 0:
+            lon0, lat0 = float(pts[idx - 1, 0]), float(pts[idx - 1, 1])
+            dlon = lon1 - lon0
+            if dlon > 180.0:
+                dlon -= 360.0
+            elif dlon < -180.0:
+                dlon += 360.0
+            dlat = lat1 - lat0
+            span = math.hypot(dlon, dlat)
+            if span > max_step_deg:
+                steps = min(24, int(math.ceil(span / max_step_deg)))
+                for s in range(1, steps):
+                    t = s / float(steps)
+                    out.append((lon0 + dlon * t, lat0 + dlat * t))
+        out.append((lon1, lat1))
+    return np.asarray(out, dtype=float)
+
+
+def _rotate_ring_spherical(coords: Any, mat: np.ndarray) -> list[tuple[float, float]]:
+    """Apply SO(3) spherical rotation matrix to a coordinate ring."""
+    dense = _densify_ring_coords(coords)
+    if len(dense) < 3:
+        return []
+    lam = np.radians(dense[:, 0])
+    phi = np.radians(dense[:, 1])
+    cos_phi = np.cos(phi)
+    vecs = np.column_stack((cos_phi * np.cos(lam), cos_phi * np.sin(lam), np.sin(phi)))
+    rot = vecs @ mat.T
+    new_lat = np.degrees(np.arcsin(np.clip(rot[:, 2], -1.0, 1.0)))
+    new_lon = np.degrees(np.arctan2(rot[:, 1], rot[:, 0]))
+    ring = list(zip(new_lon.tolist(), new_lat.tolist()))
+    if ring[0] != ring[-1]:
+        ring.append(ring[0])
+    return ring
+
+
+def transform_shadow_geometries(
+    geoms: list[Any],
+    target_lon: float,
+    target_lat: float,
+    rotation_deg: float = 0.0,
+) -> tuple[list[Any], float]:
+    """Translate & rotate Shapely polygon(s) on the sphere preserving exact geodesic area."""
+    area_km2 = compute_geodesic_area_km2(geoms)
+    src_lon, src_lat = _compute_main_landmass_centroid(geoms)
+    mat = build_spherical_rotation_matrix(src_lon, src_lat, target_lon, target_lat, rotation_deg)
+
+    out_polys: list[Polygon] = []
+    for g in geoms:
+        polys = [g] if isinstance(g, Polygon) else (list(g.geoms) if isinstance(g, MultiPolygon) else [])
+        for poly in polys:
+            if poly.is_empty:
+                continue
+            ext = _rotate_ring_spherical(poly.exterior.coords, mat)
+            if len(ext) < 4:
+                continue
+            try:
+                ext_area, _ = _GEOD.geometry_area_perimeter(Polygon(ext))
+                if math.isfinite(ext_area) and ext_area < 0.0:
+                    ext = list(reversed(ext))
+            except Exception:
+                pass
+            holes = []
+            for interior in poly.interiors:
+                hring = _rotate_ring_spherical(interior.coords, mat)
+                if len(hring) >= 4:
+                    try:
+                        h_area, _ = _GEOD.geometry_area_perimeter(Polygon(hring))
+                        if math.isfinite(h_area) and h_area > 0.0:
+                            hring = list(reversed(hring))
+                    except Exception:
+                        pass
+                    holes.append(hring)
+            try:
+                p = Polygon(ext, holes)
+                if not p.is_empty:
+                    out_polys.append(p)
+            except Exception:
+                continue
+    return out_polys, area_km2
+
+
+def _poly_crosses_antimeridian(poly: Polygon) -> bool:
+    """Return True if any consecutive ring segment jumps > 180 degrees in longitude."""
+    coords = list(poly.exterior.coords)
+    for idx in range(1, len(coords)):
+        if abs(coords[idx][0] - coords[idx - 1][0]) > 180.0:
+            return True
+    return False
+
+
+def _draw_region_shadows(
+    ax: Any,
+    spec: MapSpec,
+    ne_scale: str,
+    proj: ccrs.Projection,
+    limits: tuple[float, float, float, float],
+) -> None:
+    """Render true-size geodesic region comparison shadows onto ax."""
+    if not spec.regionShadows:
+        return
+
+    countries = _load_countries_index(ne_scale)
+    admin1_records: tuple[tuple[Any, dict[str, str]], ...] | None = None
+    geodetic_arc = ccrs.Geodetic()
+    plate_carree = ccrs.PlateCarree()
+    units = spec.ornaments.scaleBar.units
+    xmin, xmax, ymin, ymax = limits
+
+    for shadow in spec.regionShadows:
+        if not shadow.visible:
+            continue
+        if shadow.sourceType == "admin1":
+            if admin1_records is None:
+                admin1_records = _load_admin1_polygons_index()
+            geoms = _match_admin1_geometries(shadow.sourceId, shadow.sourceName, admin1_records)
+        else:
+            hc_proxy = HighlightedCountry(id=shadow.sourceId, name=shadow.sourceName)
+            geoms = _match_country_geometries(hc_proxy, countries)
+
+        if not geoms:
+            continue
+
+        transformed, area_km2 = transform_shadow_geometries(
+            geoms, shadow.targetLon, shadow.targetLat, shadow.rotationDeg
+        )
+        if not transformed:
+            continue
+
+        fill = _valid_color(shadow.fill, "#dc2626")
+        stroke = _valid_color(shadow.stroke, "#7f1d1d")
+        hatch = _HATCH_MAP.get(shadow.hatch)
+        fill_rgba = to_rgba(fill, max(0.05, min(0.95, float(shadow.opacity))))
+        linestyle = "--" if shadow.dashed else "-"
+
+        base_kwargs: dict[str, Any] = {
+            "facecolor": fill_rgba,
+            "edgecolor": stroke,
+            "linewidth": max(0.5, float(shadow.strokeWidth)),
+            "linestyle": linestyle,
+            "zorder": 5.5,
+        }
+        if hatch:
+            base_kwargs["hatch"] = hatch
+
+        planar_polys = [p for p in transformed if not _poly_crosses_antimeridian(p)]
+        wrap_polys = [p for p in transformed if _poly_crosses_antimeridian(p)]
+        if planar_polys:
+            ax.add_geometries(planar_polys, crs=plate_carree, **base_kwargs)
+        if wrap_polys:
+            ax.add_geometries(wrap_polys, crs=geodetic_arc, **base_kwargs)
+
+        if shadow.showLabel:
+            px, py = proj.transform_point(shadow.targetLon, shadow.targetLat, plate_carree)
+            if math.isfinite(px) and math.isfinite(py) and xmin <= px <= xmax and ymin <= py <= ymax:
+                label_name = (shadow.sourceName or shadow.sourceId or "Region").strip()
+                area_text = _format_area_label(area_km2, units) if shadow.showArea else ""
+                full_text = f"{label_name}\n{area_text}" if area_text else label_name
+                halo = [patheffects.withStroke(linewidth=2.8, foreground="#ffffff")]
+                ax.text(
+                    px,
+                    py,
+                    full_text,
+                    transform=ax.transData,
+                    ha="center",
+                    va="center",
+                    fontsize=8.5,
+                    fontweight="bold",
+                    color=stroke,
+                    path_effects=halo,
+                    clip_on=True,
+                    zorder=5.8,
+                )
+
+
+def fetch_geoboundaries_geojson(
+    iso3: str,
+    level: str = "ADM1",
+    full_vertices: bool = False,
+) -> dict[str, Any]:
+    """Fetch and repair OSM-derived ADM0/ADM1/ADM2 GeoJSON from geoBoundaries.org."""
+    code = iso3.strip().upper()
+    adm_level = level.strip().upper()
+    if not re.fullmatch(r"[A-Z]{3}", code):
+        raise ValueError(f"Invalid ISO-3 country code: {iso3!r}")
+    if adm_level not in ("ADM0", "ADM1", "ADM2"):
+        raise ValueError(f"Unsupported administrative level: {level!r}")
+
+    meta_url = f"https://www.geoboundaries.org/api/current/gbOpen/{code}/{adm_level}/"
+    meta_resp = requests.get(meta_url, timeout=15)
+    meta_resp.raise_for_status()
+    meta = meta_resp.json()
+    gj_url = (
+        meta.get("gjDownloadURL") or meta.get("simplifiedGeometryGeoJSON")
+        if full_vertices
+        else meta.get("simplifiedGeometryGeoJSON") or meta.get("gjDownloadURL")
+    )
+    if not gj_url:
+        raise ValueError(f"geoBoundaries {adm_level} data is not available for {code}.")
+
+    inspected = inspect_geojson(url=gj_url)
+    inspected["iso3"] = code
+    inspected["admLevel"] = adm_level
+    inspected["boundaryName"] = meta.get("boundaryName") or code
+    inspected["source"] = meta.get("boundarySource") or "geoBoundaries / OpenStreetMap"
+    inspected["url"] = gj_url
+    return inspected
 
 
 def _normalize_geojson_features(raw: Any) -> list[dict[str, Any]]:
@@ -1415,6 +2109,22 @@ def _draw_legend(fig: Figure, ax: Any, spec: MapSpec, has_title: bool) -> None:
             )
         )
 
+    for shadow in spec.regionShadows:
+        if not shadow.visible:
+            continue
+        fill = _valid_color(shadow.fill, "#dc2626")
+        stroke = _valid_color(shadow.stroke, "#7f1d1d")
+        handles.append(
+            Patch(
+                facecolor=to_rgba(fill, shadow.opacity),
+                edgecolor=stroke,
+                linestyle="--" if shadow.dashed else "-",
+                hatch=_HATCH_MAP.get(shadow.hatch),
+                linewidth=1.0,
+                label=f"{shadow.sourceName or shadow.sourceId or 'Region'} (Shadow)",
+            )
+        )
+
     for layer in spec.customGeoJsonLayers:
         if not layer.visible:
             continue
@@ -1569,6 +2279,8 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
     coast_color = _valid_color(spec.colors.coastline, border_color)
     river_color = _valid_color(spec.colors.rivers, water_color)
     admin1_color = _valid_color(spec.colors.admin1, "#737373")
+    bathy_color = _valid_color(spec.colors.bathymetry, "#bfbdbd")
+    urban_color = _valid_color(spec.colors.urban, "#636363")
 
     fig.patch.set_facecolor(water_color)
     proj = _build_projection(spec)
@@ -1577,48 +2289,125 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
 
     limits = _configure_extent(ax, spec, proj)
     scale = resolve_scale(spec)
+    ne_scale = _ne_scale_for(scale)
 
     # 1. Optional Contextily basemap underlay
     basemap_active = _add_basemap_underlay(ax, spec, proj)
 
     # 2. Vector base layers (skip opaque ocean/land fills when basemap is active)
+    used_gshhs = False
+    gshhs_land_geoms: list[Any] = []
+    gshhs_lake_geoms: list[Any] = []
     if not basemap_active:
-        _add_ne_layer(
-            ax, "physical", "ocean", scale, facecolor=water_color, edgecolor="none", zorder=1
-        )
-        _add_ne_layer(
-            ax, "physical", "land", scale, facecolor=land_color, edgecolor="none", zorder=2
-        )
-        if spec.layers.showLakes:
+        if ne_scale != "10m":
             _add_ne_layer(
+                ax, "physical", "ocean", ne_scale, facecolor=water_color, edgecolor="none", zorder=1
+            )
+        if spec.layers.showBathymetry:
+            _add_ne_layer_bbox(
                 ax,
+                spec,
                 "physical",
-                "lakes",
-                scale,
-                facecolor=water_color,
-                edgecolor=coast_color if spec.layers.showCoastlines else "none",
-                linewidth=spec.layers.coastlineWidth * 0.7,
-                zorder=2.5,
+                "bathymetry_J_1000",
+                "10m",
+                facecolor=bathy_color,
+                edgecolor="none",
+                alpha=0.45,
+                zorder=1.4,
+            )
+            _add_ne_layer_bbox(
+                ax,
+                spec,
+                "physical",
+                "bathymetry_K_200",
+                "10m",
+                facecolor=bathy_color,
+                edgecolor="none",
+                alpha=0.45,
+                zorder=1.5,
             )
 
-    if spec.layers.showRivers:
-        _add_ne_layer(
+        gshhs_scale = _resolve_gshhs_scale(spec, scale)
+        if gshhs_scale is not None:
+            used_gshhs, gshhs_land_geoms, gshhs_lake_geoms = _draw_gshhs_land_and_lakes(
+                ax, spec, gshhs_scale, land_color, water_color, coast_color
+            )
+
+        if not used_gshhs:
+            _add_ne_layer_bbox(
+                ax,
+                spec,
+                "physical",
+                "land",
+                ne_scale,
+                facecolor=land_color,
+                edgecolor="none",
+                zorder=2,
+            )
+            if (
+                ne_scale == "10m"
+                and spec.layers.showMinorIslands
+                and spec.projection != "orthographic"
+                and max(spec.span.lonDeg, spec.span.latDeg) <= 95.0
+            ):
+                _add_ne_layer_bbox(
+                    ax,
+                    spec,
+                    "physical",
+                    "minor_islands",
+                    "10m",
+                    facecolor=land_color,
+                    edgecolor=coast_color if spec.layers.showCoastlines else "none",
+                    linewidth=spec.layers.coastlineWidth * 0.8 if spec.layers.showCoastlines else 0.0,
+                    zorder=2.1,
+                )
+            if spec.layers.showLakes:
+                _add_ne_layer_bbox(
+                    ax,
+                    spec,
+                    "physical",
+                    "lakes",
+                    ne_scale,
+                    facecolor=water_color,
+                    edgecolor=coast_color if spec.layers.showCoastlines else "none",
+                    linewidth=spec.layers.coastlineWidth * 0.7,
+                    zorder=2.5,
+                )
+
+    if spec.layers.showUrbanAreas:
+        urban_scale = "10m" if ne_scale == "10m" else "50m"
+        _add_ne_layer_bbox(
             ax,
+            spec,
+            "cultural",
+            "urban_areas",
+            urban_scale,
+            facecolor=urban_color,
+            edgecolor="none",
+            alpha=0.72,
+            zorder=2.3,
+        )
+
+    if spec.layers.showRivers:
+        _add_ne_layer_bbox(
+            ax,
+            spec,
             "physical",
             "rivers_lake_centerlines",
-            scale,
+            ne_scale,
             facecolor="none",
             edgecolor=river_color,
             linewidth=spec.layers.riverWidth,
             zorder=3,
         )
 
-    if spec.layers.showCoastlines:
-        _add_ne_layer(
+    if spec.layers.showCoastlines and not used_gshhs:
+        _add_ne_layer_bbox(
             ax,
+            spec,
             "physical",
             "coastline",
-            scale,
+            ne_scale,
             facecolor="none",
             edgecolor=coast_color,
             linewidth=spec.layers.coastlineWidth,
@@ -1627,8 +2416,9 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
 
     if spec.layers.showAdmin1:
         admin1_scale = resolve_admin1_scale(spec)
-        _add_ne_layer(
+        _add_ne_layer_bbox(
             ax,
+            spec,
             "cultural",
             "admin_1_states_provinces_lines",
             admin1_scale,
@@ -1641,24 +2431,34 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
         )
 
     # 3. Highlighted countries
-    _draw_highlighted_countries(ax, spec, scale)
+    _draw_highlighted_countries(
+        ax,
+        spec,
+        ne_scale,
+        gshhs_land_geoms=gshhs_land_geoms if used_gshhs else None,
+        gshhs_lake_geoms=gshhs_lake_geoms if used_gshhs else None,
+    )
 
     # 4. Custom GeoJSON layers
     _draw_custom_geojson_layers(ax, spec)
 
     # 5. International borders
     if spec.layers.showBorders:
-        _add_ne_layer(
+        _add_ne_layer_bbox(
             ax,
+            spec,
             "cultural",
             "admin_0_boundary_lines_land",
-            scale,
+            ne_scale,
             facecolor="none",
             edgecolor=border_color,
             linewidth=spec.layers.borderWidth,
             linestyle=_BORDER_STYLE_MAP.get(spec.layers.borderStyle, "-"),
             zorder=5,
         )
+
+    # 5b. True-size geodesic region comparison shadows
+    _draw_region_shadows(ax, spec, ne_scale, proj, limits)
 
     # 6. Graticule
     _draw_graticule(ax, spec)
@@ -1669,7 +2469,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
     # 8. Ornaments & Title Banner
     has_title = _draw_title_banner(fig, spec)
     _draw_scale_bar(fig, ax, spec, proj, limits, has_title)
-    _draw_locator_globe(fig, spec, scale, has_title, proj=proj, limits=limits)
+    _draw_locator_globe(fig, spec, ne_scale, has_title, proj=proj, limits=limits)
     _draw_north_arrow(fig, spec, has_title)
     _draw_legend(fig, ax, spec, has_title)
 

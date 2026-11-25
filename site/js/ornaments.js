@@ -424,6 +424,23 @@ function getLegendItems(spec) {
     });
   }
 
+  const shadows = Array.isArray(spec?.regionShadows) ? spec.regionShadows : [];
+  for (let i = 0; i < shadows.length; i += 1) {
+    const sh = shadows[i];
+    if (!sh || sh.visible === false) continue;
+    const label = String(sh.sourceName || sh.sourceId || '').trim();
+    if (!label) continue;
+    items.push({
+      kind: 'overlay',
+      label: `${label} (Shadow)`,
+      fill: sh.fill || '#dc2626',
+      fillOpacity: Number.isFinite(Number(sh.opacity)) ? Number(sh.opacity) : 0.35,
+      stroke: sh.stroke || '#7f1d1d',
+      hatch: sh.hatch || 'none',
+      dashed: sh.dashed !== false,
+    });
+  }
+
   const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
   for (let i = 0; i < overlays.length; i += 1) {
     const layer = overlays[i];

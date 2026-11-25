@@ -6,15 +6,16 @@
 import * as topojson from 'https://cdn.jsdelivr.net/npm/topojson-client@3/+esm';
 import { geoArea } from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 
-const CACHE_NAME = 'dusty-mapmaker-v2';
+const CACHE_NAME = 'dusty-mapmaker-v3';
 try {
   if (typeof caches !== 'undefined') {
     void caches.delete('dusty-mapmaker-v1');
+    void caches.delete('dusty-mapmaker-v2');
   }
 } catch {
   // Ignore CacheStorage errors on restricted origins
 }
-const VALID_RESOLUTIONS = new Set(['110m', '50m', '10m']);
+const VALID_RESOLUTIONS = new Set(['110m', '50m', '10m', 'ultra']);
 
 const VALID_GEOJSON_TYPES = new Set([
   'FeatureCollection',
@@ -184,22 +185,47 @@ function decomposeGeometryParts(geojson, singleType, multiType) {
   return parts;
 }
 
-function buildUrls(res, fineHydrology = false, admin1Scale = '50m') {
-  const hydroRes = fineHydrology ? res : res === '10m' ? '50m' : res;
+function buildUrls(res, fineHydrology = false, admin1Scale = '50m', finePlaces = false) {
+  const worldRes = res === 'ultra' ? '10m' : res;
+  const use10mHydro = res === 'ultra' || (fineHydrology && worldRes === '10m');
+  const hydroRes = use10mHydro ? '10m' : worldRes === '10m' ? '50m' : worldRes;
   const riverRes = hydroRes === '110m' ? '50m' : hydroRes;
   const effAdmin1 = admin1Scale === '10m' ? '10m' : '50m';
+  const placesRes = res === 'ultra' || finePlaces ? '10m' : '50m';
+
   return {
-    world: `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-${res}.json`,
-    lakes: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${hydroRes}_lakes.geojson`,
-    rivers: `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${riverRes}_rivers_lake_centerlines.geojson`,
+    world: `https://cdn.jsdelivr.net/npm/world-atlas@2/countries-${worldRes}.json`,
+    minorIslands:
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_10m_minor_islands.geojson',
+    lakes:
+      hydroRes === '10m'
+        ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_lakes.geojson'
+        : `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${hydroRes}_lakes.geojson`,
+    rivers:
+      riverRes === '10m'
+        ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_rivers_lake_centerlines.geojson'
+        : `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${riverRes}_rivers_lake_centerlines.geojson`,
+    bathymetry200:
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_10m_bathymetry_K_200.geojson',
+    bathymetry1000:
+      'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_bathymetry_J_1000.geojson',
+    urbanAreas:
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_urban_areas.geojson',
     admin1:
       effAdmin1 === '10m'
         ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_1_states_provinces_lines.geojson'
         : 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_admin_1_states_provinces_lines.geojson',
-    places: 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_populated_places_simple.geojson',
+    admin1Polygons:
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_admin_1_states_provinces.geojson',
+    places:
+      placesRes === '10m'
+        ? 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_10m_populated_places_simple.geojson'
+        : 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_populated_places_simple.geojson',
+    worldRes,
     hydroRes,
     riverRes,
     admin1Res: effAdmin1,
+    placesRes,
   };
 }
 
@@ -263,15 +289,16 @@ async function fetchJsonCached(url) {
 }
 
 async function loadWorldAtlas(res) {
-  if (worldAtlasCache.has(res)) {
-    return worldAtlasCache.get(res);
+  const worldRes = res === 'ultra' ? '10m' : res;
+  if (worldAtlasCache.has(worldRes)) {
+    return worldAtlasCache.get(worldRes);
   }
 
-  const { world } = buildUrls(res);
+  const { world } = buildUrls(worldRes);
   const topo = await fetchJsonCached(world);
   const countriesObj = topo?.objects?.countries;
   if (!countriesObj) {
-    throw new Error(`Invalid world-atlas TopoJSON (missing objects.countries) for ${res}`);
+    throw new Error(`Invalid world-atlas TopoJSON (missing objects.countries) for ${worldRes}`);
   }
 
   const land = topo.objects.land
@@ -284,7 +311,7 @@ async function loadWorldAtlas(res) {
   const borderParts = decomposeGeometryParts(internalBorders, 'LineString', 'MultiLineString');
 
   const parsed = { land, landParts, countries, internalBorders, borderParts };
-  worldAtlasCache.set(res, parsed);
+  worldAtlasCache.set(worldRes, parsed);
   return parsed;
 }
 
@@ -309,6 +336,17 @@ async function loadFilteredRivers(res, fineHydrology = false) {
   });
   filteredRiversCache.set(riverRes, filtered);
   return filtered;
+}
+
+async function loadPolygonCollection(url) {
+  const fc = attachFeatureBBoxes(await fetchJsonCached(url));
+  sanitizePolygonFeatureCollection(fc);
+  return fc;
+}
+
+export async function loadAdmin1Polygons() {
+  const { admin1Polygons } = buildUrls('50m');
+  return loadPolygonCollection(admin1Polygons);
 }
 
 function emitProgress(onProgress, info) {
@@ -344,7 +382,10 @@ export function resolveResolution(spec) {
     Number.isFinite(lonDeg) ? lonDeg : 24,
     Number.isFinite(latDeg) ? latDeg : 14,
   );
-  if (maxSpan <= 10) {
+  if (maxSpan <= 5) {
+    return 'ultra';
+  }
+  if (maxSpan <= 16) {
     return '10m';
   }
   if (maxSpan <= 90) {
@@ -356,30 +397,36 @@ export function resolveResolution(spec) {
 export async function ensureDatasets(
   resolution = '50m',
   {
+    needMinorIslands = true,
     needLakes = true,
     needRivers = false,
+    needBathymetry = false,
+    needUrbanAreas = false,
     needAdmin1 = false,
+    needAdmin1Polygons = false,
     needPlaces = false,
     fineHydrology = false,
+    finePlaces = false,
     admin1Scale = '50m',
     onProgress = null,
   } = {},
 ) {
   const res = VALID_RESOLUTIONS.has(resolution) ? resolution : '50m';
   const effAdmin1 = admin1Scale === '10m' ? '10m' : '50m';
-  const urls = buildUrls(res, fineHydrology, effAdmin1);
+  const urls = buildUrls(res, fineHydrology, effAdmin1, finePlaces);
   let usedAdmin1Scale = effAdmin1;
+  let usedPlacesRes = urls.placesRes;
 
   const tasks = [
     {
       key: 'world',
-      label: `Loading ${res} world boundaries`,
+      label: `Loading ${res === 'ultra' ? 'Ultra 10m+' : res} world boundaries`,
       run: () => loadWorldAtlas(res),
     },
   ];
 
   const cached50m = worldAtlasCache.get('50m') || null;
-  const locatorRes = res === '10m' && !cached50m ? '50m' : '110m';
+  const locatorRes = (res === '10m' || res === 'ultra') && !cached50m ? '50m' : '110m';
 
   if (res !== '110m') {
     tasks.push({
@@ -388,15 +435,25 @@ export async function ensureDatasets(
       run: () => loadWorldAtlas(locatorRes),
     });
   }
+  if (needMinorIslands && (res === '10m' || res === 'ultra')) {
+    tasks.push({
+      key: 'minorIslands',
+      label: 'Loading 10m minor islands',
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.minorIslands);
+        } catch (err) {
+          console.warn('Minor islands layer unavailable:', err);
+          return null;
+        }
+      },
+    });
+  }
   if (needLakes) {
     tasks.push({
       key: 'lakes',
       label: `Loading ${urls.hydroRes} lakes`,
-      run: async () => {
-        const fc = attachFeatureBBoxes(await fetchJsonCached(urls.lakes));
-        sanitizePolygonFeatureCollection(fc);
-        return fc;
-      },
+      run: () => loadPolygonCollection(urls.lakes),
     });
   }
   if (needRivers) {
@@ -404,6 +461,46 @@ export async function ensureDatasets(
       key: 'rivers',
       label: `Loading ${urls.riverRes} rivers`,
       run: () => loadFilteredRivers(res, fineHydrology),
+    });
+  }
+  if (needBathymetry) {
+    tasks.push({
+      key: 'bathymetry200',
+      label: 'Loading ocean continental shelf (200m)',
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.bathymetry200);
+        } catch (err) {
+          console.warn('Bathymetry 200m unavailable:', err);
+          return null;
+        }
+      },
+    });
+    tasks.push({
+      key: 'bathymetry1000',
+      label: 'Loading ocean slope (1000m)',
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.bathymetry1000);
+        } catch (err) {
+          console.warn('Bathymetry 1000m unavailable:', err);
+          return null;
+        }
+      },
+    });
+  }
+  if (needUrbanAreas) {
+    tasks.push({
+      key: 'urbanAreas',
+      label: 'Loading urban area footprints',
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.urbanAreas);
+        } catch (err) {
+          console.warn('Urban areas unavailable:', err);
+          return null;
+        }
+      },
     });
   }
   if (needAdmin1) {
@@ -425,11 +522,36 @@ export async function ensureDatasets(
       },
     });
   }
+  if (needAdmin1Polygons) {
+    tasks.push({
+      key: 'admin1Polygons',
+      label: 'Loading state & province shapes',
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.admin1Polygons);
+        } catch (err) {
+          console.warn('Admin-1 polygons unavailable:', err);
+          return null;
+        }
+      },
+    });
+  }
   if (needPlaces) {
     tasks.push({
       key: 'places',
-      label: 'Loading populated places',
-      run: () => fetchJsonCached(urls.places),
+      label: `Loading ${urls.placesRes} populated places`,
+      run: async () => {
+        try {
+          return await fetchJsonCached(urls.places);
+        } catch (err) {
+          if (urls.placesRes === '10m') {
+            console.warn('Failed to load 10m populated places; falling back to 50m:', err);
+            usedPlacesRes = '50m';
+            return await fetchJsonCached(buildUrls('50m').places);
+          }
+          throw err;
+        }
+      },
     });
   }
 
@@ -464,7 +586,7 @@ export async function ensureDatasets(
   let locatorDetail = null;
   if (res === '50m') {
     locatorDetail = world;
-  } else if (res === '10m') {
+  } else if (res === '10m' || res === 'ultra') {
     locatorDetail = cached50m || worldAtlasCache.get('50m') || locator;
   } else {
     locatorDetail = worldAtlasCache.get('50m') || null;
@@ -472,10 +594,12 @@ export async function ensureDatasets(
 
   return {
     resolution: res,
-    fineHydrology: Boolean(fineHydrology),
+    fineHydrology: Boolean(fineHydrology || res === 'ultra'),
+    placesResolution: needPlaces ? usedPlacesRes : null,
     admin1Resolution: needAdmin1 ? usedAdmin1Scale : null,
     land: world.land,
     landParts: world.landParts,
+    minorIslands: results.minorIslands || null,
     countries: world.countries,
     internalBorders: world.internalBorders,
     borderParts: world.borderParts,
@@ -485,7 +609,11 @@ export async function ensureDatasets(
     locatorDetailBorders: locatorDetail ? locatorDetail.internalBorders : null,
     lakes: results.lakes || null,
     rivers: results.rivers || null,
+    bathymetry200: results.bathymetry200 || null,
+    bathymetry1000: results.bathymetry1000 || null,
+    urbanAreas: results.urbanAreas || null,
     admin1: results.admin1 || null,
+    admin1Polygons: results.admin1Polygons || null,
     populatedPlaces: results.places || null,
   };
 }
@@ -507,6 +635,95 @@ export function getCountryCatalog(dataset) {
 
   catalog.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
   return catalog;
+}
+
+export function getAdmin1Catalog(dataset) {
+  const features = dataset?.admin1Polygons?.features;
+  if (!Array.isArray(features)) return [];
+
+  const catalog = [];
+  for (let i = 0; i < features.length; i += 1) {
+    const f = features[i];
+    const props = f?.properties || {};
+    const name = String(props.name || '').trim();
+    const admin = String(props.admin || '').trim();
+    if (!name) continue;
+    const id = String(props.adm1_code || props.iso_3166_2 || f.id || name).trim();
+    catalog.push({
+      id,
+      name,
+      admin,
+      label: admin ? `${name} (${admin})` : name,
+    });
+  }
+
+  catalog.sort((a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }));
+  return catalog;
+}
+
+const ISO_N3_TO_ISO3 = {
+  '004': 'AFG', '008': 'ALB', '012': 'DZA', '024': 'AGO', '032': 'ARG', '036': 'AUS',
+  '040': 'AUT', '031': 'AZE', '050': 'BGD', '112': 'BLR', '056': 'BEL', '068': 'BOL',
+  '070': 'BIH', '076': 'BRA', '100': 'BGR', '116': 'KHM', '120': 'CMR', '124': 'CAN',
+  '152': 'CHL', '156': 'CHN', '170': 'COL', '180': 'COD', '188': 'CRI', '191': 'HRV',
+  '192': 'CUB', '196': 'CYP', '203': 'CZE', '208': 'DNK', '214': 'DOM', '218': 'ECU',
+  '818': 'EGY', '233': 'EST', '231': 'ETH', '246': 'FIN', '250': 'FRA', '268': 'GEO',
+  '276': 'DEU', '288': 'GHA', '300': 'GRC', '304': 'GRL', '320': 'GTM', '348': 'HUN',
+  '352': 'ISL', '356': 'IND', '360': 'IDN', '364': 'IRN', '368': 'IRQ', '372': 'IRL',
+  '376': 'ISR', '380': 'ITA', '392': 'JPN', '400': 'JOR', '398': 'KAZ', '404': 'KEN',
+  '408': 'PRK', '410': 'KOR', '414': 'KWT', '417': 'KGZ', '418': 'LAO', '428': 'LVA',
+  '422': 'LBN', '434': 'LBY', '440': 'LTU', '458': 'MYS', '484': 'MEX', '498': 'MDA',
+  '496': 'MNG', '504': 'MAR', '508': 'MOZ', '104': 'MMR', '524': 'NPL', '528': 'NLD',
+  '554': 'NZL', '566': 'NGA', '578': 'NOR', '512': 'OMN', '586': 'PAK', '275': 'PSE',
+  '591': 'PAN', '598': 'PNG', '600': 'PRY', '604': 'PER', '608': 'PHL', '616': 'POL',
+  '620': 'PRT', '634': 'QAT', '642': 'ROU', '643': 'RUS', '682': 'SAU', '686': 'SEN',
+  '688': 'SRB', '702': 'SGP', '703': 'SVK', '705': 'SVN', '706': 'SOM', '710': 'ZAF',
+  '724': 'ESP', '144': 'LKA', '729': 'SDN', '752': 'SWE', '756': 'CHE', '760': 'SYR',
+  '158': 'TWN', '762': 'TJK', '834': 'TZA', '764': 'THA', '788': 'TUN', '792': 'TUR',
+  '795': 'TKM', '800': 'UGA', '804': 'UKR', '784': 'ARE', '826': 'GBR', '840': 'USA',
+  '858': 'URY', '860': 'UZB', '862': 'VEN', '704': 'VNM', '887': 'YEM', '894': 'ZMB',
+  '716': 'ZWE',
+};
+
+export function resolveIso3FromNumericId(id) {
+  const key = String(id || '').trim().padStart(3, '0');
+  return ISO_N3_TO_ISO3[key] || null;
+}
+
+/**
+ * Fetch OSM-derived ultra-granular ADM0/ADM1/ADM2 boundaries from geoBoundaries.org.
+ * Uses simplified GeoJSON by default for fast browser rendering, or full vertices when requested.
+ */
+export async function fetchGeoBoundariesLayer(iso3, admLevel = 'ADM1', { fullVertices = false } = {}) {
+  const code = String(iso3 || '').trim().toUpperCase();
+  const level = ['ADM0', 'ADM1', 'ADM2'].includes(String(admLevel).toUpperCase())
+    ? String(admLevel).toUpperCase()
+    : 'ADM1';
+  if (!/^[A-Z]{3}$/.test(code)) {
+    throw new Error(`Invalid ISO-3 country code: "${iso3}"`);
+  }
+
+  const metaUrl = `https://www.geoboundaries.org/api/current/gbOpen/${code}/${level}/`;
+  const meta = await fetchJsonCached(metaUrl);
+  const gjUrl = fullVertices
+    ? (meta?.gjDownloadURL || meta?.simplifiedGeometryGeoJSON)
+    : (meta?.simplifiedGeometryGeoJSON || meta?.gjDownloadURL);
+
+  if (!gjUrl) {
+    throw new Error(`geoBoundaries ${level} data is not available for ${code}.`);
+  }
+
+  const data = await fetchJsonCached(gjUrl);
+  return {
+    iso3: code,
+    admLevel: level,
+    boundaryName: meta?.boundaryName || code,
+    admUnitCount: Number(meta?.admUnitCount) || 0,
+    maxVertices: Number(meta?.maxVertices) || 0,
+    source: meta?.boundarySource || 'geoBoundaries / OpenStreetMap',
+    url: gjUrl,
+    data: validateGeoJson(data),
+  };
 }
 
 function lonInBounds(lon, minLon, maxLon) {
