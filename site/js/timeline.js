@@ -638,3 +638,193 @@ export function exportTimelineSliceCsv(matchedRows, windowLabel) {
   }
   return `${lines.join('\n')}\n`;
 }
+
+/**
+ * Extract an FAA/ICAO airport identifier (e.g., PAMR, PAED, Z93, 5KE, AK75) from modern_equivalent.
+ */
+export function extractAirportCode(modernEquivalent) {
+  const raw = String(modernEquivalent || '').trim();
+  if (!raw || /^(abandoned|closed)/i.test(raw)) return '';
+  const m = /^([A-Z0-9]{3,4})\s*\//.exec(raw);
+  return m ? m[1] : '';
+}
+
+function buildTextFragment(text) {
+  const clean = String(text || '').trim();
+  return clean ? `#:~:text=${encodeURIComponent(clean)}` : '';
+}
+
+function pickRecordSearchTerm(record) {
+  const name = String(record?.name || '').trim();
+  if (!name) return '';
+  // Prefer short recognizable place/base name for HTML text-fragment jump
+  if (/kodiak/i.test(name)) return 'Kodiak';
+  if (/sitka/i.test(name)) return 'Sitka';
+  if (/dutch harbor/i.test(name)) return 'Dutch Harbor';
+  if (/cold bay|fort randall/i.test(name)) return 'Cold Bay';
+  if (/umnak|fort glenn/i.test(name)) return 'Fort Glenn';
+  if (/port heiden|fort morrow/i.test(name)) return 'Fort Morrow';
+  if (/port althorp/i.test(name)) return 'Port Althorp';
+  if (/port armstrong/i.test(name)) return 'Port Armstrong';
+  if (/sand point/i.test(name)) return 'Sand Point';
+  if (/seward|walseth/i.test(name)) return 'Seward';
+  if (/yakutat/i.test(name)) return 'Yakutat';
+  if (/annette/i.test(name)) return 'Annette Island';
+  if (/cape chiniak/i.test(name)) return 'Cape Chiniak';
+  if (/ketchikan/i.test(name)) return 'Ketchikan';
+  if (/adak/i.test(name)) return 'Adak';
+  if (/amchitka/i.test(name)) return 'Amchitka';
+  if (/alexai/i.test(name)) return 'Alexai Point';
+  if (/casco cove/i.test(name)) return 'Casco Cove';
+  if (/shemya/i.test(name)) return 'Shemya';
+  if (/kiska/i.test(name)) return 'Kiska';
+  if (/ogliuga/i.test(name)) return 'Ogliuga';
+  if (/tanaga/i.test(name)) return 'Tanaga';
+  if (/atka/i.test(name)) return 'Atka';
+  if (/elmendorf/i.test(name)) return 'Elmendorf';
+  if (/ladd/i.test(name)) return 'Ladd';
+  if (/mile 26|eielson/i.test(name)) return 'Mile 26';
+  if (/big delta/i.test(name)) return 'Big Delta';
+  if (/tanacross/i.test(name)) return 'Tanacross';
+  if (/northway/i.test(name)) return 'Northway';
+  if (/galena/i.test(name)) return 'Galena';
+  if (/mcgrath/i.test(name)) return 'McGrath';
+  if (/marks/i.test(name)) return 'Marks Army Airfield';
+  if (/moses point/i.test(name)) return 'Moses Point';
+  if (/gambell/i.test(name)) return 'Gambell';
+  if (/naknek|king salmon/i.test(name)) return 'Naknek';
+  if (/bethel/i.test(name)) return 'Bethel';
+  if (/cordova/i.test(name)) return 'Cordova';
+  if (/juneau/i.test(name)) return 'Juneau';
+  if (/gakona/i.test(name)) return 'Gakona';
+  if (/point barrow/i.test(name)) return 'Point Barrow';
+  if (/umiat/i.test(name)) return 'Umiat';
+  return name.split(/[/(]/)[0].trim();
+}
+
+/**
+ * Resolve any citation string from primary_sources into a direct, clickable URL
+ * pointing to the exact authoritative page, section, PDF, or FAA airport record.
+ */
+export function resolveSourceUrl(sourceLabel, record = null) {
+  const s = String(sourceLabel || '').trim();
+  const low = s.toLowerCase();
+  const term = pickRecordSearchTerm(record);
+  const frag = buildTextFragment(term);
+  const code = extractAirportCode(record?.modern_equivalent);
+
+  // Specific site reports & exact documents first
+  if (low.includes('site report #2620')) {
+    return 'https://dec.alaska.gov/Applications/SPAR/PublicMVC/CSP/SiteReport/2620';
+  }
+  if (low.includes('site report #2637')) {
+    return 'https://dec.alaska.gov/Applications/SPAR/PublicMVC/CSP/SiteReport/2637';
+  }
+  if (low.includes('alaska dec fuds')) {
+    return 'https://dec.alaska.gov/Applications/SPAR/PublicMVC/CSP/Download?documentID=43940&fileName=96_20020930%20MAP.pdf';
+  }
+  if (low.includes('skyvector ak23')) {
+    return 'https://skyvector.com/airport/AK23/Driftwood-Bay-Air-Force-Station-Airport';
+  }
+  if (low.includes('gustavus section 4(f)')) {
+    return 'https://dot.alaska.gov/sereg/projects/gustavus_airport/assets/appendix_k_section_4_f_statement.pdf';
+  }
+  if (low.includes('atka auxiliary field')) {
+    return 'https://apiai.org/wp-content/uploads/2016/03/2006.-DERP-Preliminary-Assesment.-USACE-Alaska.-USACE-Rock-Island-District-r.pdf';
+  }
+  if (low.includes('shemya')) {
+    return 'https://www.hlswilliwaw.com/aleutians/shemya/index_htm_files/Shemya-Construction-1943-1945.pdf';
+  }
+  if (low.includes('ladd field')) {
+    return 'https://dnr.alaska.gov/parks/oha/publications/The%20WWII%20Heritage%20of%20Ladd%20Field.pdf';
+  }
+  if (low.includes('dutch harbor report')) {
+    return 'https://npshistory.com/publications/aleu/dutch_harbor.pdf';
+  }
+  if (low.includes('wrangells')) {
+    return 'https://npshistory.com/publications/wrst/work-in-the-wrangells.pdf';
+  }
+  if (low.includes('usgs professional paper 301')) {
+    return 'https://pubs.usgs.gov/pp/0301/report.pdf';
+  }
+  if (low.includes('blm history of npr-4')) {
+    return 'https://www.blm.gov/sites/default/files/documents/files/PublicRoom_Alaska_HistoryoftheNPR-4.pdf';
+  }
+  if (low.includes('seabee cbd 1058')) {
+    return 'https://en.wikipedia.org/wiki/Seabee#Seabee_North_Slope_Oil_Exploration_1944';
+  }
+  if (low.includes('polar record')) {
+    return 'https://www.cambridge.org/core/journals/polar-record/article/oil-spill-august-1944-the-cula-expedition-and-the-north-slope-inupiat/A13C2E1D035F70C04F3A424D7483A299';
+  }
+  if (low.includes('rcaf journal')) {
+    return 'https://publications.gc.ca/collections/collection_2018/mdn-dnd/D12-16-7-2-eng.pdf';
+  }
+  if (low.includes('gila historical')) {
+    return 'https://www.gilaschool.org/about-gila/our-story';
+  }
+  if (low.includes('russell (1997)')) {
+    return 'https://en.wikipedia.org/wiki/Project_Hula';
+  }
+  if (low.includes('maurer (1983)')) {
+    return 'https://media.defense.gov/2010/Sep/21/2001330257/-1/-1/0/combat_wings.pdf';
+  }
+  if (low.includes('usaf office of history')) {
+    return 'https://media.defense.gov/2025/Jun/23/2003741903/-1/-1/0/PRINTED_UNIT_HISTORIES.PDF';
+  }
+  if (low.includes('bureau of mines')) {
+    return 'https://dggs.alaska.gov/webpubs/usbm/ic/text/ic9177.pdf';
+  }
+
+  // Major archival series (with exact text-fragment jump on HTML pages)
+  if (low.includes('budocks')) {
+    return `https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html${frag}`;
+  }
+  if (low.includes('nhhc') || low.includes('the aleutians campaign')) {
+    return `https://www.history.navy.mil/research/library/online-reading-room/title-list-alphabetically/a/the-aleutians-campaign.html${frag}`;
+  }
+  if (low.includes('cmh aleutian')) {
+    return `https://www.ibiblio.org/hyperwar/USA/USA-C-Aleutians/${frag}`;
+  }
+  if (low.includes('cmh')) {
+    return `https://www.ibiblio.org/hyperwar/USA/USA-WH-Guard/USA-WH-Guard-9.html${frag}`;
+  }
+  if (low.includes('alaska wwii army airfields')) {
+    return `https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields${frag}`;
+  }
+  if (low.includes('green book ii')) {
+    return 'https://www.poa.usace.army.mil/Portals/34/docs/AKdistrict/green_book_ii.pdf';
+  }
+  if (low.includes('green book iv')) {
+    return 'https://www.poa.usace.army.mil/Portals/34/docs/AKdistrict/green_book_iv.pdf';
+  }
+  if (low.includes('narrative report') || low.includes('alaska construction report')) {
+    return 'https://apiai.org/wp-content/uploads/2016/03/1941-1944.-Narrative-Report-of-Alaska-Construction.-US-Army-r.pdf';
+  }
+  if (low.includes('cold war plan') || low.includes('usace alaska district')) {
+    return 'https://www.poa.usace.army.mil/Portals/34/docs/civilworks/archive/TheColdWarInAlaskaAManagementPlanForCulturalResourcesAug1994a.pdf';
+  }
+  if (low.includes('wwii caa nav ranges')) {
+    return 'https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/WWII_CAA_NAV_RANGES.pdf';
+  }
+  if (low.includes('civil aviation policy')) {
+    return 'https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf';
+  }
+  if (low.includes('alaska road commission')) {
+    return 'https://rowalaska.net/archives/projects/2016_loewen_v_soa/Research/ARC-BPR/Paving_Alaska%27s_Trails_Part3.pdf';
+  }
+  if (low.includes('alaska aviation history')) {
+    return 'https://www.sketchesofalaska.com/2022/02/world-war-ii-construction-laid-the-groundwork-for-north-pacific-great-circle-air-route.html';
+  }
+  if (low.includes('us army alaska wwii')) {
+    return 'https://www.nps.gov/articles/world-war-ii-in-alaska.htm';
+  }
+  if (low === 'faa' || low === 'faa adip') {
+    if (code) {
+      return `https://www.airnav.com/airport/${encodeURIComponent(code)}`;
+    }
+    return 'https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf';
+  }
+
+  return record?.source_url || '';
+}
+

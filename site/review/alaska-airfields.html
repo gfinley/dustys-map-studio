@@ -659,12 +659,25 @@
     }
 
     .src-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       font-size: 10.5px;
-      padding: 2px 7px;
+      font-weight: 600;
+      padding: 3px 8px;
       border-radius: 5px;
       background: var(--surface-soft);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #93c5fd;
+      text-decoration: none;
+      transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+    }
+
+    a.src-chip:hover {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--accent);
+      color: #ffffff;
+      text-decoration: none;
     }
 
     /* Human Validation Controls */
@@ -853,7 +866,13 @@
   </div>
 
   <script type="module">
-    import { parseCsv, computeAnnualSeries, normalizeTimelineDataset } from '../js/timeline.js';
+    import {
+      parseCsv,
+      computeAnnualSeries,
+      normalizeTimelineDataset,
+      resolveSourceUrl,
+      extractAirportCode,
+    } from '../js/timeline.js?v=19';
 
     const CSV_URL = '../data/alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv';
     const STORAGE_KEY = 'dusty_alaska_airfields_review_v1';
@@ -1149,8 +1168,22 @@
       }).join('');
 
       const sourcesHtml = rec.primary_sources
-        .map((s) => `<span class="src-chip">${escapeHtml(s)}</span>`)
+        .map((s) => {
+          const href = resolveSourceUrl(s, rec);
+          if (href) {
+            return `<a class="src-chip" href="${escapeHtml(href)}" target="_blank" rel="noopener" title="Open reference: ${escapeHtml(s)}">${escapeHtml(s)} &#8599;</a>`;
+          }
+          return `<span class="src-chip">${escapeHtml(s)}</span>`;
+        })
         .join('');
+
+      const primaryRefHref =
+        (rec.primary_sources[0] && resolveSourceUrl(rec.primary_sources[0], rec)) || rec.source_url || '';
+
+      const airportCode = extractAirportCode(rec.modern_equivalent);
+      const modernSiteHtml = airportCode
+        ? `<a href="https://www.airnav.com/airport/${encodeURIComponent(airportCode)}" target="_blank" rel="noopener" title="Open FAA/AirNav record for ${escapeHtml(airportCode)}">${escapeHtml(rec.modern_equivalent)} &#8599;</a>`
+        : escapeHtml(rec.modern_equivalent);
 
       const gSatUrl = `https://www.google.com/maps/@${rec.latitude},${rec.longitude},14z/data=!3m1!1e3`;
       const osmUrl = `https://www.openstreetmap.org/?mlat=${rec.latitude}&mlon=${rec.longitude}#map=13/${rec.latitude}/${rec.longitude}`;
@@ -1192,7 +1225,7 @@
               <a class="ext-link" href="${gSatUrl}" target="_blank" rel="noopener">Google Sat</a>
               <a class="ext-link" href="${osmUrl}" target="_blank" rel="noopener">OSM Map</a>
               <a class="ext-link" href="${skyUrl}" target="_blank" rel="noopener">SkyVector</a>
-              ${rec.source_url ? `<a class="ext-link" href="${escapeHtml(rec.source_url)}" target="_blank" rel="noopener">Source Ref</a>` : '<span class="ext-link">Archival</span>'}
+              ${primaryRefHref ? `<a class="ext-link" href="${escapeHtml(primaryRefHref)}" target="_blank" rel="noopener">Source Ref &#8599;</a>` : '<span class="ext-link">Archival</span>'}
             </div>
           </div>
         </div>
@@ -1209,7 +1242,7 @@
             <div class="meta-k">Strategic Role</div><div class="meta-v">${escapeHtml(rec.strategic_role)} (Opened: ${escapeHtml(rec.opened_date || 'Pre-1939')})</div>
             <div class="meta-k">Operator(s)</div><div class="meta-v">${escapeHtml(rec.operator_1939_1945)}</div>
             <div class="meta-k">Runways</div><div class="meta-v">${escapeHtml(rec.surface_wartime.replace(/_/g, ' '))} — ${escapeHtml(rec.runway_specs)}</div>
-            <div class="meta-k">Modern Site</div><div class="meta-v">${escapeHtml(rec.modern_equivalent)}</div>
+            <div class="meta-k">Modern Site</div><div class="meta-v">${modernSiteHtml}</div>
           </div>
           <div class="sources-row">${sourcesHtml}</div>
         </div>

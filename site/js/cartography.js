@@ -12,10 +12,10 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=18';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=18';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=18';
-import { sanitizeGeoJsonWinding } from './data-loader.js?v=18';
+} from './ornaments.js?v=19';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=19';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=19';
+import { sanitizeGeoJsonWinding } from './data-loader.js?v=19';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;

@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=18';
+} from './schema.js?v=19';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,14 +19,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=18';
+} from './data-loader.js?v=19';
 import {
   buildProjection,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=18';
+} from './cartography.js?v=19';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -35,15 +35,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=18';
+} from './exporter.js?v=19';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=18';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=18';
+} from './presets.js?v=19';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=19';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -53,22 +53,24 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=18';
+} from './controls.js?v=19';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=18';
+} from './shadow.js?v=19';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
   computeAnnualSeries,
   exportTimelineSliceCsv,
+  extractAirportCode,
   generateTimelineLayers,
   loadTimelineDataset,
   normalizeTimelineDataset,
-} from './timeline.js?v=18';
+  resolveSourceUrl,
+} from './timeline.js?v=19';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -1503,10 +1505,41 @@ function showFeatureInfoCard(hit) {
     addRow('1939–1945 Arc', p.timeline_1939_1945);
     addRow('Operator(s)', p.operator_1939_1945);
     addRow('Surface / Runways', [formatEnumLabel(p.surface_wartime), p.runway_specs].filter(Boolean).join(' — '));
-    addRow('Modern Site', p.modern_equivalent);
+    const modernCode = extractAirportCode(p.modern_equivalent);
+    if (modernCode) {
+      grid.appendChild(createFeatureEl('div', 'fic-key', 'Modern Site'));
+      const modernVal = createFeatureEl('div', 'fic-val');
+      const a = document.createElement('a');
+      a.className = 'fic-link';
+      a.href = `https://www.airnav.com/airport/${encodeURIComponent(modernCode)}`;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = `${p.modern_equivalent} ↗`;
+      modernVal.appendChild(a);
+      grid.appendChild(modernVal);
+    } else {
+      addRow('Modern Site', p.modern_equivalent);
+    }
     addRow('Proof Summary', p.proof_summary);
     if (Array.isArray(p.primary_sources) && p.primary_sources.length > 0) {
-      addRow('Sources', p.primary_sources.join('; '));
+      grid.appendChild(createFeatureEl('div', 'fic-key', 'Sources'));
+      const srcVal = createFeatureEl('div', 'fic-val fic-links-wrap');
+      for (const srcLabel of p.primary_sources) {
+        const href = resolveSourceUrl(srcLabel, p);
+        if (href) {
+          const a = document.createElement('a');
+          a.className = 'fic-link-chip';
+          a.href = href;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.title = `Open reference: ${srcLabel}`;
+          a.textContent = `${srcLabel} ↗`;
+          srcVal.appendChild(a);
+        } else {
+          srcVal.appendChild(createFeatureEl('span', 'fic-link-chip', srcLabel));
+        }
+      }
+      grid.appendChild(srcVal);
     }
     addRow('Confidence', formatEnumLabel(p.source_confidence));
   } else if (isAirfieldSchema) {
