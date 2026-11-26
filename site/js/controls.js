@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=22';
+} from './schema.js?v=23';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,16 +14,16 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=22';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=22';
-import { formatArea } from './shadow.js?v=22';
+} from './presets.js?v=23';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=23';
+import { formatArea } from './shadow.js?v=23';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=22';
+} from './osm-coastline.js?v=23';
 
 const PALETTE_COLOR_FIELDS = [
   { key: 'land', inputId: 'color-land', noneBtnId: 'btn-land-none', fallback: '#4a4a4a' },

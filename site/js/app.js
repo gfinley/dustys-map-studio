@@ -6,7 +6,8 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=22';
+  stripLegacyAutoPins,
+} from './schema.js?v=23';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -21,7 +22,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=22';
+} from './data-loader.js?v=23';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -29,12 +30,12 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=22';
+} from './cartography.js?v=23';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=22';
+} from './osm-coastline.js?v=23';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -43,15 +44,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=22';
+} from './exporter.js?v=23';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=22';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=22';
+} from './presets.js?v=23';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=23';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -61,13 +62,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=22';
+} from './controls.js?v=23';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=22';
+} from './shadow.js?v=23';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -78,7 +79,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=22';
+} from './timeline.js?v=23';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -220,7 +221,12 @@ function loadInitialSpec() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      return { spec: normalizeMapSpec(JSON.parse(raw)), source: 'draft' };
+      const normalized = normalizeMapSpec(JSON.parse(raw));
+      const { spec: cleaned, removedCount } = stripLegacyAutoPins(normalized);
+      if (removedCount > 0) {
+        saveDraftToStorage(cleaned);
+      }
+      return { spec: cleaned, source: 'draft' };
     }
   } catch {
     // Ignore invalid localStorage draft

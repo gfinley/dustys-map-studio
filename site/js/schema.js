@@ -486,6 +486,64 @@ export function normalizeMapSpec(partial) {
   };
 }
 
+export const LEGACY_AUTO_PIN_IDS = new Set([
+  'kyiv',
+  'lviv',
+  'odesa',
+  'kharkiv',
+  'helsinki',
+  'stockholm',
+  'st_petersburg',
+  'juneau',
+  'anchorage',
+  'fairbanks',
+  'nome',
+  'anadyr',
+  'adak',
+  'attu',
+  'seoul',
+  'pyongyang',
+  'busan',
+  'manila',
+  'cebu',
+  'davao',
+  'zamboanga',
+  'london',
+  'paris',
+  'berlin',
+  'dc',
+  'nyc',
+  'chicago',
+  'la',
+  'manila_1941',
+  'singapore_1941',
+  'batavia_1941',
+  'saigon_1941',
+  'bangkok_1941',
+  'san_fernando_lu',
+  'legazpi',
+  'iloilo',
+]);
+
+export function stripLegacyAutoPins(spec) {
+  const cities = Array.isArray(spec?.cities) ? spec.cities : [];
+  if (cities.length === 0) {
+    return { spec, removedCount: 0 };
+  }
+  const filtered = cities.filter((c) => {
+    const id = typeof c?.id === 'string' ? c.id.trim().toLowerCase() : '';
+    return !LEGACY_AUTO_PIN_IDS.has(id);
+  });
+  const removedCount = cities.length - filtered.length;
+  if (removedCount === 0) {
+    return { spec, removedCount: 0 };
+  }
+  return {
+    spec: { ...spec, cities: filtered },
+    removedCount,
+  };
+}
+
 export function getPixelDimensions(page) {
   const widthIn = clamp(page?.widthIn, 1.0, 40.0, 4.6);
   const heightIn = clamp(page?.heightIn, 1.0, 40.0, 7.0);
