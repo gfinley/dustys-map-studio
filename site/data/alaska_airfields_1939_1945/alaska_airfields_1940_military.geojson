@@ -1,0 +1,203 @@
+{
+  "type": "FeatureCollection",
+  "name": "alaska_airfields_1940_military",
+  "metadata": {
+    "dataset": "Alaska Airfields Progression (1939-1945)",
+    "snapshot_year": 1940,
+    "source_csv": "alaska_airfields_1939_1945.csv",
+    "crs": "EPSG:4326 (WGS84, RFC 7946 [longitude, latitude])",
+    "counts": {
+      "year": 1940,
+      "total_active": 39,
+      "military_only": 3,
+      "dual_use": 0,
+      "military_plus_dual": 3,
+      "civilian_only": 36,
+      "construction": 4,
+      "closed": 0,
+      "new_active": 3,
+      "new_military": 3
+    },
+    "subset": "military_and_dual_use"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ak-elmendorf-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.8065,
+          61.2514
+        ]
+      },
+      "properties": {
+        "id": "ak-elmendorf-field",
+        "name": "Elmendorf Field",
+        "alternate_names": [
+          "Fort Richardson Airfield",
+          "Elmendorf AAF"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1940,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1940-12",
+        "opened_year": 1940,
+        "military_start_year": 1940,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Eleventh Air Force; Alaska Defense Command",
+        "surface_wartime": "concrete",
+        "runway_specs": "Two heavy concrete runways (7,500 ft & 5,000 ft) expanded through 1942-44",
+        "strategic_role": "Major Command Airbase",
+        "timeline_1939_1945": "40:military · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Construction began June 8, 1940; first runway operational late 1940; served as primary air defense headquarters and main logistics hub for Alaska throughout WWII.",
+        "modern_equivalent": "PAED / Joint Base Elmendorf-Richardson (Active)",
+        "proof_summary": "Site withdrawn with Fort Richardson; construction initiated June 1940 with first military aircraft arriving late 1940. Primary HQ of Eleventh Air Force. Verified against JBER airfield coordinates.",
+        "primary_sources": [
+          "US Army CMH Guarding the US Ch. 9",
+          "USACE Narrative Report of Alaska Construction 1941-1944",
+          "Maurer (1983)"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Elmendorf Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "military",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-ladd-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -147.6142,
+          64.8375
+        ]
+      },
+      "properties": {
+        "id": "ak-ladd-field",
+        "name": "Ladd Field (Ladd Army Airfield)",
+        "alternate_names": [
+          "Fairbanks Cold Weather Test Station",
+          "Fort Wainwright"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1940,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1940-09",
+        "opened_year": 1940,
+        "military_start_year": 1940,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Cold Weather Detachment; ATC Alaskan Division (1466th AAFBU); Soviet Air Force ALSIB Mission",
+        "surface_wartime": "concrete",
+        "runway_specs": "Heavy concrete runways (up to 9,400 ft) & massive heated hangars",
+        "strategic_role": "ALSIB Lend-Lease Hub",
+        "timeline_1939_1945": "39:construction · 40:military · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Withdrawn 1937; construction began 1939 as Cold Weather Test Station; operational 1940; became primary US-Soviet transfer point for 7,926 ALSIB Lend-Lease aircraft (1942-45).",
+        "modern_equivalent": "PAFB / Ladd Army Airfield, Fort Wainwright (Active)",
+        "proof_summary": "Extensive primary documentation in Alaska DNR/US Army Heritage of Ladd Field; site built 1939, operational 1940, ALSIB main hub Sep 1942-Sep 1945. Coordinates match PAFB.",
+        "primary_sources": [
+          "Alaska DNR OHA WWII Heritage of Ladd Field",
+          "US Army CMH",
+          "Maurer (1983)"
+        ],
+        "source_url": "https://dnr.alaska.gov/parks/oha/publications/The%20WWII%20Heritage%20of%20Ladd%20Field.pdf",
+        "source_confidence": "verified",
+        "title": "Ladd Field (Ladd Army Airfield)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "construction",
+        "status_1940": "military",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-nas-sitka",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -135.3616,
+          57.0471
+        ]
+      },
+      "properties": {
+        "id": "ak-nas-sitka",
+        "name": "Naval Air Station Sitka",
+        "alternate_names": [
+          "NOB Sitka / Japonski Island"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1940,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "amphibious_airstation",
+        "origin_category": "military",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1940",
+        "opened_year": 1940,
+        "military_start_year": 1940,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "U.S. Navy Patrol Wing 4; U.S. Army Fort Ray garrison",
+        "surface_wartime": "concrete",
+        "runway_specs": "Three concrete seaplane ramps + 170x1,500 ft concrete arresting-gear landplane strip",
+        "strategic_role": "Naval Patrol & Defense",
+        "timeline_1939_1945": "39:construction · 40:military · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "CPFF contract signed Aug 29, 1939; designated NAS Sep 12, 1939; operational 1940 as intermediate naval air station between Seattle and Kodiak (redesignated NOB Jul 20, 1942).",
+        "modern_equivalent": "PASI / Sitka Rocky Gutierrez Airport (Expanded on Japonski Island)",
+        "proof_summary": "USN BuDocks Ch. 23 details Aug 29, 1939 contract, Sep 12, 1939 NAS designation, 3 concrete ramps, and 170x1500 ft arresting-gear landplane strip on Japonski Island. Coordinates match PASI.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23",
+          "US Army CMH Ch. 9"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Naval Air Station Sitka",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "construction",
+        "status_1940": "military",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    }
+  ]
+}

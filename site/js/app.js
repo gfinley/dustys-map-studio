@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=17';
+} from './schema.js?v=18';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,14 +19,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=17';
+} from './data-loader.js?v=18';
 import {
   buildProjection,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=17';
+} from './cartography.js?v=18';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -35,13 +35,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=17';
+} from './exporter.js?v=18';
 import {
   AIRFIELD_1941_LAYERS,
+  ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
-} from './presets.js?v=17';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=17';
+  buildAlaskaYearLayerDefs,
+} from './presets.js?v=18';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=18';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -51,13 +53,22 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=17';
+} from './controls.js?v=18';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=17';
+} from './shadow.js?v=18';
+import {
+  ALASKA_AIRFIELDS_CSV_URL,
+  TIMELINE_LAYER_PREFIX,
+  computeAnnualSeries,
+  exportTimelineSliceCsv,
+  generateTimelineLayers,
+  loadTimelineDataset,
+  normalizeTimelineDataset,
+} from './timeline.js?v=18';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -98,6 +109,24 @@ const state = {
   renderedShadows: [],
   hoveredFeature: null,
   selectedFeature: null,
+  alaskaYear: 1943,
+  timeline: {
+    dataset: null,
+    windowSize: '1', // Defaults to 1-year window
+    startYear: 1939,
+    endYear: 1939,
+    mode: 'cumulative_split',
+    regionFilter: 'all',
+    dotSize: 1.5,
+    includeMilitary: true,
+    includeCivilian: true,
+    splitDualUse: false,
+    includeConstruction: false,
+    includeSeaplane: true,
+    autoSync: true,
+    playTimer: null,
+    lastResult: null,
+  },
   mode: 'pan', // 'pan' | 'country' | 'pin' | 'shadow'
   refPeek: false,
   proAvailable: false,
@@ -287,6 +316,7 @@ function syncAllUi({ skipDynamicLists = false } = {}) {
     mode: state.mode,
     refPeek: state.refPeek,
     activePresetId: state.activePresetId,
+    alaskaYear: state.alaskaYear,
     skipDynamicLists,
     shadowMetrics: skipDynamicLists ? null : computeShadowMetrics(),
   });
@@ -1311,18 +1341,26 @@ function showFeatureHover(hit, canvas) {
     tooltip.appendChild(buildFeatureBadgeRow(hit));
     tooltip.appendChild(createFeatureEl('div', 'fht-title', getFeatureTitle(hit)));
 
-    const subtitleParts = [p.subregion, p.territory_1941].filter(Boolean);
+    const subtitleParts = [p.subregion, p.territory_1941 || p.territory].filter(Boolean);
     const subtitleText =
-      subtitleParts.length > 0
-        ? subtitleParts.join(' · ')
-        : p.region || p.modern_country || (p.category ? hit.layer?.label : '');
+      p.dataset === 'alaska_airfields_1939_1945'
+        ? [p.region, p.snapshot_year ? `${p.snapshot_year} (${formatEnumLabel(p.year_status)})` : '']
+            .filter(Boolean)
+            .join(' · ')
+        : subtitleParts.length > 0
+          ? subtitleParts.join(' · ')
+          : p.region || p.modern_country || (p.category ? hit.layer?.label : '');
     if (subtitleText) {
       tooltip.appendChild(createFeatureEl('div', 'fht-subtitle', subtitleText));
     }
 
     const metaParts = [
-      p.operator_1941,
-      p.surface_1941 ? formatEnumLabel(p.surface_1941) : '',
+      p.strategic_role || p.operator_1941 || p.operator_1939_1945,
+      p.surface_wartime
+        ? formatEnumLabel(p.surface_wartime)
+        : p.surface_1941
+          ? formatEnumLabel(p.surface_1941)
+          : '',
     ].filter(Boolean);
     if (metaParts.length > 0) {
       tooltip.appendChild(createFeatureEl('div', 'fht-meta', metaParts.join(' • ')));
@@ -1445,11 +1483,33 @@ function showFeatureInfoCard(hit) {
     );
   };
 
+  const isAlaskaAirfield = p.dataset === 'alaska_airfields_1939_1945' || Boolean(p.timeline_1939_1945);
   const isAirfieldSchema = Boolean(
-    p.territory_1941 || p.control_dec_1941 || p.operator_1941 || p.facility_class || p.surface_1941,
+    !isAlaskaAirfield &&
+      (p.territory_1941 || p.control_dec_1941 || p.operator_1941 || p.facility_class || p.surface_1941),
   );
 
-  if (isAirfieldSchema) {
+  if (isAlaskaAirfield) {
+    addRow(
+      'Snapshot Status',
+      [p.snapshot_year, formatEnumLabel(p.year_status), p.is_new_in_year ? '(New in Window)' : '']
+        .filter(Boolean)
+        .join(' — '),
+    );
+    addRow('Region', [p.region, p.territory].filter(Boolean).join(', '));
+    addRow('Strategic Role', p.strategic_role);
+    addRow('Facility Type', formatEnumLabel(p.airfield_type));
+    addRow('Opened', p.opened_date);
+    addRow('1939–1945 Arc', p.timeline_1939_1945);
+    addRow('Operator(s)', p.operator_1939_1945);
+    addRow('Surface / Runways', [formatEnumLabel(p.surface_wartime), p.runway_specs].filter(Boolean).join(' — '));
+    addRow('Modern Site', p.modern_equivalent);
+    addRow('Proof Summary', p.proof_summary);
+    if (Array.isArray(p.primary_sources) && p.primary_sources.length > 0) {
+      addRow('Sources', p.primary_sources.join('; '));
+    }
+    addRow('Confidence', formatEnumLabel(p.source_confidence));
+  } else if (isAirfieldSchema) {
     addRow('Facility', formatEnumLabel(p.facility_class));
     addRow('Location', [p.subregion, p.territory_1941].filter(Boolean).join(', '));
     addRow(
@@ -1580,6 +1640,248 @@ async function initPythonProHealth() {
       'Standalone Studio runs 100% in your browser with 300/600 DPI PNG, JPEG, and Vector SVG exports. Start the optional Python FastAPI server locally to unlock Contextily basemaps, Vector PDF, and batch ZIP exports.';
   }
   syncAllUi();
+}
+
+function downloadTextFile(filename, content, mimeType = 'text/plain;charset=utf-8') {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function stopTimelinePlay() {
+  if (state.timeline.playTimer) {
+    clearInterval(state.timeline.playTimer);
+    state.timeline.playTimer = null;
+  }
+  const btn = document.getElementById('btn-timeline-play');
+  if (btn) btn.textContent = '▶ Play';
+}
+
+function syncTimelineWindowBounds() {
+  const tl = state.timeline;
+  const ds = tl.dataset;
+  const minY = ds ? ds.minYear : 1939;
+  const maxY = ds ? ds.maxYear : 1945;
+
+  tl.startYear = Math.max(minY, Math.min(maxY, Number(tl.startYear) || minY));
+  if (tl.windowSize === 'all') {
+    tl.startYear = minY;
+    tl.endYear = maxY;
+  } else if (tl.windowSize === 'custom') {
+    tl.endYear = Math.max(tl.startYear, Math.min(maxY, Number(tl.endYear) || tl.startYear));
+  } else {
+    const spanYears = Math.max(1, Number(tl.windowSize) || 1);
+    const maxStart = Math.max(minY, maxY - (spanYears - 1));
+    tl.startYear = Math.min(tl.startYear, maxStart);
+    tl.endYear = Math.min(maxY, tl.startYear + spanYears - 1);
+  }
+}
+
+function populateTimelineDatasetSelectors() {
+  const ds = state.timeline.dataset;
+  if (!ds) return;
+
+  const slider = document.getElementById('timeline-year-slider');
+  if (slider) {
+    slider.min = String(ds.minYear);
+    slider.max = String(ds.maxYear);
+  }
+
+  const ticksEl = document.getElementById('timeline-year-ticks');
+  if (ticksEl) {
+    ticksEl.replaceChildren();
+    for (const y of ds.years) {
+      const sp = document.createElement('span');
+      sp.textContent = String(y);
+      ticksEl.appendChild(sp);
+    }
+  }
+
+  const startSel = document.getElementById('timeline-start-year');
+  const endSel = document.getElementById('timeline-end-year');
+  for (const sel of [startSel, endSel]) {
+    if (!sel) continue;
+    sel.replaceChildren();
+    for (const y of ds.years) {
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      sel.appendChild(opt);
+    }
+  }
+
+  const regSel = document.getElementById('timeline-region-filter');
+  if (regSel) {
+    const prev = state.timeline.regionFilter;
+    regSel.replaceChildren();
+    const allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.textContent = 'All Regions';
+    regSel.appendChild(allOpt);
+    for (const reg of ds.regions) {
+      const opt = document.createElement('option');
+      opt.value = reg;
+      opt.textContent = reg;
+      regSel.appendChild(opt);
+    }
+    state.timeline.regionFilter = ds.regions.includes(prev) ? prev : 'all';
+    regSel.value = state.timeline.regionFilter;
+  }
+}
+
+function renderTimelineUi() {
+  const tl = state.timeline;
+  const ds = tl.dataset;
+  if (!ds) return;
+
+  syncTimelineWindowBounds();
+  const result = generateTimelineLayers(ds, {
+    startYear: tl.startYear,
+    endYear: tl.endYear,
+    mode: tl.mode,
+    splitDualUse: tl.splitDualUse,
+    includeMilitary: tl.includeMilitary,
+    includeCivilian: tl.includeCivilian,
+    includeConstruction: tl.includeConstruction,
+    includeSeaplane: tl.includeSeaplane,
+    regionFilter: tl.regionFilter,
+    dotSize: tl.dotSize,
+  });
+  tl.lastResult = result;
+
+  const spanCount = tl.endYear - tl.startYear + 1;
+  const badge = document.getElementById('timeline-window-badge');
+  if (badge) {
+    badge.textContent = `${result.stats.windowLabel} (${spanCount} ${spanCount === 1 ? 'yr' : 'yrs'})`;
+  }
+  const rangeLbl = document.getElementById('timeline-range-label');
+  if (rangeLbl) rangeLbl.textContent = result.stats.windowLabel;
+
+  const slider = document.getElementById('timeline-year-slider');
+  if (slider) {
+    slider.value = String(tl.startYear);
+    slider.disabled = tl.windowSize === 'all';
+  }
+
+  const customRow = document.getElementById('timeline-custom-range-row');
+  if (customRow) customRow.hidden = tl.windowSize !== 'custom';
+  const startSel = document.getElementById('timeline-start-year');
+  const endSel = document.getElementById('timeline-end-year');
+  if (startSel) startSel.value = String(tl.startYear);
+  if (endSel) endSel.value = String(tl.endYear);
+
+  const setTxt = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(val);
+  };
+  setTxt('tl-stat-total', result.stats.totalActive);
+  setTxt('tl-stat-mil', result.stats.militaryOnly);
+  setTxt('tl-stat-dual', result.stats.dualUse);
+  setTxt('tl-stat-civ', result.stats.civilianOnly);
+  setTxt('tl-stat-new', `+${result.stats.newOperational}`);
+
+  // Interactive stacked progression bar chart
+  const chartEl = document.getElementById('timeline-chart');
+  if (chartEl) {
+    const series = computeAnnualSeries(ds, {
+      includeSeaplane: tl.includeSeaplane,
+      regionFilter: tl.regionFilter,
+    });
+    const maxTotal = Math.max(1, ...series.map((s) => s.total));
+    chartEl.style.gridTemplateColumns = `repeat(${series.length}, 1fr)`;
+    chartEl.replaceChildren();
+
+    for (const item of series) {
+      const inWin = item.year >= tl.startYear && item.year <= tl.endYear;
+      const col = document.createElement('button');
+      col.type = 'button';
+      col.className = `tl-bar-col${inWin ? ' in-window' : ''}`;
+      col.title = `${item.year}: ${item.total} active (${item.military} Mil, ${item.dual_use} Dual, ${item.civilian} Civ)`;
+      col.addEventListener('click', () => {
+        stopTimelinePlay();
+        if (tl.windowSize === 'all' || tl.windowSize === 'custom') {
+          tl.windowSize = '1';
+          const ws = document.getElementById('timeline-window-size');
+          if (ws) ws.value = '1';
+        }
+        tl.startYear = item.year;
+        renderTimelineUi();
+        if (tl.autoSync) applyTimelineLayersToMap({ quiet: true });
+      });
+
+      const stack = document.createElement('div');
+      stack.className = 'tl-bar-stack';
+      const maxH = 56;
+      const totalH = Math.max(2, Math.round((item.total / maxTotal) * maxH));
+      stack.style.height = `${totalH}px`;
+
+      const addSeg = (cls, count) => {
+        if (!count || !item.total) return;
+        const seg = document.createElement('div');
+        seg.className = cls;
+        seg.style.flex = String(count);
+        stack.appendChild(seg);
+      };
+      addSeg('tl-seg-mil', item.military);
+      addSeg('tl-seg-dual', item.dual_use);
+      addSeg('tl-seg-civ', item.civilian);
+
+      const yr = document.createElement('span');
+      yr.className = 'tl-bar-yr';
+      yr.textContent = String(item.year).slice(2);
+
+      col.append(stack, yr);
+      chartEl.appendChild(col);
+    }
+  }
+
+  return result;
+}
+
+function applyTimelineLayersToMap({ quiet = false, commitHistory = false } = {}) {
+  const result = state.timeline.lastResult || renderTimelineUi();
+  if (!result) return;
+
+  const akPresetIds = new Set(ALASKA_AIRFIELDS_ALL_LAYER_DEFS.map((d) => d.id));
+  const preserved = (state.spec.customGeoJsonLayers || []).filter(
+    (l) => !l?.id || (!l.id.startsWith(TIMELINE_LAYER_PREFIX) && !akPresetIds.has(l.id)),
+  );
+  patchSpec({ customGeoJsonLayers: [...preserved, ...result.layers] }, { commitHistory });
+  if (!quiet) {
+    showToast(
+      `Generated ${result.layers.length} timeline layer(s) for ${result.stats.windowLabel} (${result.combinedGeoJson.features.length} airfields).`,
+      'success',
+      2600,
+    );
+  }
+}
+
+async function ensureTimelineDatasetLoaded() {
+  if (state.timeline.dataset) {
+    renderTimelineUi();
+    return state.timeline.dataset;
+  }
+  try {
+    setLoadingProgress(true, 'Loading Alaska Airfields (1939–1945) CSV...');
+    const ds = await loadTimelineDataset(ALASKA_AIRFIELDS_CSV_URL, 'Alaska Airfields (1939–1945)');
+    state.timeline.dataset = ds;
+    state.timeline.startYear = ds.minYear;
+    state.timeline.endYear = ds.minYear;
+    populateTimelineDatasetSelectors();
+    renderTimelineUi();
+    setLoadingProgress(false);
+    return ds;
+  } catch (err) {
+    setLoadingProgress(false);
+    showToast(`Could not load timeline CSV: ${err.message}`, 'error', 4500);
+    return null;
+  }
 }
 
 function buildCallbacks() {
@@ -2320,7 +2622,9 @@ function buildCallbacks() {
       const targetIds = new Set(
         groupKey === 'airfields'
           ? AIRFIELD_1941_LAYERS.map((d) => d.id)
-          : PHILIPPINES_RAIL_1942_LAYERS.filter((d) => d.geometryKind === 'line').map((d) => d.id),
+          : groupKey === 'alaska_airfields'
+            ? ALASKA_AIRFIELDS_ALL_LAYER_DEFS.map((d) => d.id)
+            : PHILIPPINES_RAIL_1942_LAYERS.filter((d) => d.geometryKind === 'line').map((d) => d.id),
       );
       const current = [...(state.spec.customGeoJsonLayers || [])];
       let touched = false;
@@ -2334,6 +2638,66 @@ function buildCallbacks() {
       if (touched) {
         patchSpec({ customGeoJsonLayers: next }, opts);
       }
+    },
+
+    onSelectAlaskaYear: async (year) => {
+      const y = Number(year);
+      if (!Number.isFinite(y)) return;
+      state.alaskaYear = y;
+      const defs = buildAlaskaYearLayerDefs(y);
+      const neededDefs = defs.filter((d) => d.defaultOn);
+      const loadedById = new Map();
+
+      try {
+        setLoadingProgress(true, `Loading Alaska ${y} airfield layers...`);
+        await Promise.all(
+          neededDefs.map(async (def) => {
+            const existing = (state.spec.customGeoJsonLayers || []).find((l) => l?.id === def.id);
+            const data = existing?.data || (await fetchCustomGeoJson(def.url));
+            loadedById.set(def.id, data);
+          }),
+        );
+        setLoadingProgress(false);
+      } catch (err) {
+        setLoadingProgress(false);
+        showToast(`Could not load Alaska ${y} airfields: ${err.message}`, 'error', 4500);
+        return;
+      }
+
+      const allAkIds = new Set(ALASKA_AIRFIELDS_ALL_LAYER_DEFS.map((d) => d.id));
+      const others = (state.spec.customGeoJsonLayers || []).filter(
+        (l) => !l?.id || (!allAkIds.has(l.id) && !l.id.startsWith(TIMELINE_LAYER_PREFIX)),
+      );
+      const nextGroup = neededDefs.map((def) => ({
+        id: def.id,
+        label: def.label,
+        url: def.url,
+        data: loadedById.get(def.id) || null,
+        visible: true,
+        color: def.color,
+        fillOpacity: def.fillOpacity,
+        strokeWidth: def.strokeWidth,
+        dashed: false,
+        hatch: 'none',
+      }));
+
+      patchSpec({ customGeoJsonLayers: [...others, ...nextGroup] });
+      showToast(`Loaded Alaska ${y} Military & Civilian airfield layers.`, 'success', 2200);
+    },
+
+    onApplyAlaskaPreset: async (mode) => {
+      const allAkIds = new Set(ALASKA_AIRFIELDS_ALL_LAYER_DEFS.map((d) => d.id));
+      if (mode === 'none') {
+        const others = (state.spec.customGeoJsonLayers || []).filter((l) => !l?.id || !allAkIds.has(l.id));
+        hideFeatureHover();
+        if (state.selectedFeature?.layer?.id && allAkIds.has(state.selectedFeature.layer.id)) {
+          closeFeatureInfoCard();
+        }
+        patchSpec({ customGeoJsonLayers: others });
+        showToast('Hid all Alaska 1939–1945 airfield layers.', 'success', 2200);
+        return;
+      }
+      await buildCallbacks().onSelectAlaskaYear(state.alaskaYear);
     },
 
     onApplyAirfieldPreset: async (mode) => {
@@ -2479,7 +2843,15 @@ function buildCallbacks() {
     },
 
     onFrameHistoricalRegion: (regionKey) => {
-      if (regionKey === 'se_asia') {
+      if (regionKey === 'alaska') {
+        patchSpec({
+          projection: 'mercator',
+          detailLevel: '10m',
+          center: { lat: 60.8, lon: -158.0 },
+          span: { lonDeg: 58.0, latDeg: 22.0 },
+        });
+        showToast('Framed Alaska & Aleutian Islands across the Date Line', 'info', 2200);
+      } else if (regionKey === 'se_asia') {
         patchSpec({
           projection: 'mercator',
           detailLevel: '50m',
@@ -2495,6 +2867,148 @@ function buildCallbacks() {
           span: { lonDeg: 8.5, latDeg: 11.5 },
         });
         showToast('Framed Philippines (Luzon & Visayas, 10m detail)', 'info', 2200);
+      }
+    },
+
+    onTabChange: (tabId) => {
+      if (tabId === 'timeline') {
+        void ensureTimelineDatasetLoaded();
+      } else {
+        stopTimelinePlay();
+      }
+    },
+
+    onUploadTimelineCsv: async (file) => {
+      try {
+        const text = await file.text();
+        const ds = normalizeTimelineDataset(text, file.name.replace(/\.csv$/i, ''));
+        stopTimelinePlay();
+        state.timeline.dataset = ds;
+        state.timeline.startYear = ds.minYear;
+        state.timeline.endYear = ds.minYear;
+        state.timeline.windowSize = '1';
+        const sel = document.getElementById('timeline-dataset-select');
+        if (sel) {
+          const opt = document.createElement('option');
+          opt.value = `custom_${Date.now()}`;
+          opt.textContent = `${ds.name} (${ds.records.length} rows)`;
+          sel.appendChild(opt);
+          sel.value = opt.value;
+        }
+        const ws = document.getElementById('timeline-window-size');
+        if (ws) ws.value = '1';
+        populateTimelineDatasetSelectors();
+        renderTimelineUi();
+        if (state.timeline.autoSync) applyTimelineLayersToMap({ commitHistory: true });
+        showToast(`Loaded custom CSV "${ds.name}" (${ds.records.length} rows, ${ds.minYear}–${ds.maxYear}).`, 'success', 3200);
+      } catch (err) {
+        showToast(`Could not parse CSV: ${err.message}`, 'error', 4500);
+      }
+    },
+
+    onTimelineConfigChange: async (patch = {}) => {
+      await ensureTimelineDatasetLoaded();
+      const tl = state.timeline;
+      if (patch.windowSize !== undefined) tl.windowSize = patch.windowSize;
+      if (patch.mode !== undefined) tl.mode = patch.mode;
+      if (patch.startYear !== undefined) tl.startYear = Number(patch.startYear);
+      if (patch.endYear !== undefined) tl.endYear = Number(patch.endYear);
+      if (patch.regionFilter !== undefined) tl.regionFilter = patch.regionFilter;
+      if (patch.dotSize !== undefined) tl.dotSize = Number(patch.dotSize);
+      if (patch.includeMilitary !== undefined) tl.includeMilitary = Boolean(patch.includeMilitary);
+      if (patch.includeCivilian !== undefined) tl.includeCivilian = Boolean(patch.includeCivilian);
+      if (patch.splitDualUse !== undefined) tl.splitDualUse = Boolean(patch.splitDualUse);
+      if (patch.includeConstruction !== undefined) tl.includeConstruction = Boolean(patch.includeConstruction);
+      if (patch.includeSeaplane !== undefined) tl.includeSeaplane = Boolean(patch.includeSeaplane);
+      if (patch.autoSync !== undefined) tl.autoSync = Boolean(patch.autoSync);
+
+      renderTimelineUi();
+      if (tl.autoSync) {
+        applyTimelineLayersToMap({ quiet: true, commitHistory: false });
+      }
+    },
+
+    onTimelineStep: async (delta) => {
+      const ds = await ensureTimelineDatasetLoaded();
+      if (!ds) return;
+      stopTimelinePlay();
+      const tl = state.timeline;
+      if (tl.windowSize === 'all' || tl.windowSize === 'custom') {
+        tl.windowSize = '1';
+        const ws = document.getElementById('timeline-window-size');
+        if (ws) ws.value = '1';
+      }
+      const spanYears = Math.max(1, Number(tl.windowSize) || 1);
+      const maxStart = Math.max(ds.minYear, ds.maxYear - (spanYears - 1));
+      let nextStart = tl.startYear + delta;
+      if (nextStart > maxStart) nextStart = ds.minYear;
+      if (nextStart < ds.minYear) nextStart = maxStart;
+      tl.startYear = nextStart;
+      renderTimelineUi();
+      if (tl.autoSync) applyTimelineLayersToMap({ quiet: true });
+    },
+
+    onTimelineTogglePlay: async () => {
+      const ds = await ensureTimelineDatasetLoaded();
+      if (!ds) return;
+      const tl = state.timeline;
+      if (tl.playTimer) {
+        stopTimelinePlay();
+        return;
+      }
+      if (tl.windowSize === 'all' || tl.windowSize === 'custom') {
+        tl.windowSize = '1';
+        const ws = document.getElementById('timeline-window-size');
+        if (ws) ws.value = '1';
+      }
+      const btn = document.getElementById('btn-timeline-play');
+      if (btn) btn.textContent = '⏸ Pause';
+
+      renderTimelineUi();
+      applyTimelineLayersToMap({ quiet: true });
+
+      tl.playTimer = setInterval(() => {
+        const spanYears = Math.max(1, Number(tl.windowSize) || 1);
+        const maxStart = Math.max(ds.minYear, ds.maxYear - (spanYears - 1));
+        tl.startYear = tl.startYear >= maxStart ? ds.minYear : tl.startYear + 1;
+        renderTimelineUi();
+        applyTimelineLayersToMap({ quiet: true });
+      }, 1350);
+    },
+
+    onTimelineGenerate: async () => {
+      const ds = await ensureTimelineDatasetLoaded();
+      if (!ds) return;
+      renderTimelineUi();
+      applyTimelineLayersToMap({ quiet: false, commitHistory: true });
+    },
+
+    onTimelineClear: () => {
+      stopTimelinePlay();
+      const preserved = (state.spec.customGeoJsonLayers || []).filter(
+        (l) => !l?.id || !l.id.startsWith(TIMELINE_LAYER_PREFIX),
+      );
+      hideFeatureHover();
+      if (state.selectedFeature?.layer?.id?.startsWith(TIMELINE_LAYER_PREFIX)) {
+        closeFeatureInfoCard();
+      }
+      patchSpec({ customGeoJsonLayers: preserved });
+      showToast('Cleared generated timeline layers.', 'info', 2000);
+    },
+
+    onTimelineExport: async (fmt) => {
+      const ds = await ensureTimelineDatasetLoaded();
+      if (!ds) return;
+      const result = state.timeline.lastResult || renderTimelineUi();
+      const slug = sanitizeFilename(`alaska_airfields_${result.stats.windowLabel}`);
+      if (fmt === 'csv') {
+        const csv = exportTimelineSliceCsv(result.matchedRows, result.stats.windowLabel);
+        downloadTextFile(`${slug}.csv`, csv, 'text/csv;charset=utf-8');
+        showToast(`Downloaded ${slug}.csv (${result.matchedRows.length} rows).`, 'success', 2400);
+      } else {
+        const json = `${JSON.stringify(result.combinedGeoJson, null, 2)}\n`;
+        downloadTextFile(`${slug}.geojson`, json, 'application/geo+json;charset=utf-8');
+        showToast(`Downloaded ${slug}.geojson (${result.combinedGeoJson.features.length} features).`, 'success', 2400);
       }
     },
 

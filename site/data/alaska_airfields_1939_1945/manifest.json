@@ -1,0 +1,147 @@
+{
+  "dataset_id": "alaska_airfields_1939_1945",
+  "title": "Alaska Airfields Progression (1939–1945)",
+  "source_csv": "alaska_airfields_1939_1945.csv",
+  "total_records": 80,
+  "years": [
+    1939,
+    1940,
+    1941,
+    1942,
+    1943,
+    1944,
+    1945
+  ],
+  "regions": {
+    "Aleutian Islands": 12,
+    "Arctic / North Slope": 2,
+    "Interior / ALSIB": 20,
+    "Southcentral": 20,
+    "Southeast": 10,
+    "Southwest & Peninsula": 8,
+    "Western / Bering": 8
+  },
+  "annual_summary": [
+    {
+      "year": 1939,
+      "total_active": 36,
+      "military_only": 0,
+      "dual_use": 0,
+      "military_plus_dual": 0,
+      "civilian_only": 36,
+      "construction": 3,
+      "closed": 0,
+      "new_active": 0,
+      "new_military": 0
+    },
+    {
+      "year": 1940,
+      "total_active": 39,
+      "military_only": 3,
+      "dual_use": 0,
+      "military_plus_dual": 3,
+      "civilian_only": 36,
+      "construction": 4,
+      "closed": 0,
+      "new_active": 3,
+      "new_military": 3
+    },
+    {
+      "year": 1941,
+      "total_active": 43,
+      "military_only": 9,
+      "dual_use": 5,
+      "military_plus_dual": 14,
+      "civilian_only": 29,
+      "construction": 15,
+      "closed": 0,
+      "new_active": 6,
+      "new_military": 11
+    },
+    {
+      "year": 1942,
+      "total_active": 64,
+      "military_only": 25,
+      "dual_use": 21,
+      "military_plus_dual": 46,
+      "civilian_only": 18,
+      "construction": 4,
+      "closed": 0,
+      "new_active": 22,
+      "new_military": 32
+    },
+    {
+      "year": 1943,
+      "total_active": 77,
+      "military_only": 37,
+      "dual_use": 22,
+      "military_plus_dual": 59,
+      "civilian_only": 18,
+      "construction": 0,
+      "closed": 0,
+      "new_active": 13,
+      "new_military": 13
+    },
+    {
+      "year": 1944,
+      "total_active": 76,
+      "military_only": 36,
+      "dual_use": 21,
+      "military_plus_dual": 57,
+      "civilian_only": 19,
+      "construction": 1,
+      "closed": 2,
+      "new_active": 1,
+      "new_military": 1
+    },
+    {
+      "year": 1945,
+      "total_active": 76,
+      "military_only": 35,
+      "dual_use": 7,
+      "military_plus_dual": 42,
+      "civilian_only": 34,
+      "construction": 0,
+      "closed": 4,
+      "new_active": 2,
+      "new_military": 2
+    }
+  ],
+  "files": {
+    "1939": {
+      "combined": "alaska_airfields_1939.geojson",
+      "military": "alaska_airfields_1939_military.geojson",
+      "civilian": "alaska_airfields_1939_civilian.geojson"
+    },
+    "1940": {
+      "combined": "alaska_airfields_1940.geojson",
+      "military": "alaska_airfields_1940_military.geojson",
+      "civilian": "alaska_airfields_1940_civilian.geojson"
+    },
+    "1941": {
+      "combined": "alaska_airfields_1941.geojson",
+      "military": "alaska_airfields_1941_military.geojson",
+      "civilian": "alaska_airfields_1941_civilian.geojson"
+    },
+    "1942": {
+      "combined": "alaska_airfields_1942.geojson",
+      "military": "alaska_airfields_1942_military.geojson",
+      "civilian": "alaska_airfields_1942_civilian.geojson"
+    },
+    "1943": {
+      "combined": "alaska_airfields_1943.geojson",
+      "military": "alaska_airfields_1943_military.geojson",
+      "civilian": "alaska_airfields_1943_civilian.geojson"
+    },
+    "1944": {
+      "combined": "alaska_airfields_1944.geojson",
+      "military": "alaska_airfields_1944_military.geojson",
+      "civilian": "alaska_airfields_1944_civilian.geojson"
+    },
+    "1945": {
+      "combined": "alaska_airfields_1945.geojson",
+      "military": "alaska_airfields_1945_military.geojson",
+      "civilian": "alaska_airfields_1945_civilian.geojson"
+    }
+  }
+}

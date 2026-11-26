@@ -1,0 +1,1065 @@
+{
+  "type": "FeatureCollection",
+  "name": "alaska_airfields_1942_civilian",
+  "metadata": {
+    "dataset": "Alaska Airfields Progression (1939-1945)",
+    "snapshot_year": 1942,
+    "source_csv": "alaska_airfields_1939_1945.csv",
+    "crs": "EPSG:4326 (WGS84, RFC 7946 [longitude, latitude])",
+    "counts": {
+      "year": 1942,
+      "total_active": 64,
+      "military_only": 25,
+      "dual_use": 21,
+      "military_plus_dual": 46,
+      "civilian_only": 18,
+      "construction": 4,
+      "closed": 0,
+      "new_active": 22,
+      "new_military": 32
+    },
+    "subset": "civilian_only"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ak-merrill-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.8444,
+          61.2135
+        ]
+      },
+      "properties": {
+        "id": "ak-merrill-field",
+        "name": "Merrill Field",
+        "alternate_names": [
+          "Anchorage Municipal Airport"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1930",
+        "opened_year": 1930,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "City of Anchorage; CAA; Civil Air Patrol; Star Air Lines / Alaska Airlines",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two gravel strips (4,000 ft & 2,000 ft) with CAA control tower added 1942",
+        "strategic_role": "Territorial Municipal Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Opened 1930; remained Anchorage's primary civilian hub throughout WWII after Elmendorf opened nearby in 1940; CAA improved runways and installed control tower in 1942.",
+        "modern_equivalent": "PAMR / Merrill Field (Active)",
+        "proof_summary": "Municipal airport established 1930 and expanded under CAA wartime program while adjacent Elmendorf Field absorbed combat/transport squadrons. Coordinates match existing PAMR runway center.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "US Army CMH Guarding the US Ch. 9"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Merrill Field",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-palmer",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.0887,
+          61.5949
+        ]
+      },
+      "properties": {
+        "id": "ak-palmer",
+        "name": "Palmer Municipal Field",
+        "alternate_names": [
+          "Matanuska Colony Airfield"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1936",
+        "opened_year": 1936,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Territorial / Municipal; Civil Air Patrol",
+        "surface_wartime": "gravel",
+        "runway_specs": "Graded gravel runway serving Matanuska Valley agricultural colony",
+        "strategic_role": "Territorial Municipal Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Built 1935-36 for Matanuska Valley resettlement colony; served civilian commuters, mail, and wartime Civil Air Patrol northeast of Anchorage.",
+        "modern_equivalent": "PAAQ / Palmer Municipal Airport (Active)",
+        "proof_summary": "Matanuska Colony airfield active pre-war through 1945; coordinates verified against PAAQ.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "Alaska Road Commission reports"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Palmer Municipal Field",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-wasilla",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.5397,
+          61.5717
+        ]
+      },
+      "properties": {
+        "id": "ak-wasilla",
+        "name": "Wasilla Territorial Strip",
+        "alternate_names": [
+          "Wasilla ARC Landing Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1932",
+        "opened_year": 1932,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Territorial Bush Operators",
+        "surface_wartime": "dirt_turf",
+        "runway_specs": "Short gravel/turf strip serving Willow Creek gold mines & railroad",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war Alaska Road Commission strip operating continuously for civil bush and mining traffic throughout 1939-45.",
+        "modern_equivalent": "PAWS / Wasilla Airport vicinity (Relocated/Active)",
+        "proof_summary": "ARC pre-war territorial landing field serving Matanuska-Susitna and Willow Creek mining corridor.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports",
+          "FAA Civil Aviation Policy in Alaska"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "medium",
+        "title": "Wasilla Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-valdez",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -146.2483,
+          61.1339
+        ]
+      },
+      "properties": {
+        "id": "ak-valdez",
+        "name": "Valdez Municipal Strip",
+        "alternate_names": [
+          "Valdez Territorial Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1931",
+        "opened_year": 1931,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "City of Valdez; Territorial Airlines",
+        "surface_wartime": "gravel",
+        "runway_specs": "Short gravel/silt strip on glacial outwash plain near Richardson Highway port",
+        "strategic_role": "Territorial Municipal Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war ice-free port strip serving Copper River & Richardson Highway traffic; remained civilian throughout WWII while military traffic concentrated at Gulkana and Cordova.",
+        "modern_equivalent": "PAVD / Valdez Pioneer Field (Active)",
+        "proof_summary": "Pre-war ARC/municipal strip at Richardson Highway terminus; coordinates verified against PAVD.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "Alaska Road Commission reports"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Valdez Municipal Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-copper-center",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -145.2944,
+          61.9412
+        ]
+      },
+      "properties": {
+        "id": "ak-copper-center",
+        "name": "Copper Center Territorial Strip",
+        "alternate_names": [
+          "Copper Center ARC Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1931",
+        "opened_year": 1931,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Copper Belt Line civil operators",
+        "surface_wartime": "gravel",
+        "runway_specs": "Graded gravel strip along Richardson Highway / Copper River",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war Copper Belt Line civil bush strip serving Copper River Valley communities continuously 1939-45.",
+        "modern_equivalent": "Z93 / Copper Center 2 Airport (Active)",
+        "proof_summary": "Documented pre-war ARC territorial strip on Richardson Highway corridor; coordinates match Z93.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports",
+          "Alaska Aviation history"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Copper Center Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-chitina",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -144.4356,
+          61.5858
+        ]
+      },
+      "properties": {
+        "id": "ak-chitina",
+        "name": "Chitina Territorial Strip",
+        "alternate_names": [
+          "Chitina Bush Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1933",
+        "opened_year": 1933,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Territorial Bush Operators; Wrangell Mountain flyers",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip serving Wrangell Mountains / former Copper River Railway town",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war civil bush strip active 1939-45 after closure of Copper River & Northwestern Railway in 1938.",
+        "modern_equivalent": "CXC / Chitina Airport (Active)",
+        "proof_summary": "Active pre-war bush strip serving Copper River & Wrangell district after 1938 railway closure; coordinates match CXC.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska",
+          "NPS At Work in the Wrangells"
+        ],
+        "source_url": "https://npshistory.com/publications/wrst/work-in-the-wrangells.pdf",
+        "source_confidence": "high",
+        "title": "Chitina Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-weeks-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -147.7289,
+          64.8358
+        ]
+      },
+      "properties": {
+        "id": "ak-weeks-field",
+        "name": "Weeks Field",
+        "alternate_names": [
+          "Fairbanks Municipal Airport (Original)"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1923",
+        "opened_year": 1923,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "City of Fairbanks; Pan American Airways; Wien Alaska Airlines",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel municipal runway downtown Fairbanks (5,000 ft by WWII)",
+        "strategic_role": "Territorial Municipal Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Opened 1923; Interior Alaska's premier pre-war and wartime commercial aviation hub (Pan Am, Wien, Star) while adjacent Ladd Field served USAAF and Soviet Lend-Lease.",
+        "modern_equivalent": "Closed 1951 (Replaced by PAFA; now Noel Wien Library / subdivision)",
+        "proof_summary": "Historic Fairbanks municipal airfield operational 1923-1951; coordinates verified on former Weeks Field site in Fairbanks.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska",
+          "Alaska DNR OHA Ladd Field Heritage"
+        ],
+        "source_url": "https://dnr.alaska.gov/parks/oha/publications/The%20WWII%20Heritage%20of%20Ladd%20Field.pdf",
+        "source_confidence": "verified",
+        "title": "Weeks Field",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-fort-yukon",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -145.2504,
+          66.5715
+        ]
+      },
+      "properties": {
+        "id": "ak-fort-yukon",
+        "name": "Fort Yukon Field",
+        "alternate_names": [
+          "Fort Yukon Territorial Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1928",
+        "opened_year": 1928,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Wien Alaska Airlines; Territorial Civil",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip on Yukon Flats just north of Arctic Circle",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war Arctic Circle commercial hub operated by Wien Alaska Airlines; remained vital civilian mail, medical, and trapper/mining supply base 1939-45.",
+        "modern_equivalent": "PFYU / Fort Yukon Airport (Active)",
+        "proof_summary": "Historic pre-war Wien Alaska Airlines hub north of Arctic Circle; coordinates verified against PFYU.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Fort Yukon Field",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-circle-city",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -144.0761,
+          65.8266
+        ]
+      },
+      "properties": {
+        "id": "ak-circle-city",
+        "name": "Circle City Territorial Strip",
+        "alternate_names": [
+          "Circle Yukon Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1931",
+        "opened_year": 1931,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Territorial Bush Operators",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel bush strip at Steese Highway terminus on Yukon River",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war ARC territorial strip serving Circle mining district and Yukon River mail route continuously 1939-45.",
+        "modern_equivalent": "PACR / Circle City Airport (Active)",
+        "proof_summary": "ARC pre-war territorial strip at Steese Highway terminus; coordinates verified against PACR.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports",
+          "FAA"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Circle City Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-eagle",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -141.1496,
+          64.7781
+        ]
+      },
+      "properties": {
+        "id": "ak-eagle",
+        "name": "Eagle Territorial Strip",
+        "alternate_names": [
+          "Eagle City Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1929",
+        "opened_year": 1929,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Territorial Bush Operators",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip near Fort Egbert / Upper Yukon Canadian border",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war Upper Yukon border airstrip maintained for civil mail and mining traffic 1939-45.",
+        "modern_equivalent": "PAEG / Eagle Airport (Active)",
+        "proof_summary": "Pre-war Upper Yukon border strip; coordinates match PAEG.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports",
+          "FAA"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Eagle Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-wiseman",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -150.1231,
+          67.4047
+        ]
+      },
+      "properties": {
+        "id": "ak-wiseman",
+        "name": "Wiseman Territorial Strip",
+        "alternate_names": [
+          "Wiseman Koyukuk Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1928",
+        "opened_year": 1928,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Wien Alaska Airlines",
+        "surface_wartime": "gravel",
+        "runway_specs": "Short gravel mining strip in central Brooks Range",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "One of Alaska's northernmost pre-war bush strips (opened late 1920s); active civilian mail and mining link in Brooks Range throughout 1939-45.",
+        "modern_equivalent": "WSM / Wiseman Airport (Active)",
+        "proof_summary": "Historic Brooks Range bush strip served by Noel Wien from late 1920s; coordinates match WSM.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska",
+          "Alaska Aviation history"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Wiseman Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-flat",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.0067,
+          62.4414
+        ]
+      },
+      "properties": {
+        "id": "ak-flat",
+        "name": "Flat / Iditarod Territorial Strip",
+        "alternate_names": [
+          "Flat Gold-Mining Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1929",
+        "opened_year": 1929,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Bush Operators",
+        "surface_wartime": "gravel",
+        "runway_specs": "Graded mining tailings/gravel strip serving Iditarod district",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Major pre-war western interior gold-mining strip; active civilian bush hub 1939-45 despite wartime gold-mining slowdown.",
+        "modern_equivalent": "FLT / Flat Airport (Active)",
+        "proof_summary": "Pre-war ARC gold-mining airstrip in Iditarod district; coordinates verified against FLT.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports",
+          "FAA"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Flat / Iditarod Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-ophir",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.5297,
+          63.1453
+        ]
+      },
+      "properties": {
+        "id": "ak-ophir",
+        "name": "Ophir Territorial Strip",
+        "alternate_names": [
+          "Ophir Innoko Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1929",
+        "opened_year": 1929,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Bush Operators",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip serving Innoko mining district near McGrath",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war ARC territorial strip supporting Innoko River mining camps continuously 1939-45.",
+        "modern_equivalent": "Z17 / Ophir Airport (Active)",
+        "proof_summary": "Documented pre-war ARC territorial bush strip in Innoko district; coordinates match Z17.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "medium",
+        "title": "Ophir Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-dillingham",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.5055,
+          59.0447
+        ]
+      },
+      "properties": {
+        "id": "ak-dillingham",
+        "name": "Dillingham Territorial Field",
+        "alternate_names": [
+          "Snag Point / Dillingham Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1935",
+        "opened_year": 1935,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Territorial Civil; Bristol Bay Bush Carriers",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip serving Bristol Bay salmon canneries & Nushagak River",
+        "strategic_role": "Territorial Municipal Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war Bristol Bay commercial cannery and mail strip; active civilian center 1939-45 west of Naknek AAF.",
+        "modern_equivalent": "PADL / Dillingham Airport (Active)",
+        "proof_summary": "Pre-war Bristol Bay territorial commercial strip; coordinates match PADL.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Dillingham Territorial Field",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-platinum",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -161.8197,
+          59.0114
+        ]
+      },
+      "properties": {
+        "id": "ak-platinum",
+        "name": "Platinum / Goodnews Bay Strip",
+        "alternate_names": [
+          "Platinum Mining Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1937",
+        "opened_year": 1937,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Goodnews Bay Mining Co.; Civil Bush Carriers",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip serving America's primary domestic platinum dredge mine",
+        "strategic_role": "Strategic Mining Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Built late 1930s for Goodnews Bay platinum mines; operated as civilian strategic mineral supply strip throughout WWII (platinum was vital to wartime catalysts/electronics).",
+        "modern_equivalent": "PAPM / Platinum Airport (Active)",
+        "proof_summary": "Strategic WWII platinum mining strip on Kuskokwim Bay coast; coordinates verified against PAPM.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska",
+          "US Bureau of Mines Alaska records"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Platinum / Goodnews Bay Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-nome-municipal",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -165.3422,
+          64.4995
+        ]
+      },
+      "properties": {
+        "id": "ak-nome-municipal",
+        "name": "Nome Field (Municipal / City Field)",
+        "alternate_names": [
+          "Nome Territorial Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Western / Bering",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1925",
+        "opened_year": 1925,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "City of Nome; Wien Alaska Airlines; Pan Am",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip east of Nome serving Seward Peninsula & Bering mail",
+        "strategic_role": "Territorial Municipal Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war aviation hub of Northwestern Alaska since the 1920s; continued serving civilian bush and mail flights alongside neighboring Marks AAF (built 1942).",
+        "modern_equivalent": "Z90 / Nome City Field (Active)",
+        "proof_summary": "Historic Nome municipal/city strip active prior to and throughout WWII alongside Marks AAF; coordinates match Nome City Field.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "US Army CMH Ch. 9"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Nome Field (Municipal / City Field)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-teller",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -166.3394,
+          65.2403
+        ]
+      },
+      "properties": {
+        "id": "ak-teller",
+        "name": "Teller Territorial Strip",
+        "alternate_names": [
+          "Teller Bush Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Western / Bering",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1928",
+        "opened_year": 1928,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Territorial Bush Carriers (Wien / Ferguson)",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel spit strip northwest of Nome near Bering Strait",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war Seward Peninsula coastal bush strip (famous 1926 Norge airship landing site); remained active civil mail & supply field 1939-45.",
+        "modern_equivalent": "PATE / Teller Airport (Active)",
+        "proof_summary": "Pre-war Seward Peninsula civil strip northwest of Nome; coordinates match PATE.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska",
+          "Alaska Road Commission reports"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Teller Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-candle",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -161.9267,
+          65.9072
+        ]
+      },
+      "properties": {
+        "id": "ak-candle",
+        "name": "Candle Territorial Strip",
+        "alternate_names": [
+          "Candle Creek Mining Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "civilian",
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Western / Bering",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1929",
+        "opened_year": 1929,
+        "military_start_year": null,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Alaska Road Commission; Seward Peninsula Bush Operators",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip serving Kiwalik River placer gold district",
+        "strategic_role": "Bush / Mail Strip",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:civilian · 43:civilian · 44:civilian · 45:civilian",
+        "notes": "Pre-war ARC mining strip on northern Seward Peninsula active for civilian mail and mining traffic 1939-45.",
+        "modern_equivalent": "AK75 / Candle 2 Airport (Active)",
+        "proof_summary": "ARC pre-war territorial mining strip on Seward Peninsula; coordinates match AK75.",
+        "primary_sources": [
+          "Alaska Road Commission Annual Reports"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "medium",
+        "title": "Candle Territorial Strip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "civilian",
+        "status_1943": "civilian",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    }
+  ]
+}

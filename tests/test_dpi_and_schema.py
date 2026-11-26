@@ -453,6 +453,78 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         self.assertEqual(alaska_spec.highlightedCountries[0].id, "840")
         self.assertEqual([c.name for c in alaska_spec.cities], ["Juneau", "Anchorage", "Fairbanks", "Nome"])
 
+    def test_alaska_airfields_1939_1945_csv_layers_timeline_and_review(self) -> None:
+        """Alaska 1939-1945 CSV, year-by-year GeoJSONs, Timeline tab, and unlisted review console validate cleanly."""
+        import json
+        from scripts.build_alaska_airfields import YEARS, load_and_validate_csv
+
+        ak_dir = SITE_DIR / "data" / "alaska_airfields_1939_1945"
+        csv_path = ak_dir / "alaska_airfields_1939_1945.csv"
+        manifest_path = ak_dir / "manifest.json"
+        dossier_path = ak_dir / "PROOF_DOSSIER.md"
+
+        for p in (csv_path, manifest_path, dossier_path):
+            self.assertTrue(p.is_file(), f"Missing Alaska artifact: {p}")
+
+        rows = load_and_validate_csv(csv_path)
+        self.assertGreaterEqual(len(rows), 75)
+        # Ensure Western Aleutians across the 180 deg Date Line are represented
+        east_hemi = [r for r in rows if r["longitude"] > 170.0]
+        self.assertGreaterEqual(len(east_hemi), 4)
+
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["total_records"], len(rows))
+        self.assertEqual(manifest["years"], YEARS)
+
+        summary_by_year = {entry["year"]: entry for entry in manifest["annual_summary"]}
+        for year in YEARS:
+            comb = json.loads((ak_dir / f"alaska_airfields_{year}.geojson").read_text(encoding="utf-8"))
+            mil = json.loads((ak_dir / f"alaska_airfields_{year}_military.geojson").read_text(encoding="utf-8"))
+            civ = json.loads((ak_dir / f"alaska_airfields_{year}_civilian.geojson").read_text(encoding="utf-8"))
+
+            mil_ids = {f["id"] for f in mil["features"]}
+            civ_ids = {f["id"] for f in civ["features"]}
+            comb_ids = {f["id"] for f in comb["features"]}
+
+            self.assertEqual(mil_ids & civ_ids, set(), f"{year}: military/civilian must be disjoint")
+            self.assertEqual(mil_ids | civ_ids, comb_ids, f"{year}: military + civilian must equal combined")
+            self.assertEqual(len(comb["features"]), summary_by_year[year]["total_active"])
+
+        # Timeline JS module contract
+        timeline_js = (SITE_DIR / "js" / "timeline.js").read_text(encoding="utf-8")
+        for symbol in (
+            "export function parseCsv",
+            "export function normalizeTimelineDataset",
+            "export function generateTimelineLayers",
+            "export function computeAnnualSeries",
+            "export function exportTimelineSliceCsv",
+        ):
+            self.assertIn(symbol, timeline_js)
+
+        # Main studio HTML: has Timeline tab (defaulting to 1 year) and does NOT advertise review page
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        for elem_id in (
+            "alaska-year-pills",
+            "alaska-airfield-layers-list",
+            "tab-timeline",
+            "timeline-window-size",
+            "timeline-year-slider",
+            "timeline-chart",
+            "btn-timeline-generate",
+        ):
+            self.assertIn(f'id="{elem_id}"', html)
+        self.assertIn('<option value="1" selected>1 Year (Default)</option>', html)
+        self.assertNotIn("alaska-airfields.html", html, "Review workbench must not be advertised on main studio page")
+
+        # Unlisted visual card-based review console
+        review_path = SITE_DIR / "review" / "alaska-airfields.html"
+        self.assertTrue(review_path.is_file(), f"Missing review workbench: {review_path}")
+        review_html = review_path.read_text(encoding="utf-8")
+        self.assertIn('name="robots" content="noindex, nofollow"', review_html)
+        self.assertIn("../data/alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv", review_html)
+        self.assertIn("../js/timeline.js", review_html)
+        self.assertIn("btn-print-pdf", review_html)
+
 
 if __name__ == "__main__":
     unittest.main()

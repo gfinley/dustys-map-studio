@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=17" />
+  <link rel="stylesheet" href="./styles/main.css?v=18" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -96,6 +96,7 @@
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="colors">Colors &amp; Map</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="features">Regions &amp; Pins</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="historical">Historical</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="timeline">Timeline</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="pro">Scale &amp; Pro</button>
         </nav>
 
@@ -491,8 +492,37 @@
             </div>
           </section>
 
-          <!-- TAB 4: Historical Layers (1941 Airfields & 1942–1945 Philippines Railways) -->
+          <!-- TAB 4: Historical Layers (Alaska 1939–45 Airfields, 1941 SE Asia Airfields & 1942–45 Philippines Railways) -->
           <section class="tab-panel" id="tab-historical" role="tabpanel" hidden>
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Alaska Airfields (1939–1945)</h2>
+                <span class="helper-pill">CSV &bull; 80 Sites</span>
+              </div>
+              <p class="helper-text subtle">Year-by-year progression of military, dual-use, and civilian airfields across Alaska &amp; the Aleutians. Pick a year below or use the <strong>Timeline</strong> tab for custom spans.</p>
+              <div id="alaska-year-pills" class="year-pill-row" role="group" aria-label="Select Alaska airfield snapshot year">
+                <button class="year-pill" type="button" data-ak-year="1939">1939</button>
+                <button class="year-pill" type="button" data-ak-year="1940">1940</button>
+                <button class="year-pill" type="button" data-ak-year="1941">1941</button>
+                <button class="year-pill" type="button" data-ak-year="1942">1942</button>
+                <button class="year-pill active" type="button" data-ak-year="1943">1943</button>
+                <button class="year-pill" type="button" data-ak-year="1944">1944</button>
+                <button class="year-pill" type="button" data-ak-year="1945">1945</button>
+              </div>
+              <div class="example-chips historical-actions">
+                <button id="btn-hist-alaska-both" class="example-chip" type="button" title="Turn on Military and Civilian Alaska airfield layers for selected year">Mil + Civ</button>
+                <button id="btn-hist-alaska-none" class="example-chip" type="button" title="Hide all Alaska 1939–1945 airfield layers">All Off</button>
+                <button id="btn-hist-frame-alaska" class="example-chip" type="button" title="Frame Alaska and the Aleutian Islands across the Date Line">Frame Alaska</button>
+                <a class="example-chip" href="./data/alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv" download="alaska_airfields_1939_1945.csv" title="Download master Alaska airfields CSV dataset">Download CSV</a>
+              </div>
+              <div class="historical-master-row">
+                <label class="historical-master-label" for="alaska-airfield-master-size">Dot Size</label>
+                <input id="alaska-airfield-master-size" type="range" min="0.4" max="4.0" step="0.1" value="1.5" title="Resize all active Alaska airfield layers together" />
+                <span id="alaska-airfield-master-size-val" class="mini-val">1.5</span>
+              </div>
+              <div id="alaska-airfield-layers-list" class="toggle-list historical-layers-list"></div>
+            </div>
+
             <div class="panel-card">
               <div class="card-header">
                 <h2>1941 Land Airfields</h2>
@@ -540,10 +570,13 @@
               </div>
               <p class="helper-text subtle">Load a complete framed map with legend, scale bar, and layers pre-configured.</p>
               <div class="btn-stack-vertical historical-preset-btns">
+                <button id="btn-preset-alaska-air" class="btn btn-primary btn-sm" type="button">
+                  Alaska Airfields Progression (1939–1945)
+                </button>
                 <button id="btn-preset-ph-rail" class="btn btn-secondary btn-sm" type="button">
                   Philippines Railways (1942–1945)
                 </button>
-                <button id="btn-preset-ph-combined" class="btn btn-primary btn-sm" type="button">
+                <button id="btn-preset-ph-combined" class="btn btn-secondary btn-sm" type="button">
                   Philippines WWII (Railways + 1941 Airfields)
                 </button>
                 <button id="btn-preset-seasia-air" class="btn btn-secondary btn-sm" type="button">
@@ -553,7 +586,161 @@
             </div>
           </section>
 
-          <!-- TAB 5: Scale, Globe & Pro -->
+          <!-- TAB 5: Timeline Layer Generator (CSV-Driven, Default 1-Year Window) -->
+          <section class="tab-panel" id="tab-timeline" role="tabpanel" hidden>
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Timeline Layer Generator</h2>
+                <span id="timeline-window-badge" class="helper-pill">1939 (1 yr)</span>
+              </div>
+              <p class="helper-text subtle">Generate map layers dynamically from a lightweight CSV dataset across any selected timeline window (defaults to <strong>1 year</strong>).</p>
+
+              <div class="field-stack">
+                <div class="field">
+                  <label for="timeline-dataset-select">CSV Dataset</label>
+                  <select id="timeline-dataset-select">
+                    <option value="alaska_airfields_1939_1945">Alaska Airfields (1939–1945) &bull; 80 Sites</option>
+                  </select>
+                </div>
+                <div class="example-chips historical-actions">
+                  <button id="btn-timeline-frame-alaska" class="example-chip" type="button">Frame Alaska</button>
+                  <button id="btn-timeline-upload-csv" class="example-chip" type="button" title="Load your own timeline CSV with status_YYYY columns">Upload Custom CSV</button>
+                  <a class="example-chip" href="./data/alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv" download="alaska_airfields_1939_1945.csv">Download Master CSV</a>
+                  <input id="file-timeline-csv" type="file" accept=".csv,text/csv" hidden />
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Timeline Window</h2>
+                <span id="timeline-range-label" class="pixel-badge">1939</span>
+              </div>
+
+              <div class="field-grid-2">
+                <div class="field">
+                  <label for="timeline-window-size">Window Interval</label>
+                  <select id="timeline-window-size">
+                    <option value="1" selected>1 Year (Default)</option>
+                    <option value="2">2 Years</option>
+                    <option value="3">3 Years</option>
+                    <option value="all">Full Span (1939–1945)</option>
+                    <option value="custom">Custom Start–End</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="timeline-gen-mode">Generation Mode</label>
+                  <select id="timeline-gen-mode">
+                    <option value="cumulative_split" selected>Active (Mil / Civ Split)</option>
+                    <option value="cumulative_highlight_new">Cumulative + Highlight New</option>
+                    <option value="new_only">Newly Added / Upgraded Only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="timeline-scrubber-box">
+                <div class="timeline-scrubber-top">
+                  <span class="subhead" style="margin:0;">Scrub Timeline</span>
+                  <div class="timeline-play-group">
+                    <button id="btn-timeline-prev" class="btn-chip" type="button" title="Previous step">&lsaquo; Prev</button>
+                    <button id="btn-timeline-play" class="btn-chip" type="button" title="Animate year-by-year progression">&#9654; Play</button>
+                    <button id="btn-timeline-next" class="btn-chip" type="button" title="Next step">Next &rsaquo;</button>
+                  </div>
+                </div>
+                <input id="timeline-year-slider" type="range" min="1939" max="1945" step="1" value="1939" aria-label="Selected timeline start year" />
+                <div id="timeline-year-ticks" class="timeline-year-ticks">
+                  <span>1939</span><span>1940</span><span>1941</span><span>1942</span><span>1943</span><span>1944</span><span>1945</span>
+                </div>
+              </div>
+
+              <div id="timeline-custom-range-row" class="field-grid-2 compact-row" hidden>
+                <div class="field">
+                  <label for="timeline-start-year">Start Year</label>
+                  <select id="timeline-start-year"></select>
+                </div>
+                <div class="field">
+                  <label for="timeline-end-year">End Year</label>
+                  <select id="timeline-end-year"></select>
+                </div>
+              </div>
+
+              <div id="timeline-chart" class="timeline-chart" aria-label="Annual Alaska airfield progression chart"></div>
+
+              <div id="timeline-stats-strip" class="timeline-stats-strip">
+                <div class="tl-stat"><strong id="tl-stat-total">—</strong><span>Active</span></div>
+                <div class="tl-stat tl-stat-mil"><strong id="tl-stat-mil">—</strong><span>Military</span></div>
+                <div class="tl-stat tl-stat-dual"><strong id="tl-stat-dual">—</strong><span>Dual-Use</span></div>
+                <div class="tl-stat tl-stat-civ"><strong id="tl-stat-civ">—</strong><span>Civilian</span></div>
+                <div class="tl-stat tl-stat-new"><strong id="tl-stat-new">—</strong><span>New</span></div>
+              </div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Filters &amp; Layer Output</h2>
+              </div>
+
+              <div class="field-grid-2">
+                <div class="field">
+                  <label for="timeline-region-filter">Region</label>
+                  <select id="timeline-region-filter">
+                    <option value="all">All Alaska Regions</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="timeline-dot-size">Dot Size: <strong id="timeline-dot-size-val">1.5</strong></label>
+                  <input id="timeline-dot-size" type="range" min="0.4" max="4.0" step="0.1" value="1.5" />
+                </div>
+              </div>
+
+              <div class="toggle-list" style="margin-top: 8px;">
+                <label class="switch-label" for="timeline-inc-mil">
+                  <input id="timeline-inc-mil" type="checkbox" checked />
+                  <span>Include Military &amp; Dual-Use</span>
+                </label>
+                <label class="switch-label" for="timeline-inc-civ">
+                  <input id="timeline-inc-civ" type="checkbox" checked />
+                  <span>Include Civilian Airfields</span>
+                </label>
+                <label class="switch-label" for="timeline-split-dual">
+                  <input id="timeline-split-dual" type="checkbox" />
+                  <span>Separate Dual-Use into 3rd Amber Layer</span>
+                </label>
+                <label class="switch-label" for="timeline-inc-const">
+                  <input id="timeline-inc-const" type="checkbox" />
+                  <span>Show Under Construction Sites</span>
+                </label>
+                <label class="switch-label" for="timeline-inc-seaplane">
+                  <input id="timeline-inc-seaplane" type="checkbox" checked />
+                  <span>Include Seaplane Bases (Navy/Civil)</span>
+                </label>
+                <label class="switch-label" for="timeline-auto-sync">
+                  <input id="timeline-auto-sync" type="checkbox" checked />
+                  <span>Auto-Update Map on Timeline Change</span>
+                </label>
+              </div>
+
+              <div class="btn-stack-2" style="margin-top: 10px;">
+                <button id="btn-timeline-generate" class="btn btn-primary btn-sm" type="button">
+                  Generate Layers on Map
+                </button>
+                <button id="btn-timeline-clear" class="btn btn-secondary btn-sm" type="button">
+                  Clear Generated Layers
+                </button>
+              </div>
+
+              <div class="btn-stack-2" style="margin-top: 6px;">
+                <button id="btn-timeline-export-geojson" class="btn btn-secondary btn-sm" type="button">
+                  Download Slice (.geojson)
+                </button>
+                <button id="btn-timeline-export-csv" class="btn btn-secondary btn-sm" type="button">
+                  Download Slice (.csv)
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 6: Scale, Globe & Pro -->
           <section class="tab-panel" id="tab-pro" role="tabpanel" hidden>
             <div class="panel-card">
               <div class="card-header">
@@ -768,6 +955,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=17"></script>
+  <script type="module" src="./js/app.js?v=18"></script>
 </body>
 </html>

@@ -67,3 +67,27 @@ Seven individually toggleable WGS 84 (`EPSG:4326`) GeoJSON layers in [`philippin
 | [`philippines_railways_1942_1945/negros_industrial.geojson`](philippines_railways_1942_1945/negros_industrial.geojson) | 4 | Surveyed Negros sugar & logging railways (`102.4 km`: ILCO, Bais, Hawaiian-Philippine, Victorias) |
 | [`philippines_railways_1942_1945/major_stations.geojson`](philippines_railways_1942_1945/major_stations.geojson) | 105 | Verified WWII-era stations & junctions (hover/click on map for details) |
 
+---
+
+# Alaska Airfields Progression (1939–1945, Military & Civilian)
+
+Lightweight CSV master dataset and pre-generated year-by-year RFC 7946 GeoJSON layers in [`alaska_airfields_1939_1945/`](alaska_airfields_1939_1945/) tracing **80 documented Alaska airfields** across mainland Alaska, Southeast Panhandle, Bristol Bay/Peninsula, Bering Strait, Arctic North Slope (PET-4), and the Aleutian Islands (spanning the 180° International Date Line).
+
+## Source CSV & Generated Products
+
+| File | Description |
+| --- | --- |
+| [`alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv`](alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv) | **Master editable CSV** (single source of truth with `status_1939`..`status_1945`, runway/operator metadata, transition notes, proof summaries, and primary citations) |
+| `alaska_airfields_YYYY.geojson` (`1939`–`1945`) | Combined active operational airfields snapshot for each year |
+| `alaska_airfields_YYYY_military.geojson` (`1939`–`1945`) | Disjoint Military & Dual-Use airfields for each year |
+| `alaska_airfields_YYYY_civilian.geojson` (`1939`–`1945`) | Disjoint Civilian-only airfields for each year |
+| [`alaska_airfields_1939_1945/manifest.json`](alaska_airfields_1939_1945/manifest.json) | Annual summary counts & layer manifest |
+| [`alaska_airfields_1939_1945/PROOF_DOSSIER.md`](alaska_airfields_1939_1945/PROOF_DOSSIER.md) | Markdown proof table & source dossier generated from the CSV |
+
+## Regenerating
+
+```bash
+python3 scripts/build_alaska_airfields.py
+```
+
+

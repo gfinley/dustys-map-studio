@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Alaska Airfields (1939–1945) — Visual Proof &amp; Human Validation Workbench</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --surface: #131e31;
+      --surface-alt: #1a2840;
+      --surface-soft: #0f1829;
+      --border: rgba(148, 163, 184, 0.22);
+      --border-strong: rgba(148, 163, 184, 0.4);
+      --text: #f1f5f9;
+      --text-sec: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --mil: #ef4444;
+      --mil-bg: rgba(239, 68, 68, 0.16);
+      --dual: #f59e0b;
+      --dual-bg: rgba(245, 158, 11, 0.18);
+      --civ: #3b82f6;
+      --civ-bg: rgba(59, 130, 246, 0.18);
+      --const: #94a3b8;
+      --const-bg: rgba(148, 163, 184, 0.16);
+      --ok: #10b981;
+      --ok-bg: rgba(16, 185, 129, 0.16);
+      --flag: #f43f5e;
+      --flag-bg: rgba(244, 63, 94, 0.18);
+      --mono: ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, monospace;
+      --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .page-wrap {
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 20px 22px 60px;
+    }
+
+    /* Header */
+    .workbench-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 18px;
+    }
+
+    .title-block h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .title-block p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 720px;
+    }
+
+    .unlisted-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+      margin-bottom: 6px;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-alt);
+      color: var(--text);
+      border-radius: 7px;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.14s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      background: #223452;
+    }
+
+    .btn-primary {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #0369a1;
+    }
+
+    .btn-ok {
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+    }
+    .btn-ok.active {
+      background: rgba(16, 185, 129, 0.28);
+      border-color: #10b981;
+      color: #ffffff;
+    }
+
+    .btn-flag {
+      border-color: rgba(244, 63, 94, 0.5);
+      color: #fda4af;
+    }
+    .btn-flag.active {
+      background: rgba(244, 63, 94, 0.28);
+      border-color: #f43f5e;
+      color: #ffffff;
+    }
+
+    /* Overview Grid */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .overview-map-wrap {
+      position: relative;
+      width: 100%;
+      height: 255px;
+      background: #0c1728;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .overview-map-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .overview-map-legend {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      background: rgba(11, 18, 32, 0.85);
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    .legend-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-sec);
+    }
+
+    .legend-dot i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .progress-bar-track {
+      width: 100%;
+      height: 10px;
+      background: var(--surface-soft);
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      border: 1px solid var(--border);
+      margin: 8px 0 10px;
+    }
+
+    .prog-ok { background: var(--ok); height: 100%; transition: width 0.2s ease; }
+    .prog-flag { background: var(--flag); height: 100%; transition: width 0.2s ease; }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .kpi-box {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .kpi-box strong {
+      display: block;
+      font-size: 18px;
+      font-family: var(--mono);
+    }
+
+    .kpi-box span {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .macro-chart {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      align-items: end;
+      height: 112px;
+      padding: 10px 8px 6px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .macro-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 3px;
+      height: 100%;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 2px;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .macro-col:hover { background: rgba(56, 189, 248, 0.08); }
+    .macro-col.active { background: rgba(56, 189, 248, 0.16); border-color: rgba(56, 189, 248, 0.5); }
+
+    .macro-cnt { font-size: 10px; font-family: var(--mono); color: var(--text-sec); }
+    .macro-stack {
+      width: 24px;
+      display: flex;
+      flex-direction: column-reverse;
+      border-radius: 3px 3px 0 0;
+      overflow: hidden;
+    }
+    .macro-yr { font-size: 11px; font-family: var(--mono); color: var(--text-muted); }
+    .macro-col.active .macro-yr { color: #ffffff; font-weight: 700; }
+
+    /* Filter Toolbar */
+    .filter-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 1.5fr repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+      position: sticky;
+      top: 8px;
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .filter-field label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .filter-field input,
+    .filter-field select {
+      background: var(--surface-soft);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12.5px;
+      font-family: var(--sans);
+    }
+
+    .results-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+
+    /* Verification Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+      gap: 16px;
+    }
+
+    .verify-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .verify-card.state-approved {
+      border-color: rgba(16, 185, 129, 0.55);
+    }
+
+    .verify-card.state-flagged {
+      border-color: rgba(244, 63, 94, 0.65);
+      box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.25);
+    }
+
+    .verify-card.highlight-pulse {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+    }
+
+    .vc-header {
+      padding: 12px 14px 10px;
+      background: var(--surface-alt);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .vc-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .vc-sub {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .vc-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      color: var(--text-sec);
+    }
+
+    .pill-verified { background: var(--ok-bg); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+    .pill-high { background: rgba(56, 189, 248, 0.16); border-color: rgba(56, 189, 248, 0.4); color: #7dd3fc; }
+    .pill-medium { background: var(--dual-bg); border-color: rgba(245, 158, 11, 0.4); color: #fcd34d; }
+
+    .stamp {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      padding: 3px 8px;
+      border-radius: 5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .stamp-pending { background: rgba(148, 163, 184, 0.14); color: var(--text-muted); border: 1px solid var(--border); }
+    .stamp-approved { background: var(--ok-bg); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.6); }
+    .stamp-flagged { background: var(--flag-bg); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.6); }
+
+    /* Visual Verification Media Row */
+    .vc-visual-row {
+      display: grid;
+      grid-template-columns: 1.55fr 1fr;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #0d1525;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tile-viewer {
+      position: relative;
+      height: 156px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0a101d;
+      border: 1px solid var(--border);
+    }
+
+    .tile-grid {
+      position: absolute;
+      width: 768px;
+      height: 768px;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .tile-grid img {
+      position: absolute;
+      width: 256px;
+      height: 256px;
+      display: block;
+      image-rendering: auto;
+    }
+
+    .reticle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .reticle::before,
+    .reticle::after {
+      content: '';
+      position: absolute;
+      background: #ef4444;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+    }
+    .reticle::before { left: 11px; top: 0; width: 2px; height: 24px; }
+    .reticle::after { top: 11px; left: 0; height: 2px; width: 24px; }
+    .reticle-ring {
+      position: absolute;
+      inset: 4px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .tile-controls {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      display: flex;
+      gap: 4px;
+      z-index: 6;
+    }
+
+    .tile-btn {
+      background: rgba(11, 18, 32, 0.86);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 6px;
+      cursor: pointer;
+    }
+    .tile-btn:hover { background: #0284c7; }
+
+    .tile-coord-tag {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      z-index: 6;
+      background: rgba(11, 18, 32, 0.86);
+      color: #e2e8f0;
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .locator-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .locator-svg-wrap {
+      height: 114px;
+      background: #0a1324;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .ext-links {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+
+    .ext-link {
+      text-align: center;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 4px 5px;
+      border-radius: 5px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      color: var(--text-sec);
+    }
+    .ext-link:hover { border-color: var(--accent); color: #ffffff; text-decoration: none; }
+
+    /* 1939-1945 Timeline Strip */
+    .vc-timeline-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .yr-cell {
+      border-radius: 6px;
+      padding: 4px 2px;
+      text-align: center;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+    }
+
+    .yr-cell .yr-num {
+      display: block;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .yr-cell .yr-st {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .yr-st-none { opacity: 0.45; }
+    .yr-st-construction { background: var(--const-bg); border-color: rgba(148, 163, 184, 0.45); color: #cbd5e1; }
+    .yr-st-civilian { background: var(--civ-bg); border-color: rgba(59, 130, 246, 0.55); color: #93c5fd; }
+    .yr-st-dual_use { background: var(--dual-bg); border-color: rgba(245, 158, 11, 0.55); color: #fcd34d; }
+    .yr-st-military { background: var(--mil-bg); border-color: rgba(239, 68, 68, 0.55); color: #fca5a5; }
+    .yr-st-closed { background: rgba(100, 116, 139, 0.16); color: #94a3b8; text-decoration: line-through; }
+
+    /* Card Body */
+    .vc-body {
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .proof-box {
+      background: rgba(56, 189, 248, 0.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: var(--text-sec);
+    }
+
+    .proof-box strong {
+      color: #ffffff;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .meta-table {
+      display: grid;
+      grid-template-columns: 98px 1fr;
+      gap: 4px 8px;
+      font-size: 11.5px;
+    }
+
+    .meta-k { color: var(--text-muted); font-weight: 600; }
+    .meta-v { color: var(--text-sec); }
+
+    .sources-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .src-chip {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    /* Human Validation Controls */
+    .vc-review-bar {
+      padding: 10px 14px 12px;
+      background: var(--surface-soft);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .vc-review-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .vc-review-actions .btn {
+      padding: 5px 10px;
+      font-size: 11.5px;
+    }
+
+    .vc-note-input {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      font-family: var(--sans);
+      resize: vertical;
+      min-height: 36px;
+    }
+
+    @media (max-width: 1024px) {
+      .overview-grid { grid-template-columns: 1fr; }
+      .filter-bar { grid-template-columns: repeat(2, 1fr); position: static; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Clean Visual PDF Print Mode */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #111827 !important;
+      }
+      .page-wrap { max-width: none; padding: 0; }
+      .header-actions, .filter-bar, .tile-controls, .ext-links, .vc-review-actions {
+        display: none !important;
+      }
+      .panel, .verify-card, .vc-header, .vc-visual-row, .vc-review-bar, .kpi-box, .overview-map-wrap, .macro-chart {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: none !important;
+      }
+      .vc-title, .proof-box strong, .kpi-box strong { color: #111827 !important; }
+      .vc-sub, .meta-k, .meta-v, .proof-box, .src-chip { color: #334155 !important; }
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      .verify-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .vc-note-input {
+        background: #f8fafc !important;
+        color: #111827 !important;
+        border-color: #cbd5e1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <header class="workbench-header">
+      <div class="title-block">
+        <div class="unlisted-badge">Unlisted Human Validation Console &bull; Not Publicly Indexed</div>
+        <h1>Alaska Airfields Progression (1939–1945) — Visual Proof &amp; Verification</h1>
+        <p>Card-by-card visual satellite inspection, 1939–1945 military/civilian status timeline, and archival documentary proof loaded live from <code>alaska_airfields_1939_1945.csv</code>.</p>
+      </div>
+      <div class="header-actions">
+        <button id="btn-print-pdf" class="btn btn-primary" type="button">Print / Save Visual PDF</button>
+        <button id="btn-export-review-json" class="btn" type="button">Export Review JSON</button>
+        <button id="btn-export-annotated-csv" class="btn" type="button">Export Annotated CSV</button>
+        <button id="btn-import-review-json" class="btn" type="button">Import Review JSON</button>
+        <input id="file-import-review" type="file" accept=".json,application/json" hidden />
+        <a class="btn" href="../index.html">Open Map Studio</a>
+      </div>
+    </header>
+
+    <section class="overview-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Alaska &amp; Aleutian Spatial Sanity Map (<span id="map-year-caption">All 80 Sites</span>)</h2>
+          <span style="font-size:11.5px;color:var(--text-muted);">Click any dot to jump to its verification card</span>
+        </div>
+        <div class="overview-map-wrap">
+          <svg id="overview-map-svg" class="overview-map-svg" viewBox="0 0 760 280" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="overview-map-legend">
+            <span class="legend-dot"><i style="background:#ef4444;"></i>Military</span>
+            <span class="legend-dot"><i style="background:#f59e0b;"></i>Dual-Use</span>
+            <span class="legend-dot"><i style="background:#3b82f6;"></i>Civilian</span>
+            <span class="legend-dot"><i style="background:#94a3b8;"></i>Const./Inactive</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Human Validation Progress &amp; Annual Curve</h2>
+          <span id="progress-pct-label" style="font-family:var(--mono);font-size:12px;color:var(--accent);">0% reviewed</span>
+        </div>
+        <div class="progress-bar-track">
+          <div id="prog-ok" class="prog-ok" style="width:0%"></div>
+          <div id="prog-flag" class="prog-flag" style="width:0%"></div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-box"><strong id="kpi-total">0</strong><span>Total</span></div>
+          <div class="kpi-box"><strong id="kpi-approved" style="color:#34d399;">0</strong><span>Approved</span></div>
+          <div class="kpi-box"><strong id="kpi-flagged" style="color:#fb7185;">0</strong><span>Flagged</span></div>
+          <div class="kpi-box"><strong id="kpi-pending" style="color:#94a3b8;">0</strong><span>Pending</span></div>
+        </div>
+        <div id="macro-chart" class="macro-chart" title="Click a year bar to filter cards by that snapshot year"></div>
+      </div>
+    </section>
+
+    <section class="filter-bar" aria-label="Validation filters">
+      <div class="filter-field">
+        <label for="f-search">Search Name / ID / Source</label>
+        <input id="f-search" type="search" placeholder="e.g. Ladd, Shemya, CAA, BuDocks..." />
+      </div>
+      <div class="filter-field">
+        <label for="f-year">Snapshot Year</label>
+        <select id="f-year">
+          <option value="all">All Years (1939–1945)</option>
+          <option value="1939">1939 Active</option>
+          <option value="1940">1940 Active</option>
+          <option value="1941">1941 Active</option>
+          <option value="1942">1942 Active</option>
+          <option value="1943">1943 Active</option>
+          <option value="1944">1944 Active</option>
+          <option value="1945">1945 Active</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="f-region">Region</label>
+        <select id="f-region"><option value="all">All Regions</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="f-confidence">Confidence</label>
+        <select id="f-confidence">
+          <option value="all">All Confidence</option>
+          <option value="verified">Verified</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="f-review">Review State</label>
+        <select id="f-review">
+          <option value="all">All States</option>
+          <option value="pending">Unreviewed</option>
+          <option value="approved">Approved</option>
+          <option value="flagged">Flagged</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="f-imagery">Card Visual Layer</label>
+        <select id="f-imagery">
+          <option value="satellite" selected>Esri Satellite Imagery</option>
+          <option value="osm">OpenStreetMap Topo/Street</option>
+        </select>
+      </div>
+    </section>
+
+    <div class="results-meta">
+      <span id="results-count">Loading dataset...</span>
+      <span>Tip: Use <strong>Esri Satellite</strong> + crosshair to visually confirm historic runways or WWII airstrip scars.</span>
+    </div>
+
+    <main id="cards-grid" class="cards-grid"></main>
+  </div>
+
+  <script type="module">
+    import { parseCsv, computeAnnualSeries, normalizeTimelineDataset } from '../js/timeline.js';
+
+    const CSV_URL = '../data/alaska_airfields_1939_1945/alaska_airfields_1939_1945.csv';
+    const STORAGE_KEY = 'dusty_alaska_airfields_review_v1';
+    const YEARS = [1939, 1940, 1941, 1942, 1943, 1944, 1945];
+
+    const SHORT_STATUS = {
+      none: '—',
+      construction: 'Build',
+      civilian: 'Civil',
+      dual_use: 'Dual',
+      military: 'Mil',
+      closed: 'Clsd',
+    };
+
+    // Simplified Alaska + Aleutian coastline polygon in wrapped longitude (170..231 => 170E..-129W)
+    const ALASKA_OUTLINE = [
+      // Mainland Alaska rough silhouette
+      [194.0, 65.6], [197.5, 66.8], [196.0, 68.4], [203.2, 71.3], [218.5, 69.6],
+      [219.0, 60.2], [229.5, 55.0], [226.0, 58.2], [220.2, 59.8], [214.0, 60.5],
+      [210.0, 61.1], [208.5, 59.5], [205.5, 58.5], [200.5, 56.2], [197.0, 54.9],
+      [201.5, 58.5], [198.0, 60.2], [195.0, 62.0], [198.0, 64.2], [194.0, 65.6],
+    ];
+    const ALEUTIAN_CHAIN = [
+      [197.0, 54.9], [193.5, 53.9], [191.5, 53.2], [186.0, 52.2],
+      [183.3, 51.8], [181.3, 51.6], [179.3, 51.4], [177.5, 52.0], [174.1, 52.7], [173.2, 52.8],
+    ];
+
+    let dataset = null;
+    let rawCsvRows = [];
+    let reviewState = loadReviewState();
+    let globalImagery = 'satellite';
+    let cardObserver = null;
+
+    function loadReviewState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveReviewState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reviewState));
+      } catch {
+        // ignore quota errors
+      }
+    }
+
+    function getReview(id) {
+      return reviewState[id] || { status: 'pending', note: '', updatedAt: '' };
+    }
+
+    function setReview(id, patch) {
+      const prev = getReview(id);
+      reviewState[id] = {
+        ...prev,
+        ...patch,
+        updatedAt: new Date().toISOString(),
+      };
+      saveReviewState();
+      updateProgressSummary();
+    }
+
+    // Wrap longitude across 180° into continuous [170, 232] range for Alaska + Aleutians
+    function wrapAlaskaLon(lon) {
+      return lon < 0 ? lon + 360 : lon;
+    }
+
+    function projectAlaska(lat, lon, width, height, pad = 14) {
+      const xMin = 171.0;
+      const xMax = 231.0;
+      const yMin = 50.5;
+      const yMax = 72.2;
+      const wLon = wrapAlaskaLon(lon);
+      const x = pad + ((wLon - xMin) / (xMax - xMin)) * (width - pad * 2);
+      const y = height - pad - ((lat - yMin) / (yMax - yMin)) * (height - pad * 2);
+      return [x, y];
+    }
+
+    function buildAlaskaOutlineSvg(width, height, pad = 10) {
+      const mainPts = ALASKA_OUTLINE.map(([wLon, lat]) => {
+        const lon = wLon > 180 ? wLon - 360 : wLon;
+        const [x, y] = projectAlaska(lat, lon, width, height, pad);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+
+      const aleutPts = ALEUTIAN_CHAIN.map(([wLon, lat]) => {
+        const lon = wLon > 180 ? wLon - 360 : wLon;
+        const [x, y] = projectAlaska(lat, lon, width, height, pad);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+
+      // 180 deg Date Line marker
+      const [dlX] = projectAlaska(60, 180, width, height, pad);
+      return `
+        <line x1="${dlX.toFixed(1)}" y1="4" x2="${dlX.toFixed(1)}" y2="${height - 4}" stroke="rgba(148,163,184,0.22)" stroke-dasharray="3 3" stroke-width="1" />
+        <polygon points="${mainPts}" fill="#1e2f47" stroke="#475569" stroke-width="1.1" />
+        <polyline points="${aleutPts}" fill="none" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="2 2" />
+      `;
+    }
+
+    function getStatusColor(status) {
+      if (status === 'military') return '#ef4444';
+      if (status === 'dual_use') return '#f59e0b';
+      if (status === 'civilian') return '#3b82f6';
+      return '#94a3b8';
+    }
+
+    function getRecordPeakStatus(rec, yearFilter) {
+      if (yearFilter !== 'all') {
+        return rec.statuses[Number(yearFilter)] || 'none';
+      }
+      const vals = Object.values(rec.statuses);
+      if (vals.includes('military')) return 'military';
+      if (vals.includes('dual_use')) return 'dual_use';
+      if (vals.includes('civilian')) return 'civilian';
+      return 'construction';
+    }
+
+    function renderOverviewMap(filteredRecords, yearFilter) {
+      const svg = document.getElementById('overview-map-svg');
+      const caption = document.getElementById('map-year-caption');
+      if (!svg || !dataset) return;
+
+      const W = 760;
+      const H = 280;
+      caption.textContent =
+        yearFilter === 'all'
+          ? `Showing ${filteredRecords.length} of ${dataset.records.length} Sites (1939–1945 Peak)`
+          : `${yearFilter} Snapshot — ${filteredRecords.length} Matching Sites`;
+
+      let html = buildAlaskaOutlineSvg(W, H, 16);
+
+      // Subtle 180° label
+      const [dlX] = projectAlaska(60, 180, W, H, 16);
+      html += `<text x="${(dlX + 4).toFixed(1)}" y="16" fill="#64748b" font-size="10" font-family="monospace">180°</text>`;
+
+      for (const rec of filteredRecords) {
+        const [x, y] = projectAlaska(rec.latitude, rec.longitude, W, H, 16);
+        const st = getRecordPeakStatus(rec, yearFilter);
+        const rev = getReview(rec.id);
+        const fill = getStatusColor(st);
+        const stroke =
+          rev.status === 'approved' ? '#34d399' : rev.status === 'flagged' ? '#fb7185' : '#ffffff';
+        const r = rev.status === 'flagged' ? 5.2 : 4.2;
+        html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.3" style="cursor:pointer" data-jump-id="${rec.id}"><title>${rec.name} (${rec.region}) — ${st}</title></circle>`;
+      }
+
+      svg.innerHTML = html;
+      svg.querySelectorAll('circle[data-jump-id]').forEach((c) => {
+        c.addEventListener('click', () => {
+          const card = document.getElementById(`card-${c.dataset.jumpId}`);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('highlight-pulse');
+            setTimeout(() => card.classList.remove('highlight-pulse'), 1800);
+          }
+        });
+      });
+    }
+
+    function renderMacroChart(yearFilter) {
+      const el = document.getElementById('macro-chart');
+      if (!el || !dataset) return;
+      const series = computeAnnualSeries(dataset);
+      const maxTot = Math.max(1, ...series.map((s) => s.total));
+      el.innerHTML = '';
+
+      for (const s of series) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `macro-col${String(s.year) === String(yearFilter) ? ' active' : ''}`;
+        btn.title = `${s.year}: ${s.total} active (${s.military} Mil, ${s.dual_use} Dual, ${s.civilian} Civ)`;
+        btn.addEventListener('click', () => {
+          const sel = document.getElementById('f-year');
+          sel.value = sel.value === String(s.year) ? 'all' : String(s.year);
+          applyFiltersAndRender();
+        });
+
+        const h = Math.max(4, Math.round((s.total / maxTot) * 66));
+        btn.innerHTML = `
+          <span class="macro-cnt">${s.total}</span>
+          <div class="macro-stack" style="height:${h}px">
+            ${s.military ? `<div style="flex:${s.military};background:#dc2626"></div>` : ''}
+            ${s.dual_use ? `<div style="flex:${s.dual_use};background:#f59e0b"></div>` : ''}
+            ${s.civilian ? `<div style="flex:${s.civilian};background:#3b82f6"></div>` : ''}
+          </div>
+          <span class="macro-yr">${s.year}</span>
+        `;
+        el.appendChild(btn);
+      }
+    }
+
+    function updateProgressSummary() {
+      if (!dataset) return;
+      const total = dataset.records.length;
+      let approved = 0;
+      let flagged = 0;
+      for (const rec of dataset.records) {
+        const st = getReview(rec.id).status;
+        if (st === 'approved') approved += 1;
+        else if (st === 'flagged') flagged += 1;
+      }
+      const pending = total - approved - flagged;
+      const reviewedPct = total ? Math.round(((approved + flagged) / total) * 100) : 0;
+
+      document.getElementById('kpi-total').textContent = String(total);
+      document.getElementById('kpi-approved').textContent = String(approved);
+      document.getElementById('kpi-flagged').textContent = String(flagged);
+      document.getElementById('kpi-pending').textContent = String(pending);
+      document.getElementById('progress-pct-label').textContent = `${reviewedPct}% reviewed (${approved}✓ / ${flagged}⚑)`;
+      document.getElementById('prog-ok').style.width = `${(approved / Math.max(1, total)) * 100}%`;
+      document.getElementById('prog-flag').style.width = `${(flagged / Math.max(1, total)) * 100}%`;
+    }
+
+    // Slippy map XYZ Web Mercator tile renderer (3x3 tile grid centered exactly on lat, lon)
+    function latLonToTileFloat(lat, lon, zoom) {
+      const n = 2 ** zoom;
+      const x = ((lon + 180) / 360) * n;
+      const latRad = (lat * Math.PI) / 180;
+      const y = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+      return { x, y, n };
+    }
+
+    function getTileUrl(provider, z, x, y) {
+      if (provider === 'osm') {
+        return `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+      }
+      return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+    }
+
+    function populateTileViewer(viewerEl) {
+      const lat = Number(viewerEl.dataset.lat);
+      const lon = Number(viewerEl.dataset.lon);
+      const zoom = Number(viewerEl.dataset.zoom || 13);
+      const provider = viewerEl.dataset.provider || globalImagery;
+      const grid = viewerEl.querySelector('.tile-grid');
+      if (!grid) return;
+
+      const { x, y, n } = latLonToTileFloat(lat, lon, zoom);
+      const cx = Math.floor(x);
+      const cy = Math.floor(y);
+      const fracX = (x - cx) * 256;
+      const fracY = (y - cy) * 256;
+
+      const viewW = viewerEl.clientWidth || 240;
+      const viewH = viewerEl.clientHeight || 156;
+      // Place center tile (1,1) such that exact point (fracX, fracY) aligns to (viewW/2, viewH/2)
+      const offsetX = viewW / 2 - (256 + fracX);
+      const offsetY = viewH / 2 - (256 + fracY);
+      grid.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px)`;
+
+      grid.replaceChildren();
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const tx = ((cx + dx) % n + n) % n;
+          const ty = cy + dy;
+          if (ty < 0 || ty >= n) continue;
+          const img = document.createElement('img');
+          img.alt = '';
+          img.loading = 'lazy';
+          img.referrerPolicy = 'no-referrer';
+          img.style.left = `${(dx + 1) * 256}px`;
+          img.style.top = `${(dy + 1) * 256}px`;
+          img.src = getTileUrl(provider, zoom, tx, ty);
+          grid.appendChild(img);
+        }
+      }
+      viewerEl.dataset.loaded = '1';
+      const zoomBadge = viewerEl.querySelector('.tile-zoom-lbl');
+      if (zoomBadge) zoomBadge.textContent = `z${zoom}`;
+    }
+
+    function buildCard(rec) {
+      const rev = getReview(rec.id);
+      const card = document.createElement('article');
+      card.id = `card-${rec.id}`;
+      card.className = `verify-card state-${rev.status}`;
+
+      const [locX, locY] = projectAlaska(rec.latitude, rec.longitude, 150, 114, 8);
+      const locatorSvg = `
+        <svg viewBox="0 0 150 114" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+          ${buildAlaskaOutlineSvg(150, 114, 8)}
+          <circle cx="${locX.toFixed(1)}" cy="${locY.toFixed(1)}" r="4.5" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" />
+        </svg>
+      `;
+
+      const yearCellsHtml = YEARS.map((y) => {
+        const st = rec.statuses[y] || 'none';
+        return `<div class="yr-cell yr-st-${st}" title="${y}: ${st}"><span class="yr-num">${String(y).slice(2)}</span><span class="yr-st">${SHORT_STATUS[st] || st}</span></div>`;
+      }).join('');
+
+      const sourcesHtml = rec.primary_sources
+        .map((s) => `<span class="src-chip">${escapeHtml(s)}</span>`)
+        .join('');
+
+      const gSatUrl = `https://www.google.com/maps/@${rec.latitude},${rec.longitude},14z/data=!3m1!1e3`;
+      const osmUrl = `https://www.openstreetmap.org/?mlat=${rec.latitude}&mlon=${rec.longitude}#map=13/${rec.latitude}/${rec.longitude}`;
+      const skyUrl = `https://skyvector.com/?ll=${rec.latitude},${rec.longitude}&chart=301&zoom=3`;
+
+      const stampText =
+        rev.status === 'approved' ? 'APPROVED' : rev.status === 'flagged' ? 'FLAGGED' : 'PENDING';
+
+      card.innerHTML = `
+        <div class="vc-header">
+          <div>
+            <h3 class="vc-title">${escapeHtml(rec.name)}</h3>
+            <div class="vc-sub"><code>${escapeHtml(rec.id)}</code>${rec.alternate_names.length ? ` &bull; ${escapeHtml(rec.alternate_names.join(', '))}` : ''}</div>
+            <div class="vc-badges">
+              <span class="pill">${escapeHtml(rec.region)}</span>
+              <span class="pill">${escapeHtml(rec.facility_type.replace(/_/g, ' '))}</span>
+              <span class="pill pill-${escapeHtml(rec.confidence)}">Confidence: ${escapeHtml(rec.confidence)}</span>
+            </div>
+          </div>
+          <span class="stamp stamp-${rev.status}">${stampText}</span>
+        </div>
+
+        <div class="vc-visual-row">
+          <div class="tile-viewer" data-lat="${rec.latitude}" data-lon="${rec.longitude}" data-zoom="13" data-provider="${globalImagery}">
+            <div class="tile-grid"></div>
+            <div class="reticle"><div class="reticle-ring"></div></div>
+            <div class="tile-controls">
+              <button class="tile-btn" data-act="zoom-out" type="button" title="Zoom out">−</button>
+              <span class="tile-btn tile-zoom-lbl" style="cursor:default">z13</span>
+              <button class="tile-btn" data-act="zoom-in" type="button" title="Zoom in">+</button>
+              <button class="tile-btn" data-act="toggle-layer" type="button" title="Toggle Satellite / OSM">${globalImagery === 'satellite' ? 'OSM' : 'Sat'}</button>
+            </div>
+            <div class="tile-coord-tag">${rec.latitude.toFixed(4)}°, ${rec.longitude.toFixed(4)}°</div>
+          </div>
+
+          <div class="locator-box">
+            <div class="locator-svg-wrap" title="Location in Alaska & Aleutian chain">${locatorSvg}</div>
+            <div class="ext-links">
+              <a class="ext-link" href="${gSatUrl}" target="_blank" rel="noopener">Google Sat</a>
+              <a class="ext-link" href="${osmUrl}" target="_blank" rel="noopener">OSM Map</a>
+              <a class="ext-link" href="${skyUrl}" target="_blank" rel="noopener">SkyVector</a>
+              ${rec.source_url ? `<a class="ext-link" href="${escapeHtml(rec.source_url)}" target="_blank" rel="noopener">Source Ref</a>` : '<span class="ext-link">Archival</span>'}
+            </div>
+          </div>
+        </div>
+
+        <div class="vc-timeline-strip">${yearCellsHtml}</div>
+
+        <div class="vc-body">
+          <div class="proof-box">
+            <strong>Documentary Proof &amp; Coordinate Basis</strong>
+            ${escapeHtml(rec.proof_summary)}
+          </div>
+          <div class="meta-table">
+            <div class="meta-k">Transition</div><div class="meta-v">${escapeHtml(rec.transition_notes)}</div>
+            <div class="meta-k">Strategic Role</div><div class="meta-v">${escapeHtml(rec.strategic_role)} (Opened: ${escapeHtml(rec.opened_date || 'Pre-1939')})</div>
+            <div class="meta-k">Operator(s)</div><div class="meta-v">${escapeHtml(rec.operator_1939_1945)}</div>
+            <div class="meta-k">Runways</div><div class="meta-v">${escapeHtml(rec.surface_wartime.replace(/_/g, ' '))} — ${escapeHtml(rec.runway_specs)}</div>
+            <div class="meta-k">Modern Site</div><div class="meta-v">${escapeHtml(rec.modern_equivalent)}</div>
+          </div>
+          <div class="sources-row">${sourcesHtml}</div>
+        </div>
+
+        <div class="vc-review-bar">
+          <div class="vc-review-actions">
+            <button class="btn btn-ok${rev.status === 'approved' ? ' active' : ''}" data-rev="approved" type="button">✓ Approve</button>
+            <button class="btn btn-flag${rev.status === 'flagged' ? ' active' : ''}" data-rev="flagged" type="button">⚑ Flag</button>
+            <button class="btn" data-rev="pending" type="button">Reset</button>
+          </div>
+          <textarea class="vc-note-input" placeholder="Human reviewer notes (saved locally)...">${escapeHtml(rev.note || '')}</textarea>
+        </div>
+      `;
+
+      // Bind tile viewer interactions
+      const viewer = card.querySelector('.tile-viewer');
+      viewer.querySelector('[data-act="zoom-in"]').addEventListener('click', () => {
+        const z = Math.min(16, Number(viewer.dataset.zoom || 13) + 1);
+        viewer.dataset.zoom = String(z);
+        populateTileViewer(viewer);
+      });
+      viewer.querySelector('[data-act="zoom-out"]').addEventListener('click', () => {
+        const z = Math.max(9, Number(viewer.dataset.zoom || 13) - 1);
+        viewer.dataset.zoom = String(z);
+        populateTileViewer(viewer);
+      });
+      const toggleBtn = viewer.querySelector('[data-act="toggle-layer"]');
+      toggleBtn.addEventListener('click', () => {
+        const next = viewer.dataset.provider === 'satellite' ? 'osm' : 'satellite';
+        viewer.dataset.provider = next;
+        toggleBtn.textContent = next === 'satellite' ? 'OSM' : 'Sat';
+        populateTileViewer(viewer);
+      });
+
+      // Bind human review buttons & notes
+      const stampEl = card.querySelector('.stamp');
+      const revBtns = card.querySelectorAll('[data-rev]');
+      revBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const nextStatus = btn.dataset.rev;
+          setReview(rec.id, { status: nextStatus });
+          card.className = `verify-card state-${nextStatus}`;
+          stampEl.className = `stamp stamp-${nextStatus}`;
+          stampEl.textContent =
+            nextStatus === 'approved' ? 'APPROVED' : nextStatus === 'flagged' ? 'FLAGGED' : 'PENDING';
+          revBtns.forEach((b) => b.classList.toggle('active', b.dataset.rev === nextStatus && nextStatus !== 'pending'));
+          renderOverviewMap(getFilteredRecords(), document.getElementById('f-year').value);
+        });
+      });
+
+      const noteInput = card.querySelector('.vc-note-input');
+      noteInput.addEventListener('input', () => {
+        setReview(rec.id, { note: noteInput.value });
+      });
+
+      return card;
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function getFilteredRecords() {
+      if (!dataset) return [];
+      const q = document.getElementById('f-search').value.trim().toLowerCase();
+      const year = document.getElementById('f-year').value;
+      const region = document.getElementById('f-region').value;
+      const conf = document.getElementById('f-confidence').value;
+      const revFilter = document.getElementById('f-review').value;
+
+      return dataset.records.filter((rec) => {
+        if (year !== 'all') {
+          const st = rec.statuses[Number(year)];
+          if (!['military', 'dual_use', 'civilian'].includes(st)) return false;
+        }
+        if (region !== 'all' && rec.region !== region) return false;
+        if (conf !== 'all' && rec.confidence !== conf) return false;
+        if (revFilter !== 'all' && getReview(rec.id).status !== revFilter) return false;
+        if (q) {
+          const hay = [
+            rec.id,
+            rec.name,
+            ...rec.alternate_names,
+            rec.region,
+            rec.strategic_role,
+            rec.operator_1939_1945,
+            rec.modern_equivalent,
+            rec.proof_summary,
+            ...rec.primary_sources,
+          ]
+            .join(' ')
+            .toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+    }
+
+    function applyFiltersAndRender() {
+      const filtered = getFilteredRecords();
+      const yearFilter = document.getElementById('f-year').value;
+      document.getElementById('results-count').textContent =
+        `Showing ${filtered.length} of ${dataset.records.length} Alaska airfields`;
+
+      renderOverviewMap(filtered, yearFilter);
+      renderMacroChart(yearFilter);
+
+      if (cardObserver) cardObserver.disconnect();
+      const grid = document.getElementById('cards-grid');
+      grid.replaceChildren();
+
+      const frag = document.createDocumentFragment();
+      for (const rec of filtered) {
+        frag.appendChild(buildCard(rec));
+      }
+      grid.appendChild(frag);
+
+      // Lazy-load satellite/OSM tiles as cards enter viewport
+      cardObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              const viewer = entry.target;
+              if (!viewer.dataset.loaded) {
+                populateTileViewer(viewer);
+              }
+              cardObserver.unobserve(viewer);
+            }
+          }
+        },
+        { rootMargin: '240px 0px' },
+      );
+
+      grid.querySelectorAll('.tile-viewer').forEach((v) => cardObserver.observe(v));
+    }
+
+    function downloadFile(filename, content, mime) {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function escapeCsv(val) {
+      const s = val === null || val === undefined ? '' : String(val);
+      return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }
+
+    async function init() {
+      const resp = await fetch(CSV_URL);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} loading ${CSV_URL}`);
+      const csvText = await resp.text();
+      const parsedRaw = parseCsv(csvText);
+      rawCsvRows = parsedRaw;
+      dataset = normalizeTimelineDataset(csvText, 'Alaska Airfields (1939–1945)');
+
+      const regSel = document.getElementById('f-region');
+      for (const r of dataset.regions) {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        regSel.appendChild(opt);
+      }
+
+      updateProgressSummary();
+      applyFiltersAndRender();
+
+      // Filter listeners
+      ['f-search', 'f-year', 'f-region', 'f-confidence', 'f-review'].forEach((id) => {
+        const ev = id === 'f-search' ? 'input' : 'change';
+        document.getElementById(id).addEventListener(ev, applyFiltersAndRender);
+      });
+
+      document.getElementById('f-imagery').addEventListener('change', (e) => {
+        globalImagery = e.target.value;
+        applyFiltersAndRender();
+      });
+
+      // Print / Save Visual PDF (ensure all visible tiles are loaded before print dialog)
+      document.getElementById('btn-print-pdf').addEventListener('click', () => {
+        document.querySelectorAll('.tile-viewer').forEach((v) => {
+          if (!v.dataset.loaded) populateTileViewer(v);
+        });
+        setTimeout(() => window.print(), 450);
+      });
+
+      // Export Review JSON
+      document.getElementById('btn-export-review-json').addEventListener('click', () => {
+        const payload = {
+          dataset: 'alaska_airfields_1939_1945',
+          exportedAt: new Date().toISOString(),
+          totalSites: dataset.records.length,
+          reviews: reviewState,
+        };
+        downloadFile(
+          'alaska_airfields_validation_review.json',
+          `${JSON.stringify(payload, null, 2)}\n`,
+          'application/json',
+        );
+      });
+
+      // Export Annotated CSV (master CSV + human review columns)
+      document.getElementById('btn-export-annotated-csv').addEventListener('click', () => {
+        const headers = [...rawCsvRows.headers, 'human_review_status', 'human_reviewer_notes', 'human_reviewed_at'];
+        const lines = [headers.join(',')];
+        for (const row of rawCsvRows.records) {
+          const rev = getReview(row.id);
+          const vals = [
+            ...rawCsvRows.headers.map((h) => row[h] ?? ''),
+            rev.status,
+            rev.note || '',
+            rev.updatedAt || '',
+          ];
+          lines.push(vals.map(escapeCsv).join(','));
+        }
+        downloadFile(
+          'alaska_airfields_1939_1945_reviewed.csv',
+          `${lines.join('\n')}\n`,
+          'text/csv;charset=utf-8',
+        );
+      });
+
+      // Import Review JSON
+      document.getElementById('btn-import-review-json').addEventListener('click', () => {
+        document.getElementById('file-import-review').click();
+      });
+      document.getElementById('file-import-review').addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          const parsed = JSON.parse(await file.text());
+          const incoming = parsed.reviews && typeof parsed.reviews === 'object' ? parsed.reviews : parsed;
+          reviewState = { ...reviewState, ...incoming };
+          saveReviewState();
+          updateProgressSummary();
+          applyFiltersAndRender();
+        } catch (err) {
+          alert(`Could not import review JSON: ${err.message}`);
+        }
+        e.target.value = '';
+      });
+    }
+
+    init().catch((err) => {
+      document.getElementById('results-count').textContent = `Error loading CSV: ${err.message}`;
+    });
+  </script>
+</body>
+</html>

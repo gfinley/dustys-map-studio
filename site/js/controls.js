@@ -6,15 +6,17 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=17';
+} from './schema.js?v=18';
 import {
   AIRFIELD_1941_LAYERS,
+  ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   GEOJSON_EXAMPLES,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
-} from './presets.js?v=17';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=17';
-import { formatArea } from './shadow.js?v=17';
+  buildAlaskaYearLayerDefs,
+} from './presets.js?v=18';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=18';
+import { formatArea } from './shadow.js?v=18';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -1026,7 +1028,15 @@ function renderHistoricalLayerGroup(listId, defs, spec, callbacks) {
   }
 }
 
-export function renderHistoricalTabLists(spec, callbacks = boundCallbacks) {
+export function renderHistoricalTabLists(spec, callbacks = boundCallbacks, alaskaYear = 1943) {
+  const year = Number(alaskaYear) || 1943;
+  const pillContainer = $('alaska-year-pills');
+  if (pillContainer) {
+    pillContainer.querySelectorAll('.year-pill').forEach((btn) => {
+      btn.classList.toggle('active', Number(btn.dataset.akYear) === year);
+    });
+  }
+  renderHistoricalLayerGroup('alaska-airfield-layers-list', buildAlaskaYearLayerDefs(year), spec, callbacks);
   renderHistoricalLayerGroup('airfield-1941-layers-list', AIRFIELD_1941_LAYERS, spec, callbacks);
   renderHistoricalLayerGroup('ph-rail-layers-list', PHILIPPINES_RAIL_1942_LAYERS, spec, callbacks);
 }
@@ -1135,6 +1145,7 @@ export function renderControls(callbacks) {
         panel.classList.toggle('active', active);
         panel.hidden = !active;
       });
+      boundCallbacks.onTabChange?.(targetTab);
     });
   });
 
@@ -1507,7 +1518,40 @@ export function renderControls(callbacks) {
   $('btn-render-pro')?.addEventListener('click', () => boundCallbacks.onRenderPro?.());
   $('btn-export-batch-pro')?.addEventListener('click', () => boundCallbacks.onExportBatchPro?.());
 
-  // Tab 4: Historical Layers (1941 Airfields & 1942-1945 Philippines Railways)
+  // Tab 4: Historical Layers (Alaska 1939-1945 Airfields, 1941 Airfields & 1942-1945 Philippines Railways)
+  $('alaska-year-pills')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.year-pill');
+    if (!btn) return;
+    const yr = Number(btn.dataset.akYear);
+    if (Number.isFinite(yr)) {
+      boundCallbacks.onSelectAlaskaYear?.(yr);
+    }
+  });
+  $('btn-hist-alaska-both')?.addEventListener('click', () => {
+    boundCallbacks.onApplyAlaskaPreset?.('both');
+  });
+  $('btn-hist-alaska-none')?.addEventListener('click', () => {
+    boundCallbacks.onApplyAlaskaPreset?.('none');
+  });
+  $('btn-hist-frame-alaska')?.addEventListener('click', () => {
+    boundCallbacks.onFrameHistoricalRegion?.('alaska');
+  });
+  $('alaska-airfield-master-size')?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('alaska-airfield-master-size-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onSetHistoricalGroupSize?.('alaska_airfields', val, {
+      commitHistory: false,
+      skipDynamicLists: true,
+    });
+  });
+  $('alaska-airfield-master-size')?.addEventListener('change', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('alaska-airfield-master-size-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onSetHistoricalGroupSize?.('alaska_airfields', val, { commitHistory: true });
+  });
+
   $('btn-hist-airfields-both')?.addEventListener('click', () => {
     boundCallbacks.onApplyAirfieldPreset?.('both');
   });
@@ -1560,6 +1604,9 @@ export function renderControls(callbacks) {
     boundCallbacks.onSetHistoricalGroupSize?.('ph_rail_lines', val, { commitHistory: true });
   });
 
+  $('btn-preset-alaska-air')?.addEventListener('click', () => {
+    boundCallbacks.onSelectPreset?.('alaska_airfields_1939_1945');
+  });
   $('btn-preset-ph-rail')?.addEventListener('click', () => {
     boundCallbacks.onSelectPreset?.('philippines_railways_1942_1945');
   });
@@ -1568,6 +1615,76 @@ export function renderControls(callbacks) {
   });
   $('btn-preset-seasia-air')?.addEventListener('click', () => {
     boundCallbacks.onSelectPreset?.('se_asia_1941_airfields');
+  });
+
+  // Tab 5: Timeline Layer Generator (CSV-Driven)
+  $('btn-timeline-frame-alaska')?.addEventListener('click', () => {
+    boundCallbacks.onFrameHistoricalRegion?.('alaska');
+  });
+  $('btn-timeline-upload-csv')?.addEventListener('click', () => {
+    $('file-timeline-csv')?.click();
+  });
+  $('file-timeline-csv')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) boundCallbacks.onUploadTimelineCsv?.(file);
+    e.target.value = '';
+  });
+  $('timeline-window-size')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ windowSize: e.target.value });
+  });
+  $('timeline-gen-mode')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ mode: e.target.value });
+  });
+  $('timeline-year-slider')?.addEventListener('input', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ startYear: Number(e.target.value) });
+  });
+  $('timeline-start-year')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ startYear: Number(e.target.value), customRange: true });
+  });
+  $('timeline-end-year')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ endYear: Number(e.target.value), customRange: true });
+  });
+  $('btn-timeline-prev')?.addEventListener('click', () => boundCallbacks.onTimelineStep?.(-1));
+  $('btn-timeline-next')?.addEventListener('click', () => boundCallbacks.onTimelineStep?.(1));
+  $('btn-timeline-play')?.addEventListener('click', () => boundCallbacks.onTimelineTogglePlay?.());
+  $('timeline-region-filter')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ regionFilter: e.target.value });
+  });
+  $('timeline-dot-size')?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('timeline-dot-size-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onTimelineConfigChange?.({ dotSize: val });
+  });
+  $('timeline-inc-mil')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ includeMilitary: e.target.checked });
+  });
+  $('timeline-inc-civ')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ includeCivilian: e.target.checked });
+  });
+  $('timeline-split-dual')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ splitDualUse: e.target.checked });
+  });
+  $('timeline-inc-const')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ includeConstruction: e.target.checked });
+  });
+  $('timeline-inc-seaplane')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ includeSeaplane: e.target.checked });
+  });
+  $('timeline-auto-sync')?.addEventListener('change', (e) => {
+    boundCallbacks.onTimelineConfigChange?.({ autoSync: e.target.checked });
+  });
+  $('btn-timeline-generate')?.addEventListener('click', () => {
+    boundCallbacks.onTimelineGenerate?.({ force: true });
+  });
+  $('btn-timeline-clear')?.addEventListener('click', () => {
+    boundCallbacks.onTimelineClear?.();
+  });
+  $('btn-timeline-export-geojson')?.addEventListener('click', () => {
+    boundCallbacks.onTimelineExport?.('geojson');
+  });
+  $('btn-timeline-export-csv')?.addEventListener('click', () => {
+    boundCallbacks.onTimelineExport?.('csv');
   });
 
   // Stage floating controls
@@ -1845,6 +1962,14 @@ export function syncControlsFromSpec(spec, uiState = {}) {
 
   // Historical tab master sliders (reflect average of active layers when present)
   const overlays = spec.customGeoJsonLayers || [];
+  const akIds = new Set(ALASKA_AIRFIELDS_ALL_LAYER_DEFS.map((d) => d.id));
+  const activeAk = overlays.filter((l) => l?.id && akIds.has(l.id) && l.visible !== false);
+  const akAvg = activeAk.length
+    ? activeAk.reduce((s, l) => s + (Number(l.strokeWidth) || 1.5), 0) / activeAk.length
+    : 1.5;
+  if ($('alaska-airfield-master-size')) $('alaska-airfield-master-size').value = akAvg.toFixed(1);
+  if ($('alaska-airfield-master-size-val')) $('alaska-airfield-master-size-val').textContent = akAvg.toFixed(1);
+
   const airIds = new Set(AIRFIELD_1941_LAYERS.map((d) => d.id));
   const activeAir = overlays.filter((l) => l?.id && airIds.has(l.id) && l.visible !== false);
   const airAvg = activeAir.length
@@ -1869,6 +1994,6 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     renderCountryHighlightsList(spec, boundCallbacks);
     renderCitiesList(spec, boundCallbacks);
     renderGeoJsonLayersList(spec, boundCallbacks);
-    renderHistoricalTabLists(spec, boundCallbacks);
+    renderHistoricalTabLists(spec, boundCallbacks, uiState.alaskaYear || 1943);
   }
 }

@@ -1,0 +1,24 @@
+{
+  "type": "FeatureCollection",
+  "name": "alaska_airfields_1939_military",
+  "metadata": {
+    "dataset": "Alaska Airfields Progression (1939-1945)",
+    "snapshot_year": 1939,
+    "source_csv": "alaska_airfields_1939_1945.csv",
+    "crs": "EPSG:4326 (WGS84, RFC 7946 [longitude, latitude])",
+    "counts": {
+      "year": 1939,
+      "total_active": 36,
+      "military_only": 0,
+      "dual_use": 0,
+      "military_plus_dual": 0,
+      "civilian_only": 36,
+      "construction": 3,
+      "closed": 0,
+      "new_active": 0,
+      "new_military": 0
+    },
+    "subset": "military_and_dual_use"
+  },
+  "features": []
+}

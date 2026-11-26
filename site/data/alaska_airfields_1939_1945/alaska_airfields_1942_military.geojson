@@ -1,0 +1,2719 @@
+{
+  "type": "FeatureCollection",
+  "name": "alaska_airfields_1942_military",
+  "metadata": {
+    "dataset": "Alaska Airfields Progression (1939-1945)",
+    "snapshot_year": 1942,
+    "source_csv": "alaska_airfields_1939_1945.csv",
+    "crs": "EPSG:4326 (WGS84, RFC 7946 [longitude, latitude])",
+    "counts": {
+      "year": 1942,
+      "total_active": 64,
+      "military_only": 25,
+      "dual_use": 21,
+      "military_plus_dual": 46,
+      "civilian_only": 18,
+      "construction": 4,
+      "closed": 0,
+      "new_active": 22,
+      "new_military": 32
+    },
+    "subset": "military_and_dual_use"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ak-elmendorf-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.8065,
+          61.2514
+        ]
+      },
+      "properties": {
+        "id": "ak-elmendorf-field",
+        "name": "Elmendorf Field",
+        "alternate_names": [
+          "Fort Richardson Airfield",
+          "Elmendorf AAF"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1940-12",
+        "opened_year": 1940,
+        "military_start_year": 1940,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "USAAF Eleventh Air Force; Alaska Defense Command",
+        "surface_wartime": "concrete",
+        "runway_specs": "Two heavy concrete runways (7,500 ft & 5,000 ft) expanded through 1942-44",
+        "strategic_role": "Major Command Airbase",
+        "timeline_1939_1945": "40:military · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Construction began June 8, 1940; first runway operational late 1940; served as primary air defense headquarters and main logistics hub for Alaska throughout WWII.",
+        "modern_equivalent": "PAED / Joint Base Elmendorf-Richardson (Active)",
+        "proof_summary": "Site withdrawn with Fort Richardson; construction initiated June 1940 with first military aircraft arriving late 1940. Primary HQ of Eleventh Air Force. Verified against JBER airfield coordinates.",
+        "primary_sources": [
+          "US Army CMH Guarding the US Ch. 9",
+          "USACE Narrative Report of Alaska Construction 1941-1944",
+          "Maurer (1983)"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Elmendorf Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "military",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-nas-kodiak",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -152.4939,
+          57.75
+        ]
+      },
+      "properties": {
+        "id": "ak-nas-kodiak",
+        "name": "Naval Air Station Kodiak",
+        "alternate_names": [
+          "NOB Kodiak",
+          "Fort Greely Airfield"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "amphibious_airstation",
+        "origin_category": "military",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1941-06-15",
+        "opened_year": 1941,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "U.S. Navy Patrol Wing 4; USAAF 11th AF detachment",
+        "surface_wartime": "concrete",
+        "runway_specs": "Three concrete runways (6,000 ft, 5,400 ft, 5,000 ft) plus 3 concrete seaplane ramps on Womens Bay",
+        "strategic_role": "Naval Patrol & Defense",
+        "timeline_1939_1945": "39:construction · 40:construction · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Authorized Apr 1939 (Hepburn Board); ground broken Sep 23, 1939; commissioned Jun 15, 1941 as joint landplane/seaplane headquarters guarding Gulf of Alaska.",
+        "modern_equivalent": "PADQ / Kodiak Benny Benson State Airport (Active)",
+        "proof_summary": "Hepburn Board Dec 1938 recommendation; Congress authorized Apr 25, 1939; ground broken Sep 23, 1939; BuDocks records three concrete land runways (6000/5400/5000 ft) and Womens Bay seaplane ramps.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23",
+          "US Army CMH Ch. 9"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Naval Air Station Kodiak",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "construction",
+        "status_1940": "construction",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-cape-chiniak",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -152.176,
+          57.619
+        ]
+      },
+      "properties": {
+        "id": "ak-cape-chiniak",
+        "name": "Cape Chiniak Auxiliary Field",
+        "alternate_names": [
+          "Chiniak Steel-Mat Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "U.S. Army Fort Greely; U.S. Navy Seabees",
+        "surface_wartime": "marston_mat",
+        "runway_specs": "Auxiliary pierced steel plank (Marston mat) fighter strip laid on sand base",
+        "strategic_role": "Coastal Defense Auxiliary",
+        "timeline_1939_1945": "42:military · 43:military · 44:military · 45:military",
+        "notes": "Built 1942 as dispersed auxiliary fighter strip 15 mi SE of NAS Kodiak to protect Fort Greely and Kodiak approaches; deactivated postwar.",
+        "modern_equivalent": "Abandoned / Cape Chiniak FUDS",
+        "proof_summary": "Documented in USN BuDocks Ch. 23 under Kodiak Sector: 'An auxiliary strip, constructed by laying steel matting on a sand base, was located at Cape Chiniak, 15 miles to the southeast.'",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "high",
+        "title": "Cape Chiniak Auxiliary Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-seward-walseth",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.4189,
+          60.1269
+        ]
+      },
+      "properties": {
+        "id": "ak-seward-walseth",
+        "name": "Seward Field / Walseth Army Airfield",
+        "alternate_names": [
+          "Fort Raymond Airfield",
+          "NAAF Seward"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1935",
+        "opened_year": 1935,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Territorial Civil (1939-41); USAAF Fort Raymond (1941-45); USN NAAF (1942-43)",
+        "surface_wartime": "gravel",
+        "runway_specs": "Upgraded gravel runways serving Resurrection Bay port & Alaska Railroad terminus",
+        "strategic_role": "Port Defense & Staging",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:dual_use · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Pre-war municipal gravel strip upgraded by Army engineers for Fort Raymond as Walseth AAF (1941-42); Navy operated adjacent seaplane/NAAF facility Jul 1942 - Jul 1943.",
+        "modern_equivalent": "PAWD / Seward Airport (Active)",
+        "proof_summary": "Wikipedia WWII Army airfields & BuDocks Ch. 23 confirm Seward Fort Raymond military airfield (Walseth AAF) and Navy section base Jul 31, 1942 / NAAF Apr 1, 1943. Coordinates match PAWD.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Ch. 23",
+          "Alaska WWII Army Airfields",
+          "FAA"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Seward Field / Walseth Army Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "dual_use",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-kenai",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -151.245,
+          60.5731
+        ]
+      },
+      "properties": {
+        "id": "ak-kenai",
+        "name": "Kenai Airfield",
+        "alternate_names": [
+          "Kenai Territorial Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1937",
+        "opened_year": 1937,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Civil; CAA; USAAF emergency dispersal",
+        "surface_wartime": "gravel",
+        "runway_specs": "Graded gravel strip improved under wartime CAA Cook Inlet program",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war Cook Inlet coastal strip improved in 1941-42 for CAA airways and military emergency dispersal around Anchorage; returned to full civil control by 1945.",
+        "modern_equivalent": "PAEN / Kenai Municipal Airport (Active)",
+        "proof_summary": "Cook Inlet territorial strip upgraded during WWII defense build-up; coordinates verified against PAEN airfield location.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Kenai Airfield",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-homer",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -151.4766,
+          59.6456
+        ]
+      },
+      "properties": {
+        "id": "ak-homer",
+        "name": "Homer CAA Field",
+        "alternate_names": [
+          "Homer Defense Landing Area"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF emergency & coastal patrol staging",
+        "surface_wartime": "gravel",
+        "runway_specs": "CAA-built gravel runway (~5,000 ft) on Kachemak Bay shore",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Constructed 1941-42 under CAA Defense Landing Areas program to provide an all-weather approach & emergency strip at southern entrance of Cook Inlet.",
+        "modern_equivalent": "PAHO / Homer Airport (Active)",
+        "proof_summary": "Listed among WWII CAA Alaska defense airports in Kraus (FAA, 2018) and US Army Alaska construction summaries. Coordinates match PAHO.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "USACE Alaska Construction Report"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Homer CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-talkeetna",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -150.0937,
+          62.3205
+        ]
+      },
+      "properties": {
+        "id": "ak-talkeetna",
+        "name": "Talkeetna Field",
+        "alternate_names": [
+          "Talkeetna CAA Intermediate Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1934",
+        "opened_year": 1934,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Alaska Road Commission; CAA; USAAF airway emergency",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip upgraded 1941-42 with CAA radio range along Alaska Railroad",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war bush strip along Alaska Railroad expanded by CAA 1941-42 into a key radio range and intermediate military/civil field between Anchorage and Fairbanks.",
+        "modern_equivalent": "PATK / Talkeetna Airport (Active)",
+        "proof_summary": "FAA wartime airway history confirms Talkeetna as a key CAA radio-range/intermediate field on the Anchorage-Fairbanks airway. Coordinates match PATK.",
+        "primary_sources": [
+          "FAA WWII CAA NAV Ranges",
+          "FAA Civil Aviation Policy in Alaska"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/WWII_CAA_NAV_RANGES.pdf",
+        "source_confidence": "verified",
+        "title": "Talkeetna Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-skwentna",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -151.1917,
+          61.9653
+        ]
+      },
+      "properties": {
+        "id": "ak-skwentna",
+        "name": "Skwentna CAA Field",
+        "alternate_names": [
+          "Skwentna Intermediate Landing Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF emergency airway support",
+        "surface_wartime": "gravel",
+        "runway_specs": "CAA-built 3,400+ ft gravel runway & radio range station",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Constructed 1941-42 by CAA as an inland airway and radio-range link across the Alaska Range toward Farewell, McGrath, and Nome.",
+        "modern_equivalent": "PASW / Skwentna Airport (Active)",
+        "proof_summary": "Listed explicitly in Kraus (FAA, 2018) among WWII CAA defense airway fields with radio range. Coordinates verified against PASW.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Skwentna CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-summit",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.1286,
+          63.3314
+        ]
+      },
+      "properties": {
+        "id": "ak-summit",
+        "name": "Summit CAA Field",
+        "alternate_names": [
+          "Broad Pass Intermediate Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF Anchorage-Fairbanks airway support",
+        "surface_wartime": "gravel",
+        "runway_specs": "CAA gravel runway (~3,800 ft) & radio range at Broad Pass summit",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Built 1941-42 by CAA at Broad Pass along Alaska Railroad to safeguard flights between Elmendorf (Anchorage) and Ladd Field (Fairbanks).",
+        "modern_equivalent": "PAST / Summit Airport (Active)",
+        "proof_summary": "Documented WWII CAA intermediate field and radio range station on Anchorage-Fairbanks military/civil corridor. Coordinates match PAST.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "FAA WWII CAA NAV Ranges"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Summit CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-iliamna",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -154.9108,
+          59.7544
+        ]
+      },
+      "properties": {
+        "id": "ak-iliamna",
+        "name": "Iliamna CAA Field",
+        "alternate_names": [
+          "Iliamna Defense Landing Area"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF 11th AF staging & weather support",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two CAA-built gravel runways (~5,000 ft) & radio range",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Constructed 1941-42 by CAA to bridge Cook Inlet (Anchorage/Homer) with Bristol Bay (Naknek) and the Aleutian air supply corridor.",
+        "modern_equivalent": "PAIL / Iliamna Airport (Active)",
+        "proof_summary": "Listed explicitly in Kraus (FAA, 2018) among WWII CAA defense airfields; served vital weather/emergency link on Anchorage-Naknek route. Coordinates match PAIL.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "FAA WWII CAA NAV Ranges"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Iliamna CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-cordova-mile13",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -145.4776,
+          60.4918
+        ]
+      },
+      "properties": {
+        "id": "ak-cordova-mile13",
+        "name": "Cordova Airport (Mile 13)",
+        "alternate_names": [
+          "Cordova Army Airfield",
+          "Merle K. Mudhole Smith"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1936",
+        "opened_year": 1936,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "CAA; USAAF Air Transport Command; Civil Airlines",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two heavy gravel/paved CAA-Army runways (~5,000 ft) at Mile 13",
+        "strategic_role": "Coastal Staging & Refueling",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:dual_use · 42:dual_use · 43:dual_use · 44:dual_use · 45:dual_use",
+        "notes": "Pre-war Cordova/Eyak strip superseded by major Mile 13 CAA/Army airfield (construction Jun 1941, activated 1941) serving Gulf of Alaska transport between Yakutat and Elmendorf.",
+        "modern_equivalent": "PACV / Merle K. Mudhole Smith Airport (Active)",
+        "proof_summary": "US Army CMH Ch. 9 and Alaska WWII Army Airfields confirm Cordova Mile 13 CAA/Army joint-use staging field built 1941. Coordinates match PACV.",
+        "primary_sources": [
+          "US Army CMH Guarding the US Ch. 9",
+          "USACE Narrative Report 1941-1944",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Cordova Airport (Mile 13)",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "dual_use",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "dual_use"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-gulkana",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -145.4566,
+          62.1549
+        ]
+      },
+      "properties": {
+        "id": "ak-gulkana",
+        "name": "Gulkana Army Airfield / CAA Field",
+        "alternate_names": [
+          "Gulkana Defense Landing Area"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Southcentral",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF 11th AF & ATC; Army Garrison",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two 5,000 ft CAA/USACE gravel runways at Richardson & Glenn Highway junction",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:dual_use",
+        "notes": "Constructed 1941-42 by CAA with Army garrison; operational 1942 as key interior crossroads connecting Anchorage, Valdez, Fairbanks, and the Northwest Staging Route.",
+        "modern_equivalent": "PAGK / Gulkana Airport (Active)",
+        "proof_summary": "USACE Narrative Report 1941-44 explicitly lists Army garrison at CAA Airfield Gulkana; Kraus (FAA) confirms 1941-42 CAA build. Coordinates match PAGK.",
+        "primary_sources": [
+          "USACE Narrative Report of Alaska Construction 1941-1944",
+          "FAA Civil Aviation Policy in Alaska"
+        ],
+        "source_url": "https://apiai.org/wp-content/uploads/2016/03/1941-1944.-Narrative-Report-of-Alaska-Construction.-US-Army-r.pdf",
+        "source_confidence": "verified",
+        "title": "Gulkana Army Airfield / CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "dual_use"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-ladd-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -147.6142,
+          64.8375
+        ]
+      },
+      "properties": {
+        "id": "ak-ladd-field",
+        "name": "Ladd Field (Ladd Army Airfield)",
+        "alternate_names": [
+          "Fairbanks Cold Weather Test Station",
+          "Fort Wainwright"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1940-09",
+        "opened_year": 1940,
+        "military_start_year": 1940,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "USAAF Cold Weather Detachment; ATC Alaskan Division (1466th AAFBU); Soviet Air Force ALSIB Mission",
+        "surface_wartime": "concrete",
+        "runway_specs": "Heavy concrete runways (up to 9,400 ft) & massive heated hangars",
+        "strategic_role": "ALSIB Lend-Lease Hub",
+        "timeline_1939_1945": "39:construction · 40:military · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Withdrawn 1937; construction began 1939 as Cold Weather Test Station; operational 1940; became primary US-Soviet transfer point for 7,926 ALSIB Lend-Lease aircraft (1942-45).",
+        "modern_equivalent": "PAFB / Ladd Army Airfield, Fort Wainwright (Active)",
+        "proof_summary": "Extensive primary documentation in Alaska DNR/US Army Heritage of Ladd Field; site built 1939, operational 1940, ALSIB main hub Sep 1942-Sep 1945. Coordinates match PAFB.",
+        "primary_sources": [
+          "Alaska DNR OHA WWII Heritage of Ladd Field",
+          "US Army CMH",
+          "Maurer (1983)"
+        ],
+        "source_url": "https://dnr.alaska.gov/parks/oha/publications/The%20WWII%20Heritage%20of%20Ladd%20Field.pdf",
+        "source_confidence": "verified",
+        "title": "Ladd Field (Ladd Army Airfield)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "construction",
+        "status_1940": "military",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-big-delta",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -145.7216,
+          63.9945
+        ]
+      },
+      "properties": {
+        "id": "ak-big-delta",
+        "name": "Big Delta Army Airfield",
+        "alternate_names": [
+          "Allen Army Airfield",
+          "Fort Greely (Postwar)"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1935",
+        "opened_year": 1935,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Alaska Road Commission (1939-40); CAA & USAAF ATC 1465th AAFBU (1942-45)",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Three heavy 6,000-7,500 ft runways built 1941-42 for ATC & ALSIB",
+        "strategic_role": "ALSIB Lend-Lease Staging",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Small pre-war ARC strip rebuilt into a major CAA/ATC base 1941-42; operational 1942 as key Northwest Staging Route / ALSIB hub southeast of Fairbanks.",
+        "modern_equivalent": "PABI / Allen Army Airfield, Fort Greely (Active)",
+        "proof_summary": "USACE Narrative Report 1941-44 and Alaska WWII Army Airfields document CAA/ATC Big Delta AAF (1465th AAFBU) operational 1942. Coordinates match PABI.",
+        "primary_sources": [
+          "USACE Narrative Report 1941-1944",
+          "Alaska WWII Army Airfields",
+          "FAA"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Big Delta Army Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-northway",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -141.9291,
+          62.9613
+        ]
+      },
+      "properties": {
+        "id": "ak-northway",
+        "name": "Northway Army Airfield",
+        "alternate_names": [
+          "Nabesna / Northway ATC Station"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF ATC 1463rd AAFBU; 11th AF",
+        "surface_wartime": "asphalt",
+        "runway_specs": "5,100+ ft paved runway near Yukon border on Northwest Staging Route",
+        "strategic_role": "ALSIB Lend-Lease Staging",
+        "timeline_1939_1945": "41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Constructed 1941-42 by CAA/USACE in permafrost muskeg; operational 1942 as first Alaskan entry/staging airfield for aircraft flying up the Northwest Staging Route from Canada.",
+        "modern_equivalent": "PAOR / Northway Airport (Active)",
+        "proof_summary": "Documented in USACE Narrative Report 1941-44, Kraus (FAA, 2018), and Alaska WWII Army Airfields (1463rd AAFBU). Coordinates match PAOR.",
+        "primary_sources": [
+          "USACE Narrative Report 1941-1944",
+          "FAA Civil Aviation Policy in Alaska",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Northway Army Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-nenana",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -149.0739,
+          64.5473
+        ]
+      },
+      "properties": {
+        "id": "ak-nenana",
+        "name": "Nenana CAA / Municipal Field",
+        "alternate_names": [
+          "Nenana Intermediate Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1931",
+        "opened_year": 1931,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Alaska Road Commission; CAA; USAAF emergency support",
+        "surface_wartime": "gravel",
+        "runway_specs": "CAA-upgraded 4,600 ft gravel strip beside Alaska Railroad & Tanana River",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war rail/river transfer strip expanded by CAA 1941-42 with radio range & longer runway to support Fairbanks-to-McGrath/Galena military & civil flights.",
+        "modern_equivalent": "PANN / Nenana Municipal Airport (Active)",
+        "proof_summary": "Kraus (FAA, 2018) lists Nenana among WWII CAA defense/airway fields; pre-war ARC strip expanded 1941-42. Coordinates match PANN.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Nenana CAA / Municipal Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-tanana",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -152.1094,
+          65.1744
+        ]
+      },
+      "properties": {
+        "id": "ak-tanana",
+        "name": "Tanana Field",
+        "alternate_names": [
+          "Ralph M. Calhoun Memorial Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1930",
+        "opened_year": 1930,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Civil; CAA; USAAF ALSIB emergency support",
+        "surface_wartime": "gravel",
+        "runway_specs": "4,400 ft gravel runway & CAA radio range at Yukon-Tanana confluence",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war Yukon River hub upgraded by CAA 1941-42 as intermediate weather/radio/emergency strip along the Fairbanks-Galena-Nome ALSIB route.",
+        "modern_equivalent": "PATA / Ralph M. Calhoun Memorial Airport (Active)",
+        "proof_summary": "Kraus (FAA, 2018) and US Army Alaska histories cite Tanana CAA wartime improvement along Fairbanks-Galena corridor. Coordinates match PATA.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "US Army Alaska WWII History"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Tanana Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-lake-minchumina",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -152.3019,
+          63.8861
+        ]
+      },
+      "properties": {
+        "id": "ak-lake-minchumina",
+        "name": "Lake Minchumina CAA Field",
+        "alternate_names": [
+          "Minchumina Intermediate Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF emergency & airway radio",
+        "surface_wartime": "gravel",
+        "runway_specs": "4,200 ft CAA gravel runway & radio range west of Mount McKinley",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Built 1941-42 by CAA in remote central Interior as vital emergency landing and radio navigation waypoint between Fairbanks/Nenana and McGrath.",
+        "modern_equivalent": "PAMH / Minchumina Airport (Active)",
+        "proof_summary": "Explicitly listed in Kraus (FAA, 2018) among WWII CAA Alaska defense airports. Coordinates verified against PAMH.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Lake Minchumina CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-mcgrath",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.6058,
+          62.9529
+        ]
+      },
+      "properties": {
+        "id": "ak-mcgrath",
+        "name": "McGrath Army Airbase / CAA Field",
+        "alternate_names": [
+          "McGrath Air Base"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1932",
+        "opened_year": 1932,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Territorial Bush (1939-40); CAA (1941); USAAF ATC Sub-Base of Ladd (1942-45)",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two 5,000+ ft CAA/Army runways built 1941 on Kuskokwim River",
+        "strategic_role": "ALSIB & Western Staging",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:dual_use · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Pre-war Kuskokwim mining strip expanded into a major CAA/Army airfield in 1941; served as USAAF ATC sub-base of Ladd Field supporting western Alaska and Lend-Lease.",
+        "modern_equivalent": "PAMC / McGrath Airport (Active)",
+        "proof_summary": "Alaska WWII Army Airfields & USACE Narrative Report 1941-44 verify 1941 CAA construction and USAAF ATC sub-base operations. Coordinates match PAMC.",
+        "primary_sources": [
+          "Alaska WWII Army Airfields",
+          "USACE Narrative Report 1941-1944",
+          "FAA"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "McGrath Army Airbase / CAA Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "dual_use",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-farewell",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -153.8911,
+          62.5091
+        ]
+      },
+      "properties": {
+        "id": "ak-farewell",
+        "name": "Farewell CAA Field",
+        "alternate_names": [
+          "Farewell Intermediate Landing Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF airway weather & emergency",
+        "surface_wartime": "gravel",
+        "runway_specs": "4,900 ft gravel runway & radio range west of Rainy Pass",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Constructed 1941-42 by CAA at western exit of Rainy Pass to provide critical weather, radio range, and emergency runway on the Anchorage-McGrath military/civil airway.",
+        "modern_equivalent": "PAFW / Farewell Airport (Active)",
+        "proof_summary": "Listed in Kraus (FAA, 2018) and US Army WWII summaries as CAA defense airfield built 1941-42. Coordinates match PAFW.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Farewell CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-ruby",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -155.4699,
+          64.7272
+        ]
+      },
+      "properties": {
+        "id": "ak-ruby",
+        "name": "Ruby Territorial / CAA Field",
+        "alternate_names": [
+          "Ruby Yukon Airfield"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1930",
+        "opened_year": 1930,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Civil; CAA; USAAF ALSIB alternate",
+        "surface_wartime": "gravel",
+        "runway_specs": "Graded gravel strip on Yukon River bluff upgraded 1941-42",
+        "strategic_role": "Bush & ALSIB Alternate",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war Yukon mining hub strip upgraded in WWII as CAA intermediate/emergency alternate just east of Galena along the Fairbanks-Nome ALSIB route.",
+        "modern_equivalent": "PARY / Ruby Airport (Active)",
+        "proof_summary": "Pre-war Yukon River airstrip used as wartime emergency/staging alternate east of Galena; coordinates match PARY.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska",
+          "Alaska Aviation history"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Ruby Territorial / CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-galena",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.9374,
+          64.7362
+        ]
+      },
+      "properties": {
+        "id": "ak-galena",
+        "name": "Galena Army Airfield",
+        "alternate_names": [
+          "Galena Air Base",
+          "1468th AAFBU"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Interior / ALSIB",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-08",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF ATC 1468th AAFBU; Eleventh Air Force",
+        "surface_wartime": "asphalt",
+        "runway_specs": "6,000+ ft paved runway along Yukon River (protected by flood levee)",
+        "strategic_role": "ALSIB Lend-Lease Staging",
+        "timeline_1939_1945": "41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "5,282 acres withdrawn 1941; constructed 1941-42 by CAA/USACE; military operations began Aug 1942 (formal Army takeover Jul 1, 1943) as vital ALSIB mid-point between Ladd and Nome.",
+        "modern_equivalent": "PAGA / Edward G. Pitka Sr. Airport (Active)",
+        "proof_summary": "Galena historical records, USACE Narrative Report 1941-44, and Alaska WWII Army Airfields verify 1941 withdrawal, Aug 1942 military activation, and 1468th AAFBU. Coordinates match PAGA.",
+        "primary_sources": [
+          "Alaska WWII Army Airfields",
+          "USACE Narrative Report 1941-1944",
+          "GILA Historical Summary"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Galena Army Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-juneau-municipal",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -134.5763,
+          58.355
+        ]
+      },
+      "properties": {
+        "id": "ak-juneau-municipal",
+        "name": "Juneau Municipal Airport",
+        "alternate_names": [
+          "Juneau Army Airfield (Joint)",
+          "Mendenhall Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1935",
+        "opened_year": 1935,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Pan American Airways; CAA; USAAF Air Transport Command",
+        "surface_wartime": "asphalt",
+        "runway_specs": "5,000 ft paved CAA/military runway on Mendenhall Valley flats",
+        "strategic_role": "Territorial Capital & Staging",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:dual_use · 42:dual_use · 43:dual_use · 44:dual_use · 45:dual_use",
+        "notes": "Pre-war Pan Am/territorial strip rebuilt under CAA defense program and opened Jul 1, 1941; served jointly as territorial capital airport and military refueling stop to Elmendorf.",
+        "modern_equivalent": "PAJN / Juneau International Airport (Active)",
+        "proof_summary": "Alaska WWII Army Airfields confirms Jul 1, 1941 civil opening & joint military refueling use; USACE Narrative Report lists Juneau CAA garrison. Coordinates match PAJN.",
+        "primary_sources": [
+          "Alaska WWII Army Airfields",
+          "USACE Narrative Report 1941-1944",
+          "FAA"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Juneau Municipal Airport",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "dual_use",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "dual_use"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-annette-island",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -131.5722,
+          55.0424
+        ]
+      },
+      "properties": {
+        "id": "ak-annette-island",
+        "name": "Annette Island Army Airfield",
+        "alternate_names": [
+          "Metlakatla Air Base",
+          "NAAF Annette Island"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1941-12",
+        "opened_year": 1941,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "USAAF; RCAF (115, 118, 135, 149 Sqns); U.S. Navy NAAF; Pan Am",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Two 7,500+ ft paved runways plus Navy seaplane ramp",
+        "strategic_role": "Southeast Gateway Airbase",
+        "timeline_1939_1945": "40:construction · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "USACE began construction 1940; initial operations late 1941, formally opened Mar 1, 1942; hosted RCAF fighter/bomber squadrons, USAAF transport, and Navy patrol detachment.",
+        "modern_equivalent": "PANT / Annette Island Airport (Active)",
+        "proof_summary": "USACE Green Book II, BuDocks Ch. 23, RCAF Journal, and Alaska WWII Army Airfields thoroughly document Annette Island's 1940-45 military role. Coordinates match PANT.",
+        "primary_sources": [
+          "USACE Alaska District Green Book II",
+          "USN BuDocks Ch. 23",
+          "RCAF Journal",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Annette Island Army Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "construction",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-yakutat",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -139.6602,
+          59.5033
+        ]
+      },
+      "properties": {
+        "id": "ak-yakutat",
+        "name": "Yakutat Army Airfield / NAAF",
+        "alternate_names": [
+          "Yakutat Air Base"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1941-11",
+        "opened_year": 1941,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "USAAF 11th AF & ATC; U.S. Navy NAF/NAAF (Sep 1942 - Jun 1944)",
+        "surface_wartime": "concrete",
+        "runway_specs": "Two 7,500+ ft concrete/paved runways & Navy seaplane ramp",
+        "strategic_role": "Coastal Staging Airbase",
+        "timeline_1939_1945": "40:construction · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "USACE began clearing muskeg Oct 1940; initial flight ops late 1941, formally activated Mar 1, 1942; Navy NAF added Sep 5, 1942. Vital coastal bridge between Annette and Elmendorf.",
+        "modern_equivalent": "PAYA / Yakutat Airport (Active)",
+        "proof_summary": "USACE Green Book II, BuDocks Ch. 23, and Alaska WWII Army Airfields verify Oct 1940 construction start, late 1941/Mar 1942 activation, and Navy NAF Sep 1942. Coordinates match PAYA.",
+        "primary_sources": [
+          "USACE Alaska District Green Book II",
+          "USN BuDocks Ch. 23",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Yakutat Army Airfield / NAAF",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "construction",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-gustavus",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -135.7074,
+          58.4253
+        ]
+      },
+      "properties": {
+        "id": "ak-gustavus",
+        "name": "Gustavus CAA / Defense Airfield",
+        "alternate_names": [
+          "Gustavus Airfield Historic District"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "dual_use",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF alternate & coastal defense staging",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Two 5,000+ ft paved runways in flat glacial outwash plain",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "41:construction · 42:dual_use · 43:dual_use · 44:dual_use · 45:dual_use",
+        "notes": "Constructed 1941-42 by CAA/USACE as first-class alternate/defense field to fog-prone Juneau with wide clear approaches; active military/civil staging 1942-45.",
+        "modern_equivalent": "PAGS / Gustavus Airport (Active)",
+        "proof_summary": "Alaska DOT&PF / FAA Section 4(f) Statement documents Gustavus Airfield Historic District (JUN-01093) period of significance starting 1941; Kraus (FAA) confirms CAA build. Coordinates match PAGS.",
+        "primary_sources": [
+          "Alaska DOT&PF / FAA Gustavus Section 4(f) Statement",
+          "FAA Civil Aviation Policy in Alaska"
+        ],
+        "source_url": "https://dot.alaska.gov/sereg/projects/gustavus_airport/assets/appendix_k_section_4_f_statement.pdf",
+        "source_confidence": "verified",
+        "title": "Gustavus CAA / Defense Airfield",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "dual_use"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-nas-sitka",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -135.3616,
+          57.0471
+        ]
+      },
+      "properties": {
+        "id": "ak-nas-sitka",
+        "name": "Naval Air Station Sitka",
+        "alternate_names": [
+          "NOB Sitka / Japonski Island"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "amphibious_airstation",
+        "origin_category": "military",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1940",
+        "opened_year": 1940,
+        "military_start_year": 1940,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "U.S. Navy Patrol Wing 4; U.S. Army Fort Ray garrison",
+        "surface_wartime": "concrete",
+        "runway_specs": "Three concrete seaplane ramps + 170x1,500 ft concrete arresting-gear landplane strip",
+        "strategic_role": "Naval Patrol & Defense",
+        "timeline_1939_1945": "39:construction · 40:military · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "CPFF contract signed Aug 29, 1939; designated NAS Sep 12, 1939; operational 1940 as intermediate naval air station between Seattle and Kodiak (redesignated NOB Jul 20, 1942).",
+        "modern_equivalent": "PASI / Sitka Rocky Gutierrez Airport (Expanded on Japonski Island)",
+        "proof_summary": "USN BuDocks Ch. 23 details Aug 29, 1939 contract, Sep 12, 1939 NAS designation, 3 concrete ramps, and 170x1500 ft arresting-gear landplane strip on Japonski Island. Coordinates match PASI.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23",
+          "US Army CMH Ch. 9"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Naval Air Station Sitka",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "construction",
+        "status_1940": "military",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-skagway",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -135.3157,
+          59.4601
+        ]
+      },
+      "properties": {
+        "id": "ak-skagway",
+        "name": "Skagway Territorial Field",
+        "alternate_names": [
+          "Skagway Municipal / Railhead Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1931",
+        "opened_year": 1931,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Civil; U.S. Army White Pass Supply & CANOL Support",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip in narrow Skagway River valley beside WP&YR railroad",
+        "strategic_role": "Port & Railhead Staging",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war strip near Chilkoot Barracks; heavily used by Army transport & liaison aircraft 1942-44 supporting White Pass & Yukon Route railhead for Alaska Highway/CANOL construction.",
+        "modern_equivalent": "PAGY / Skagway Airport (Active)",
+        "proof_summary": "Pre-war strip serving Chilkoot Barracks/Skagway railhead; expanded wartime Army use during 1942-44 Alaska Highway/CANOL build. Coordinates match PAGY.",
+        "primary_sources": [
+          "US Army CMH Ch. 9",
+          "FAA Civil Aviation Policy in Alaska"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USA/USA-WH-Guard/USA-WH-Guard-9.html",
+        "source_confidence": "high",
+        "title": "Skagway Territorial Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-haines",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -135.5237,
+          59.2438
+        ]
+      },
+      "properties": {
+        "id": "ak-haines",
+        "name": "Haines Field",
+        "alternate_names": [
+          "Chilkoot Barracks / Haines Strip"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1935",
+        "opened_year": 1935,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Civil; U.S. Army Engineers (Haines Cutoff)",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel strip near Chilkat River serving Chilkoot Barracks & Haines Cutoff",
+        "strategic_role": "Port & Highway Support",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:civilian · 45:civilian",
+        "notes": "Pre-war strip serving Chilkoot Barracks (Alaska's only pre-1940 Army post); used for military liaison/supply during 1942-43 Haines Cutoff Highway construction.",
+        "modern_equivalent": "PAHN / Haines Airport (Active)",
+        "proof_summary": "Adjacent to Chilkoot Barracks and Haines Cutoff Highway wartime supply port; coordinates match PAHN.",
+        "primary_sources": [
+          "US Army CMH Ch. 9",
+          "FAA Civil Aviation Policy in Alaska"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USA/USA-WH-Guard/USA-WH-Guard-9.html",
+        "source_confidence": "high",
+        "title": "Haines Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "civilian",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-ketchikan-seaplane",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -131.6461,
+          55.3422
+        ]
+      },
+      "properties": {
+        "id": "ak-ketchikan-seaplane",
+        "name": "Ketchikan Air Harbor / Naval Section Base",
+        "alternate_names": [
+          "Tongass Narrows Seaplane Base"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "seaplane_base",
+        "origin_category": "civilian",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1930",
+        "opened_year": 1930,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "Ellis Air Lines; Pan Am; U.S. Navy / Coast Guard (Jul 1941)",
+        "surface_wartime": "water_seaplane",
+        "runway_specs": "Tongass Narrows water lanes, finger floats & 2 military seaplane hangars",
+        "strategic_role": "Southeast Seaplane Hub",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:dual_use · 42:dual_use · 43:dual_use · 44:dual_use · 45:dual_use",
+        "notes": "Primary pre-war Southeast Alaska commercial seaplane base; U.S. Navy section base established Jul 8, 1941 with 2 seaplane hangars (transferred to Coast Guard Oct 1942).",
+        "modern_equivalent": "5KE / Ketchikan Harbor Seaplane Base (Active)",
+        "proof_summary": "USN BuDocks Ch. 23 documents Ketchikan naval section base (est. Jul 8, 1941) with 2 seaplane hangars & 6 finger floats on Tongass Narrows.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23",
+          "FAA"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Ketchikan Air Harbor / Naval Section Base",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "dual_use",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "dual_use"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-port-althorp",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -136.35,
+          58.1333
+        ]
+      },
+      "properties": {
+        "id": "ak-port-althorp",
+        "name": "Port Althorp Naval Auxiliary Air Facility",
+        "alternate_names": [
+          "Port Althorp Section Base / NAAF"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "seaplane_base",
+        "origin_category": "military",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1941-07-09",
+        "opened_year": 1941,
+        "military_start_year": 1941,
+        "closed_year": 1945,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "U.S. Navy Patrol Wing 4 (Sitka Sector)",
+        "surface_wartime": "water_seaplane",
+        "runway_specs": "Protected Chichagof Island seaplane anchorage & 5-plane beaching ramp",
+        "strategic_role": "Naval Patrol Outpost",
+        "timeline_1939_1945": "41:military · 42:military · 43:military · 44:military · 45:closed",
+        "notes": "Established Jul 9, 1941 as naval section base; redesignated NAAF Mar 17, 1943 with beaching ramp and 15,000 gal avgas storage guarding Cross Sound approaches.",
+        "modern_equivalent": "Abandoned / Port Althorp FUDS",
+        "proof_summary": "USN BuDocks Ch. 23 (Sitka Sector) documents Jul 9, 1941 establishment, Mar 17, 1943 NAAF redesignation, and 5-plane beaching ramp on Chichagof Island.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Port Althorp Naval Auxiliary Air Facility",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "closed"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-port-armstrong",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -134.6611,
+          56.2944
+        ]
+      },
+      "properties": {
+        "id": "ak-port-armstrong",
+        "name": "Port Armstrong Naval Auxiliary Air Facility",
+        "alternate_names": [
+          "Port Armstrong Section Base / NAAF"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "seaplane_base",
+        "origin_category": "military",
+        "region": "Southeast",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1941-07-24",
+        "opened_year": 1941,
+        "military_start_year": 1941,
+        "closed_year": 1943,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "U.S. Navy (Sitka Sector)",
+        "surface_wartime": "water_seaplane",
+        "runway_specs": "Baranof Island seaplane harbor, piers & radio station",
+        "strategic_role": "Naval Patrol Outpost",
+        "timeline_1939_1945": "41:military · 42:military · 43:military · 44:closed · 45:closed",
+        "notes": "Established Jul 24, 1941 on Baranof Island; redesignated NAAF Mar 17, 1943; decommissioned Jul 1943 as naval operations shifted west to the Aleutians.",
+        "modern_equivalent": "Port Armstrong Hatchery (Non-aviation)",
+        "proof_summary": "USN BuDocks Ch. 23 explicitly documents Jul 24, 1941 establishment, Mar 17, 1943 NAAF status, and Jul 1943 decommissioning at Port Armstrong (50 mi SE of Sitka).",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Port Armstrong Naval Auxiliary Air Facility",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "closed",
+        "status_1945": "closed"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-naknek-king-salmon",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -156.6492,
+          58.6768
+        ]
+      },
+      "properties": {
+        "id": "ak-naknek-king-salmon",
+        "name": "Naknek Army Airfield (King Salmon)",
+        "alternate_names": [
+          "King Salmon Air Base"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-07-01",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF Air Transport Command; Eleventh Air Force",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Two heavy 5,000-7,500 ft paved runways on Naknek River",
+        "strategic_role": "Bristol Bay Major Hub",
+        "timeline_1939_1945": "41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Planned in 1940-41 Army staging network; built 1941-42; activated Jul 1, 1942 as major USAAF fighter/bomber staging, maintenance, and ATC logistics hub for the Alaska Peninsula.",
+        "modern_equivalent": "PAKN / King Salmon Airport (Active)",
+        "proof_summary": "US Army CMH Ch. 9, USACE Narrative Report 1941-44, and Alaska WWII Army Airfields confirm Jul 1, 1942 activation. Coordinates match PAKN.",
+        "primary_sources": [
+          "Alaska WWII Army Airfields",
+          "US Army CMH Ch. 9",
+          "USACE Narrative Report 1941-44"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Naknek Army Airfield (King Salmon)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-port-heiden",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -158.6333,
+          56.9591
+        ]
+      },
+      "properties": {
+        "id": "ak-port-heiden",
+        "name": "Fort Morrow Army Airfield (Port Heiden)",
+        "alternate_names": [
+          "Port Heiden Air Base"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Eleventh Air Force; Alaska Defense Command",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two 5,000+ ft gravel/paved runways on Alaska Peninsula Bering shore",
+        "strategic_role": "Peninsula Forward Airbase",
+        "timeline_1939_1945": "41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Approved by Joint Board Nov 26, 1941 alongside Umnak and Cold Bay; constructed late 1941-42 as major forward fighter/bomber & staging airfield on Alaska Peninsula; closed late 1945.",
+        "modern_equivalent": "PAPH / Port Heiden Airport (Active)",
+        "proof_summary": "US Army CMH Ch. 9 confirms Nov 26, 1941 Joint Board approval of Port Heiden; Alaska WWII Army Airfields confirms Fort Morrow AAF coordinates (56.9567, -158.6383).",
+        "primary_sources": [
+          "US Army CMH Guarding the US Ch. 9",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Fort Morrow Army Airfield (Port Heiden)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-cold-bay",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -162.7244,
+          55.2053
+        ]
+      },
+      "properties": {
+        "id": "ak-cold-bay",
+        "name": "Fort Randall Army Airfield (Cold Bay)",
+        "alternate_names": [
+          "NAAF Cold Bay",
+          "Thornbrough AFB"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-03",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF 11th AF; U.S. Navy NAAF (1942-44); Project Hula (1945)",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Two 5,000 ft asphalt runways + 5,000 ft gravel satellite strip",
+        "strategic_role": "Aleutian Gateway & Project Hula",
+        "timeline_1939_1945": "42:military · 43:military · 44:military · 45:military",
+        "notes": "Secretly built early 1942 ('Blair Fish Packing Co.'); operational Mar 1942 (Navy Jul 14, 1942); launched P-40s during Dutch Harbor defense and hosted secret 1945 US-Soviet Project Hula.",
+        "modern_equivalent": "PACD / Cold Bay Airport (Active)",
+        "proof_summary": "USN BuDocks Ch. 23, FAA WWII NAV Ranges, and Alaska WWII Army Airfields verify Mar 1942 Army opening, Jul 14, 1942 Navy commissioning, and two 5,000 ft asphalt runways. Coordinates match PACD.",
+        "primary_sources": [
+          "USN BuDocks Ch. 23",
+          "FAA WWII CAA NAV Ranges",
+          "Alaska WWII Army Airfields",
+          "Russell (1997)"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Fort Randall Army Airfield (Cold Bay)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-sand-point",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -160.5231,
+          55.315
+        ]
+      },
+      "properties": {
+        "id": "ak-sand-point",
+        "name": "Sand Point Naval Auxiliary Air Facility",
+        "alternate_names": [
+          "Popof Island Section Base / NAAF"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "seaplane_base",
+        "origin_category": "military",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": 1945,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "U.S. Navy (Kodiak Sector)",
+        "surface_wartime": "water_seaplane",
+        "runway_specs": "Seaplane parking area, repair shops, radio range & weather station on Popof Island",
+        "strategic_role": "Naval Patrol & Radio Range",
+        "timeline_1939_1945": "42:military · 43:military · 44:military · 45:closed",
+        "notes": "Commissioned early 1942 as section base in Shumagin Islands; redesignated NAAF Apr 1, 1943 with radio range Sep 22, 1943; decommissioned Apr 28, 1945.",
+        "modern_equivalent": "PASD / Sand Point Airport (Modern land strip nearby)",
+        "proof_summary": "USN BuDocks Ch. 23 (Kodiak Sector) explicitly details early 1942 commissioning, Apr 1, 1943 NAAF status, and Apr 28, 1945 decommissioning on Popof Island.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Vol. II Ch. 23"
+        ],
+        "source_url": "https://www.ibiblio.org/hyperwar/USN/Building_Bases/bases-23.html",
+        "source_confidence": "verified",
+        "title": "Sand Point Naval Auxiliary Air Facility",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "closed"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-bethel",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -161.838,
+          60.7798
+        ]
+      },
+      "properties": {
+        "id": "ak-bethel",
+        "name": "Bethel Air Base / CAA Field",
+        "alternate_names": [
+          "Bethel Army Airfield"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1930",
+        "opened_year": 1930,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Bush (1939-40); CAA & USAAF ATC / 11th AF (1942-45)",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two 5,000 ft CAA/USACE gravel runways on Kuskokwim River delta",
+        "strategic_role": "Western Defense & ALSIB Aux",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Pre-war Kuskokwim delta civil hub; major military/CAA construction began Sep 21, 1941; activated Jul 4, 1942 as USAAF ATC Lend-Lease auxiliary and western Alaska defense field.",
+        "modern_equivalent": "PABE / Bethel Airport (Active)",
+        "proof_summary": "Alaska WWII Army Airfields & USACE Narrative Report 1941-44 verify Sep 21, 1941 construction start and Jul 4, 1942 activation. Coordinates match PABE.",
+        "primary_sources": [
+          "Alaska WWII Army Airfields",
+          "USACE Narrative Report 1941-1944",
+          "FAA"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Bethel Air Base / CAA Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-aniak",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -159.543,
+          61.5816
+        ]
+      },
+      "properties": {
+        "id": "ak-aniak",
+        "name": "Aniak CAA Field",
+        "alternate_names": [
+          "Aniak Intermediate Landing Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Southwest & Peninsula",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1939",
+        "opened_year": 1939,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Bush; CAA; USAAF airway support",
+        "surface_wartime": "gravel",
+        "runway_specs": "CAA-built 5,000 ft gravel runway & radio range on Kuskokwim River",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Small pre-war Kuskokwim strip upgraded 1941-42 under CAA defense airport program into a 5,000 ft airway/emergency field between McGrath and Bethel.",
+        "modern_equivalent": "PANI / Aniak Airport (Active)",
+        "proof_summary": "Kraus (FAA, 2018) & US Army WWII summaries document Aniak among WWII CAA upgraded fields on the Kuskokwim corridor. Coordinates match PANI.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "USACE Alaska Cold War Plan"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Aniak CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-marks-aaf-nome",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -165.4453,
+          64.5122
+        ]
+      },
+      "properties": {
+        "id": "ak-marks-aaf-nome",
+        "name": "Marks Army Airfield (Nome)",
+        "alternate_names": [
+          "Nome Air Base",
+          "1469th AAFBU"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Western / Bering",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-07-01",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "CAA; USAAF ATC 1469th AAFBU; Soviet Air Force ALSIB Detachment",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Two 6,000+ ft paved runways built over permafrost on Bering Sea coast",
+        "strategic_role": "ALSIB Final U.S. Hub",
+        "timeline_1939_1945": "41:construction · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Army garrison arrived Sep 1941; heavy airfield opened Jul 1, 1942 as final U.S. refueling and servicing stop for Soviet pilots flying Lend-Lease aircraft across the Bering Strait to Siberia.",
+        "modern_equivalent": "PAOM / Nome Airport (Active)",
+        "proof_summary": "US Army CMH Ch. 9, USACE Narrative Report 1941-44, and Alaska WWII Army Airfields confirm Sep 1941 garrison, Jul 1, 1942 opening, and 1469th AAFBU ALSIB mission. Coordinates match PAOM.",
+        "primary_sources": [
+          "Alaska WWII Army Airfields",
+          "US Army CMH Ch. 9",
+          "USACE Narrative Report 1941-44"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Marks Army Airfield (Nome)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "construction",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-unalakleet",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -160.7989,
+          63.8884
+        ]
+      },
+      "properties": {
+        "id": "ak-unalakleet",
+        "name": "Unalakleet CAA Field",
+        "alternate_names": [
+          "Unalakleet Intermediate Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Western / Bering",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1935",
+        "opened_year": 1935,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Territorial Bush; CAA; USAAF western airway support",
+        "surface_wartime": "gravel",
+        "runway_specs": "Two CAA-built gravel runways (~4,000-5,000 ft) & radio range on Norton Sound",
+        "strategic_role": "CAA Defense Landing Area",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war Norton Sound bush strip upgraded by CAA 1941-42 into a dual-runway radio-range airfield linking McGrath/Galena with Nome.",
+        "modern_equivalent": "PAUN / Unalakleet Airport (Active)",
+        "proof_summary": "FAA wartime CAA history documents Unalakleet's WWII radio-range and runway build on Norton Sound airway. Coordinates match PAUN.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)",
+          "FAA WWII CAA NAV Ranges"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "verified",
+        "title": "Unalakleet CAA Field",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-kotzebue",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -162.5985,
+          66.8847
+        ]
+      },
+      "properties": {
+        "id": "ak-kotzebue",
+        "name": "Kotzebue Field (Ralph Wien)",
+        "alternate_names": [
+          "Kotzebue CAA / Bush Field"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "dual_use",
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "origin_category": "civilian",
+        "region": "Western / Bering",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1929",
+        "opened_year": 1929,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "Wien Alaska Airlines; CAA; USAAF Arctic weather/patrol",
+        "surface_wartime": "gravel",
+        "runway_specs": "Gravel coastal strip expanded 1942 with CAA radio & weather facilities",
+        "strategic_role": "Arctic Commercial & Patrol",
+        "timeline_1939_1945": "39:civilian · 40:civilian · 41:civilian · 42:dual_use · 43:dual_use · 44:dual_use · 45:civilian",
+        "notes": "Pre-war commercial aviation hub of northwest Arctic Alaska (Wien Alaska Airlines); upgraded with CAA radio/airfield improvements 1942-44 supporting military Arctic patrols.",
+        "modern_equivalent": "PAOT / Ralph Wien Memorial Airport (Active)",
+        "proof_summary": "Historic pre-war Wien hub north of Arctic Circle upgraded during WWII by CAA; coordinates match PAOT.",
+        "primary_sources": [
+          "FAA Civil Aviation Policy in Alaska (1913-2018)"
+        ],
+        "source_url": "https://www.faa.gov/sites/faa.gov/files/about/office_org/headquarters_offices/arc/Civil_Aviation_Policy_in_Alaska.pdf",
+        "source_confidence": "high",
+        "title": "Kotzebue Field (Ralph Wien)",
+        "marker-color": "#d97706",
+        "marker-symbol": "airport",
+        "marker-size": "small",
+        "status_1939": "civilian",
+        "status_1940": "civilian",
+        "status_1941": "civilian",
+        "status_1942": "dual_use",
+        "status_1943": "dual_use",
+        "status_1944": "dual_use",
+        "status_1945": "civilian"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-dutch-harbor",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -166.5435,
+          53.9001
+        ]
+      },
+      "properties": {
+        "id": "ak-dutch-harbor",
+        "name": "Naval Air Station Dutch Harbor",
+        "alternate_names": [
+          "NOB Dutch Harbor",
+          "Fort Mears",
+          "Unalaska Airfield"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "amphibious_airstation",
+        "origin_category": "military",
+        "region": "Aleutian Islands",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1941-09",
+        "opened_year": 1941,
+        "military_start_year": 1941,
+        "closed_year": null,
+        "is_new_in_year": false,
+        "is_new_military_in_year": false,
+        "operator_1939_1945": "U.S. Navy Patrol Wing 4; U.S. Army Fort Mears",
+        "surface_wartime": "gravel",
+        "runway_specs": "Concrete seaplane ramp (1941) + 300x4,385 ft gravel runway below Mt. Ballyhoo (Jul 3, 1942)",
+        "strategic_role": "Aleutian Naval HQ",
+        "timeline_1939_1945": "40:construction · 41:military · 42:military · 43:military · 44:military · 45:military",
+        "notes": "Hepburn Board base; construction began Jul 1940; seaplane station operational 1941; bombed by Japanese carriers Jun 3-4, 1942; landplane runway first landing Jul 3, 1942.",
+        "modern_equivalent": "PADU / Unalaska Tom Madsen Airport (Active)",
+        "proof_summary": "NPS Dutch Harbor report and USN BuDocks Ch. 23 document Jul 1940 construction start, 1941 seaplane activation, Jun 1942 bombing, and Jul 3, 1942 first landing on 4,385 ft Mt. Ballyhoo runway. Coordinates match PADU.",
+        "primary_sources": [
+          "USN BuDocks Building the Navy's Bases Ch. 23",
+          "NPS Dutch Harbor Report",
+          "US Army CMH Ch. 9"
+        ],
+        "source_url": "https://npshistory.com/publications/aleu/dutch_harbor.pdf",
+        "source_confidence": "verified",
+        "title": "Naval Air Station Dutch Harbor",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "construction",
+        "status_1941": "military",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-fort-glenn-umnak",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -167.8919,
+          53.3775
+        ]
+      },
+      "properties": {
+        "id": "ak-fort-glenn-umnak",
+        "name": "Fort Glenn Army Airfield (Umnak)",
+        "alternate_names": [
+          "Cape Field",
+          "Blair Packing Co. (Cover Name)"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Aleutian Islands",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-05",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Eleventh Air Force; RCAF 111(F) Sqn; USN detachment",
+        "surface_wartime": "marston_mat",
+        "runway_specs": "Three Marston-mat & gravel runways (up to 7,000 ft) at Otter Point / Northeast Umnak",
+        "strategic_role": "Aleutian Forward Combat",
+        "timeline_1939_1945": "42:military · 43:military · 44:military · 45:military",
+        "notes": "Secretly built early 1942 under 'Blair Packing Co.' cover; first wheeled combat airfield in Aleutians; P-40s surprised Japanese raiders attacking Dutch Harbor Jun 3-4, 1942.",
+        "modern_equivalent": "Abandoned / Fort Glenn National Historic Landmark",
+        "proof_summary": "USACE Green Book IV, US Army CMH, and Alaska WWII Army Airfields verify May 1942 operational readiness and exact Fort Glenn coordinates (53°22'39\"N 167°53'31\"W).",
+        "primary_sources": [
+          "USACE Green Book IV (Aleutian Offensive)",
+          "US Army CMH Aleutian Islands",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://www.poa.usace.army.mil/Portals/34/docs/AKdistrict/green_book_iv.pdf",
+        "source_confidence": "verified",
+        "title": "Fort Glenn Army Airfield (Umnak)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-driftwood-bay",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -166.8574,
+          53.972
+        ]
+      },
+      "properties": {
+        "id": "ak-driftwood-bay",
+        "name": "Driftwood Bay Auxiliary Strip",
+        "alternate_names": [
+          "Unalaska NW Auxiliary / Later AFS"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Aleutian Islands",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Eleventh Air Force; U.S. Army Coast Artillery outpost",
+        "surface_wartime": "gravel",
+        "runway_specs": "3,500 ft coastal gravel auxiliary/emergency strip 12 mi NW of Dutch Harbor",
+        "strategic_role": "Aleutian Auxiliary Strip",
+        "timeline_1939_1945": "42:military · 43:military · 44:military · 45:military",
+        "notes": "Auxiliary emergency & coastal surveillance strip on NW Unalaska Island supporting Dutch Harbor and Umnak air operations 1942-45 (later Cold War White Alice station).",
+        "modern_equivalent": "AK23 / Driftwood Bay AFS Airfield (Closed/Emergency)",
+        "proof_summary": "Exact airfield coordinates verified from SkyVector/Wikipedia AK23 (53°58'19\"N 166°51'26.6\"W) and Alaska DEC FUDS record.",
+        "primary_sources": [
+          "Alaska DEC FUDS",
+          "SkyVector AK23",
+          "USACE Alaska District"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Driftwood_Bay_Air_Force_Station_Airfield",
+        "source_confidence": "high",
+        "title": "Driftwood Bay Auxiliary Strip",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-atka",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -174.2064,
+          52.2203
+        ]
+      },
+      "properties": {
+        "id": "ak-atka",
+        "name": "Atka Auxiliary Airfield",
+        "alternate_names": [
+          "Atka Air Force Auxiliary Field / NAAF Atka"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Aleutian Islands",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-09-16",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": 1943,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Eleventh Air Force; U.S. Navy Auxiliary Air Facility",
+        "surface_wartime": "marston_mat",
+        "runway_specs": "Marston-mat emergency fighter strip & seaplane anchorage on Nazan Bay",
+        "strategic_role": "Aleutian Forward Combat",
+        "timeline_1939_1945": "42:military · 43:military · 44:closed · 45:closed",
+        "notes": "USAAF landed Sep 16, 1942 to build fighter/medium bomber support strip against Kiska; Navy NAAF active Feb-Sep 1943 before decommissioning as combat moved past Adak/Amchitka.",
+        "modern_equivalent": "PAAK / Atka Airport (Modern strip nearby; WWII strip FUDS)",
+        "proof_summary": "USACE DERP-FUDS Atka report explicitly dates USAAF landing Sep 16, 1942, Navy NAAF Feb 13, 1943, and decommissioning Sep 1, 1943.",
+        "primary_sources": [
+          "USACE Atka Auxiliary Field DERP-FUDS Assessment (2006)",
+          "USN BuDocks Ch. 23"
+        ],
+        "source_url": "https://apiai.org/wp-content/uploads/2016/03/2006.-DERP-Preliminary-Assesment.-USACE-Alaska.-USACE-Rock-Island-District-r.pdf",
+        "source_confidence": "verified",
+        "title": "Atka Auxiliary Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "closed",
+        "status_1945": "closed"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ak-adak-davis",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -176.646,
+          51.878
+        ]
+      },
+      "properties": {
+        "id": "ak-adak-davis",
+        "name": "Adak Army Airfield (Davis AAF)",
+        "alternate_names": [
+          "NOB Adak",
+          "Sweeper Cove Airfield"
+        ],
+        "dataset": "alaska_airfields_1939_1945",
+        "snapshot_year": 1942,
+        "year_status": "military",
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "origin_category": "military",
+        "region": "Aleutian Islands",
+        "territory": "Territory of Alaska (USA)",
+        "opened_date": "1942-09-14",
+        "opened_year": 1942,
+        "military_start_year": 1942,
+        "closed_year": null,
+        "is_new_in_year": true,
+        "is_new_military_in_year": true,
+        "operator_1939_1945": "USAAF Eleventh Air Force; U.S. Navy NOB Adak",
+        "surface_wartime": "asphalt",
+        "runway_specs": "Initial 10-day Marston-mat strip (Sep 1942) expanded to two paved runways (7,500 ft & 6,000 ft)",
+        "strategic_role": "Aleutian Forward HQ",
+        "timeline_1939_1945": "42:military · 43:military · 44:military · 45:military",
+        "notes": "Occupied Aug 30, 1942; 807th Engineer Aviation Bn drained Sweeper Cove lagoon and launched first combat raid on Kiska Sep 14, 1942; major Aleutian command & bomber base through 1945.",
+        "modern_equivalent": "PADK / Adak Airport (Active)",
+        "proof_summary": "NHHC Aleutians Campaign, USN BuDocks Ch. 23, and Alaska WWII Army Airfields confirm Aug 30, 1942 landing and Sep 1942 combat launch. Coordinates match PADK.",
+        "primary_sources": [
+          "NHHC The Aleutians Campaign",
+          "USN BuDocks Ch. 23",
+          "Alaska WWII Army Airfields"
+        ],
+        "source_url": "https://en.wikipedia.org/wiki/Alaska_World_War_II_Army_airfields",
+        "source_confidence": "verified",
+        "title": "Adak Army Airfield (Davis AAF)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium",
+        "status_1939": "none",
+        "status_1940": "none",
+        "status_1941": "none",
+        "status_1942": "military",
+        "status_1943": "military",
+        "status_1944": "military",
+        "status_1945": "military"
+      }
+    }
+  ]
+}

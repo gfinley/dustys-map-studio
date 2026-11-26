@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=17';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=18';
 
 export const AIRFIELD_1941_LAYERS = [
   {
@@ -145,6 +145,74 @@ export const PHILIPPINES_RAIL_1942_LAYERS = [
     commonCarrier: false,
   },
 ];
+
+export const ALASKA_AIRFIELDS_YEARS = [1939, 1940, 1941, 1942, 1943, 1944, 1945];
+
+export const ALASKA_AIRFIELDS_YEAR_META = {
+  1939: { total: 36, military: 0, civilian: 36 },
+  1940: { total: 39, military: 3, civilian: 36 },
+  1941: { total: 43, military: 14, civilian: 29 },
+  1942: { total: 64, military: 46, civilian: 18 },
+  1943: { total: 77, military: 59, civilian: 18 },
+  1944: { total: 76, military: 57, civilian: 19 },
+  1945: { total: 76, military: 42, civilian: 34 },
+};
+
+export function buildAlaskaYearLayerDefs(year) {
+  const y = ALASKA_AIRFIELDS_YEARS.includes(Number(year)) ? Number(year) : 1943;
+  const counts = ALASKA_AIRFIELDS_YEAR_META[y] || { total: 0, military: 0, civilian: 0 };
+  return [
+    {
+      id: `alaska_airfields_${y}_military`,
+      group: 'alaska_airfields',
+      year: y,
+      geometryKind: 'point',
+      label: `Alaska ${y} Military & Dual-Use Airfields`,
+      shortLabel: `${y} Military & Dual-Use`,
+      meta: `${counts.military} pts`,
+      url: `./data/alaska_airfields_1939_1945/alaska_airfields_${y}_military.geojson`,
+      color: '#b91c1c',
+      fillOpacity: 0.9,
+      strokeWidth: 1.5,
+      dashed: false,
+      defaultOn: true,
+    },
+    {
+      id: `alaska_airfields_${y}_civilian`,
+      group: 'alaska_airfields',
+      year: y,
+      geometryKind: 'point',
+      label: `Alaska ${y} Civilian Airfields`,
+      shortLabel: `${y} Civilian Only`,
+      meta: `${counts.civilian} pts`,
+      url: `./data/alaska_airfields_1939_1945/alaska_airfields_${y}_civilian.geojson`,
+      color: '#1d4ed8',
+      fillOpacity: 0.9,
+      strokeWidth: 1.4,
+      dashed: false,
+      defaultOn: true,
+    },
+    {
+      id: `alaska_airfields_${y}_all`,
+      group: 'alaska_airfields',
+      year: y,
+      geometryKind: 'point',
+      label: `Alaska ${y} All Active Airfields (Combined)`,
+      shortLabel: `${y} All Active (Single Color)`,
+      meta: `${counts.total} pts`,
+      url: `./data/alaska_airfields_1939_1945/alaska_airfields_${y}.geojson`,
+      color: '#d97706',
+      fillOpacity: 0.9,
+      strokeWidth: 1.4,
+      dashed: false,
+      defaultOn: false,
+    },
+  ];
+}
+
+export const ALASKA_AIRFIELDS_ALL_LAYER_DEFS = ALASKA_AIRFIELDS_YEARS.flatMap((y) =>
+  buildAlaskaYearLayerDefs(y),
+);
 
 function buildHistoricalLayerSpec(def, visible) {
   return {
@@ -805,9 +873,72 @@ export const REGION_PRESETS = [
       },
     }),
   },
+  {
+    id: 'alaska_airfields_1939_1945',
+    label: 'Alaska Airfields Progression (1939–1945)',
+    description:
+      'WWII Alaska & Aleutian Islands framing across the 180° Date Line showing military, dual-use, and civilian airfields (1943 peak loaded; step 1939–1945 in Historical or Timeline tab).',
+    spec: makePresetSpec({
+      title: 'Alaska Airfields — 1943 Wartime Peak',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: '10m',
+      center: { lat: 60.8, lon: -158.0 },
+      span: { lonDeg: 58.0, latDeg: 22.0 },
+      page: {
+        preset: 'book_landscape',
+        widthIn: 7.0,
+        heightIn: 4.6,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'classic_atlas',
+      layers: {
+        showBorders: true,
+        borderWidth: 0.9,
+        borderStyle: 'solid',
+        showCoastlines: true,
+        coastlineWidth: 0.65,
+        showLakes: true,
+        showRivers: true,
+        riverWidth: 0.65,
+        showAdmin1: true,
+        admin1Width: 0.6,
+        showGraticule: true,
+        graticuleStepDeg: 10,
+      },
+      highlightedCountries: [],
+      cities: [
+        { id: 'anchorage', name: 'Anchorage', lat: 61.2181, lon: -149.9003, style: 'dot', dx: 6, dy: -5 },
+        { id: 'fairbanks', name: 'Fairbanks', lat: 64.8378, lon: -147.7164, style: 'dot', dx: 6, dy: -5 },
+        { id: 'juneau', name: 'Juneau', lat: 58.3019, lon: -134.4197, style: 'dot', dx: 6, dy: 4 },
+        { id: 'nome', name: 'Nome', lat: 64.5011, lon: -165.4064, style: 'dot', dx: -8, dy: -6 },
+        { id: 'adak', name: 'Adak', lat: 51.8780, lon: -176.6460, style: 'dot', dx: 6, dy: 8 },
+        { id: 'attu', name: 'Attu', lat: 52.8142, lon: 173.2975, style: 'dot', dx: -8, dy: -6 },
+      ],
+      customGeoJsonLayers: buildAlaskaYearLayerDefs(1943)
+        .filter((d) => d.defaultOn)
+        .map((d) => buildHistoricalLayerSpec(d, true)),
+      ornaments: {
+        scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 20, showExtentBox: true },
+        legend: { enabled: true, position: 'bottom-right' },
+      },
+    }),
+  },
 ];
 
 export const GEOJSON_EXAMPLES = [
+  {
+    label: 'Alaska 1943 Airfields — Military/Dual (59)',
+    url: './data/alaska_airfields_1939_1945/alaska_airfields_1943_military.geojson',
+    style: { color: '#b91c1c', fillOpacity: 0.9, strokeWidth: 1.5 },
+  },
+  {
+    label: 'Alaska 1939 Airfields — Pre-War Civilian (36)',
+    url: './data/alaska_airfields_1939_1945/alaska_airfields_1939_civilian.geojson',
+    style: { color: '#1d4ed8', fillOpacity: 0.9, strokeWidth: 1.4 },
+  },
   {
     label: '1941 SE Asia Airfields — Military (94)',
     url: './data/airfields_1941_se_asia_western_pacific_military.geojson',
