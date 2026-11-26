@@ -525,6 +525,81 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         self.assertIn("../js/timeline.js", review_html)
         self.assertIn("btn-print-pdf", review_html)
 
+    def test_alaska_only_country_and_palette_none_toggles(self) -> None:
+        """Alaska (Only) is wired into country selection and all 9 palette colors can be toggled off ('none')."""
+        spec = MapSpec.model_validate(
+            {
+                "center": {"lat": 64.2, "lon": -152.5},
+                "span": {"lonDeg": 38.0, "latDeg": 18.0},
+                "colors": {
+                    "land": "none",
+                    "water": "none",
+                    "borders": "none",
+                    "coastline": "none",
+                    "rivers": "none",
+                    "text": "none",
+                    "admin1": "none",
+                    "bathymetry": "none",
+                    "urban": "none",
+                },
+                "highlightedCountries": [
+                    {
+                        "id": "US-AK",
+                        "name": "Alaska (Only)",
+                        "fill": "#7a7d7a",
+                        "stroke": "#ffffff",
+                        "hatch": "none",
+                    }
+                ],
+            }
+        )
+        for key in ("land", "water", "borders", "coastline", "rivers", "text", "admin1", "bathymetry", "urban"):
+            self.assertEqual(getattr(spec.colors, key), "none")
+        self.assertEqual(spec.highlightedCountries[0].id, "US-AK")
+        self.assertEqual(spec.highlightedCountries[0].name, "Alaska (Only)")
+
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        for btn_id in (
+            "btn-palette-all-off",
+            "btn-palette-reset",
+            "btn-land-none",
+            "btn-water-none",
+            "btn-borders-none",
+            "btn-coastline-none",
+            "btn-rivers-none",
+            "btn-text-none",
+            "btn-admin1-none",
+            "btn-bathymetry-none",
+            "btn-urban-none",
+        ):
+            self.assertIn(f'id="{btn_id}"', html)
+
+        data_loader_js = (SITE_DIR / "js" / "data-loader.js").read_text(encoding="utf-8")
+        for symbol in (
+            "export const ALASKA_ONLY_COUNTRY",
+            "export function isAlaskaOnlySelection",
+            "export function extractAlaskaOnlyFeature",
+            "export function filterGeoJsonToAlaska",
+        ):
+            self.assertIn(symbol, data_loader_js)
+
+        cartography_js = (SITE_DIR / "js" / "cartography.js").read_text(encoding="utf-8")
+        self.assertIn("extractAlaskaOnlyFeature", cartography_js)
+        self.assertIn("isNoneColor", cartography_js)
+
+        controls_js = (SITE_DIR / "js" / "controls.js").read_text(encoding="utf-8")
+        self.assertIn("PALETTE_COLOR_FIELDS", controls_js)
+        self.assertIn("transparent-bg", controls_js)
+
+        app_js = (SITE_DIR / "js" / "app.js").read_text(encoding="utf-8")
+        for cb in (
+            "onTogglePaletteColorNone",
+            "onToggleAllPaletteColorsOff",
+            "onResetPaletteColors",
+            "filterGeoJsonToAlaska",
+        ):
+            self.assertIn(cb, app_js)
+
 
 if __name__ == "__main__":
     unittest.main()

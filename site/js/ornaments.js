@@ -51,6 +51,15 @@ function escapeXml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function resolveOrnamentColor(value, fallback) {
+  if (typeof value !== 'string') return fallback;
+  const cleaned = value.trim();
+  if (!cleaned) return fallback;
+  const lower = cleaned.toLowerCase();
+  if (lower === 'none' || lower === 'transparent') return fallback;
+  return cleaned;
+}
+
 function buildExtentRing(spec, asPolygon = false) {
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
@@ -478,16 +487,16 @@ function getLegendItems(spec) {
       {
         kind: 'polygon',
         label: 'Land',
-        fill: colors.land || '#4a4a4a',
-        stroke: colors.borders || '#ffffff',
+        fill: resolveOrnamentColor(colors.land, '#4a4a4a'),
+        stroke: resolveOrnamentColor(colors.borders, '#ffffff'),
         hatch: 'none',
         dashed: false,
       },
       {
         kind: 'polygon',
         label: 'Water',
-        fill: colors.water || '#d1cfcf',
-        stroke: colors.coastline && colors.coastline !== 'none' ? colors.coastline : '#999999',
+        fill: resolveOrnamentColor(colors.water, '#d1cfcf'),
+        stroke: resolveOrnamentColor(colors.coastline, '#999999'),
         hatch: 'none',
         dashed: false,
       },
@@ -874,18 +883,18 @@ function renderLocatorGlobeToCanvas(
 
   ctx.beginPath();
   ctx.arc(cx, cy, globeRadius, 0, Math.PI * 2);
-  ctx.fillStyle = colors.water || '#d1cfcf';
+  ctx.fillStyle = resolveOrnamentColor(colors.water, '#d1cfcf');
   ctx.fill();
 
   ctx.beginPath();
   path(locatorLand);
-  ctx.fillStyle = colors.land || '#4a4a4a';
+  ctx.fillStyle = resolveOrnamentColor(colors.land, '#4a4a4a');
   ctx.fill();
 
   if (locatorBorders) {
     ctx.beginPath();
     path(locatorBorders);
-    ctx.strokeStyle = colors.borders || '#ffffff';
+    ctx.strokeStyle = resolveOrnamentColor(colors.borders, '#ffffff');
     ctx.lineWidth = Math.max(0.35, 0.55 * scaleFactor);
     ctx.stroke();
   }
@@ -1278,17 +1287,17 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
       );
       parts.push(`<g clip-path="url(#${clipId})">`);
       parts.push(
-        `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="${escapeXml(colors.water || '#d1cfcf')}" />`,
+        `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${globeRadius.toFixed(2)}" fill="${escapeXml(resolveOrnamentColor(colors.water, '#d1cfcf'))}" />`,
       );
       const landD = svgPath(svgLocatorLand) || '';
       if (landD) {
-        parts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}" />`);
+        parts.push(`<path d="${landD}" fill="${escapeXml(resolveOrnamentColor(colors.land, '#4a4a4a'))}" />`);
       }
       if (svgLocatorBorders) {
         const borderD = svgPath(svgLocatorBorders) || '';
         if (borderD) {
           parts.push(
-            `<path d="${borderD}" fill="none" stroke="${escapeXml(colors.borders || '#ffffff')}" stroke-width="${Math.max(0.35, 0.55 * scaleFactor).toFixed(2)}" />`,
+            `<path d="${borderD}" fill="none" stroke="${escapeXml(resolveOrnamentColor(colors.borders, '#ffffff'))}" stroke-width="${Math.max(0.35, 0.55 * scaleFactor).toFixed(2)}" />`,
           );
         }
       }

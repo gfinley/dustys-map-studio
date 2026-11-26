@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=19';
+} from './schema.js?v=20';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,9 +14,21 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=19';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=19';
-import { formatArea } from './shadow.js?v=19';
+} from './presets.js?v=20';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=20';
+import { formatArea } from './shadow.js?v=20';
+
+const PALETTE_COLOR_FIELDS = [
+  { key: 'land', inputId: 'color-land', noneBtnId: 'btn-land-none', fallback: '#4a4a4a' },
+  { key: 'water', inputId: 'color-water', noneBtnId: 'btn-water-none', fallback: '#d1cfcf' },
+  { key: 'borders', inputId: 'color-borders', noneBtnId: 'btn-borders-none', fallback: '#ffffff' },
+  { key: 'coastline', inputId: 'color-coastline', noneBtnId: 'btn-coastline-none', fallback: '#111111' },
+  { key: 'rivers', inputId: 'color-rivers', noneBtnId: 'btn-rivers-none', fallback: '#73a9ca' },
+  { key: 'text', inputId: 'color-text', noneBtnId: 'btn-text-none', fallback: '#111111' },
+  { key: 'admin1', inputId: 'color-admin1', noneBtnId: 'btn-admin1-none', fallback: '#737373' },
+  { key: 'bathymetry', inputId: 'color-bathymetry', noneBtnId: 'btn-bathymetry-none', fallback: '#bfbdbd' },
+  { key: 'urban', inputId: 'color-urban', noneBtnId: 'btn-urban-none', fallback: '#636363' },
+];
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -1241,63 +1253,44 @@ export function renderControls(callbacks) {
   bindNum('span-lat', (v) => boundCallbacks.onPatchSpec?.({ span: { latDeg: v } }));
 
   // Tab 2: Colors & Layers
-  const bindColor = (id, key) => {
-    $(id)?.addEventListener('input', (e) => {
-      boundCallbacks.onPatchSpec?.({ colors: { [key]: e.target.value } }, { commitHistory: false });
+  for (const field of PALETTE_COLOR_FIELDS) {
+    $(field.inputId)?.addEventListener('input', (e) => {
+      boundCallbacks.onPickPaletteColor?.(field.key, e.target.value, {
+        commitHistory: false,
+        skipDynamicLists: true,
+      });
     });
-    $(id)?.addEventListener('change', (e) => {
-      boundCallbacks.onPatchSpec?.({ colors: { [key]: e.target.value } }, { commitHistory: true });
+    $(field.inputId)?.addEventListener('change', (e) => {
+      boundCallbacks.onPickPaletteColor?.(field.key, e.target.value, {
+        commitHistory: true,
+      });
     });
-  };
-  bindColor('color-land', 'land');
-  bindColor('color-water', 'water');
-  bindColor('color-borders', 'borders');
-  bindColor('color-rivers', 'rivers');
-  bindColor('color-text', 'text');
-  bindColor('color-bathymetry', 'bathymetry');
-  bindColor('color-urban', 'urban');
+    $(field.noneBtnId)?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      boundCallbacks.onTogglePaletteColorNone?.(field.key);
+    });
+  }
 
-  $('color-admin1')?.addEventListener('input', (e) => {
-    boundCallbacks.onPatchSpec?.(
-      { colors: { admin1: e.target.value } },
-      { commitHistory: false, skipDynamicLists: true },
-    );
+  $('btn-palette-all-off')?.addEventListener('click', () => {
+    boundCallbacks.onToggleAllPaletteColorsOff?.();
   });
-  $('color-admin1')?.addEventListener('change', (e) => {
-    boundCallbacks.onPatchSpec?.(
-      { colors: { admin1: e.target.value } },
-      { commitHistory: true },
-    );
-  });
-
-  $('color-coastline')?.addEventListener('input', (e) => {
-    boundCallbacks.onPatchSpec?.(
-      { colors: { coastline: e.target.value }, layers: { showCoastlines: true } },
-      { commitHistory: false },
-    );
-  });
-  $('color-coastline')?.addEventListener('change', (e) => {
-    boundCallbacks.onPatchSpec?.(
-      { colors: { coastline: e.target.value }, layers: { showCoastlines: true } },
-      { commitHistory: true },
-    );
-  });
-  $('btn-coastline-none')?.addEventListener('click', () => {
-    boundCallbacks.onToggleCoastlineNone?.();
+  $('btn-palette-reset')?.addEventListener('click', () => {
+    boundCallbacks.onResetPaletteColors?.();
   });
 
   const bindCheck = (id, fn) => {
     $(id)?.addEventListener('change', (e) => fn(e.target.checked));
   };
-  bindCheck('layer-show-land', (v) => boundCallbacks.onPatchSpec?.({ layers: { showLand: v } }));
-  bindCheck('layer-show-borders', (v) => boundCallbacks.onPatchSpec?.({ layers: { showBorders: v } }));
+  bindCheck('layer-show-land', (v) => boundCallbacks.onToggleLayerWithColor?.('showLand', 'land', v));
+  bindCheck('layer-show-borders', (v) => boundCallbacks.onToggleLayerWithColor?.('showBorders', 'borders', v));
   bindCheck('layer-show-minor-islands', (v) => boundCallbacks.onPatchSpec?.({ layers: { showMinorIslands: v } }));
   bindCheck('layer-show-lakes', (v) => boundCallbacks.onPatchSpec?.({ layers: { showLakes: v } }));
-  bindCheck('layer-show-bathymetry', (v) => boundCallbacks.onPatchSpec?.({ layers: { showBathymetry: v } }));
-  bindCheck('layer-show-urban', (v) => boundCallbacks.onPatchSpec?.({ layers: { showUrbanAreas: v } }));
-  bindCheck('layer-show-rivers', (v) => boundCallbacks.onPatchSpec?.({ layers: { showRivers: v } }));
-  bindCheck('layer-show-admin1', (v) => boundCallbacks.onPatchSpec?.({ layers: { showAdmin1: v } }));
-  bindCheck('layer-show-coastlines', (v) => boundCallbacks.onPatchSpec?.({ layers: { showCoastlines: v } }));
+  bindCheck('layer-show-bathymetry', (v) => boundCallbacks.onToggleLayerWithColor?.('showBathymetry', 'bathymetry', v));
+  bindCheck('layer-show-urban', (v) => boundCallbacks.onToggleLayerWithColor?.('showUrbanAreas', 'urban', v));
+  bindCheck('layer-show-rivers', (v) => boundCallbacks.onToggleLayerWithColor?.('showRivers', 'rivers', v));
+  bindCheck('layer-show-admin1', (v) => boundCallbacks.onToggleLayerWithColor?.('showAdmin1', 'admin1', v));
+  bindCheck('layer-show-coastlines', (v) => boundCallbacks.onToggleLayerWithColor?.('showCoastlines', 'coastline', v));
   bindCheck('layer-show-graticule', (v) => boundCallbacks.onPatchSpec?.({ layers: { showGraticule: v } }));
   bindCheck('page-show-frame', (v) => boundCallbacks.onPatchSpec?.({ page: { showFrameBorder: v } }));
 
@@ -1786,21 +1779,37 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     btn.classList.toggle('active', btn.dataset.themeId === spec.theme);
   });
 
-  if ($('color-land')) $('color-land').value = safeHexColor(spec.colors.land, '#4a4a4a');
-  if ($('color-water')) $('color-water').value = safeHexColor(spec.colors.water, '#d1cfcf');
-  if ($('color-borders')) $('color-borders').value = safeHexColor(spec.colors.borders, '#ffffff');
-  const coastIsNone = !spec.colors.coastline || spec.colors.coastline === 'none';
-  if ($('color-coastline')) {
-    $('color-coastline').value = coastIsNone ? '#111111' : safeHexColor(spec.colors.coastline, '#111111');
+  const themeColors = COLOR_THEMES[spec.theme] || COLOR_THEMES.dusty_prime;
+  let allPaletteOff = true;
+  for (const field of PALETTE_COLOR_FIELDS) {
+    const rawVal = spec.colors?.[field.key];
+    const norm = typeof rawVal === 'string' ? rawVal.trim().toLowerCase() : '';
+    const isNone = !norm || norm === 'none' || norm === 'transparent';
+    if (!isNone) allPaletteOff = false;
+
+    const inputEl = $(field.inputId);
+    const btnEl = $(field.noneBtnId);
+    if (inputEl) {
+      const themeFallback = safeHexColor(themeColors?.[field.key], field.fallback);
+      inputEl.value = isNone ? themeFallback : safeHexColor(rawVal, themeFallback);
+      const fieldLabel = inputEl.closest('.color-field');
+      if (fieldLabel) fieldLabel.classList.toggle('is-none', isNone);
+    }
+    if (btnEl) {
+      btnEl.classList.toggle('active', isNone);
+      btnEl.setAttribute('aria-pressed', String(isNone));
+    }
   }
-  if ($('btn-coastline-none')) {
-    $('btn-coastline-none').classList.toggle('active', coastIsNone);
+
+  const allOffBtn = $('btn-palette-all-off');
+  if (allOffBtn) {
+    allOffBtn.classList.toggle('active', allPaletteOff);
+    allOffBtn.setAttribute('aria-pressed', String(allPaletteOff));
   }
-  if ($('color-rivers')) $('color-rivers').value = safeHexColor(spec.colors.rivers, '#73a9ca');
-  if ($('color-text')) $('color-text').value = safeHexColor(spec.colors.text, '#111111');
-  if ($('color-admin1')) $('color-admin1').value = safeHexColor(spec.colors.admin1, '#737373');
-  if ($('color-bathymetry')) $('color-bathymetry').value = safeHexColor(spec.colors.bathymetry, '#bfbdbd');
-  if ($('color-urban')) $('color-urban').value = safeHexColor(spec.colors.urban, '#636363');
+
+  const waterNorm = typeof spec.colors?.water === 'string' ? spec.colors.water.trim().toLowerCase() : '';
+  const waterIsNone = waterNorm === 'none' || waterNorm === 'transparent';
+  $('map-canvas')?.classList.toggle('transparent-bg', waterIsNone);
 
   // Layers
   if ($('layer-show-land')) $('layer-show-land').checked = spec.layers.showLand !== false;

@@ -3,10 +3,10 @@
  * and optional Python Cartopy Pro backend client.
  */
 
-import { getPixelDimensions, sanitizeFilename } from './schema.js?v=19';
-import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=19';
-import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=19';
-import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=19';
+import { COLOR_THEMES, getPixelDimensions, sanitizeFilename } from './schema.js?v=20';
+import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=20';
+import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=20';
+import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=20';
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -143,7 +143,22 @@ export async function exportBrowserRaster(spec, datasets, format = 'png', option
     height: heightPx,
   });
 
-  const rawBlob = await canvasToBlob(canvas, mime, isJpeg ? 0.95 : undefined);
+  let encodeCanvas = canvas;
+  const waterVal = String(spec?.colors?.water || '').trim().toLowerCase();
+  if (isJpeg && (waterVal === 'none' || waterVal === 'transparent')) {
+    const whiteCanvas = document.createElement('canvas');
+    whiteCanvas.width = widthPx;
+    whiteCanvas.height = heightPx;
+    const wctx = whiteCanvas.getContext('2d');
+    if (wctx) {
+      wctx.fillStyle = '#ffffff';
+      wctx.fillRect(0, 0, widthPx, heightPx);
+      wctx.drawImage(canvas, 0, 0);
+      encodeCanvas = whiteCanvas;
+    }
+  }
+
+  const rawBlob = await canvasToBlob(encodeCanvas, mime, isJpeg ? 0.95 : undefined);
   const rawBytes = new Uint8Array(await rawBlob.arrayBuffer());
   const injectedBytes = isJpeg ? injectJpegDpi(rawBytes, dpi) : injectPngDpi(rawBytes, dpi);
   const finalBlob = new Blob([injectedBytes], { type: mime });
@@ -164,9 +179,18 @@ export async function exportBrowserRaster(spec, datasets, format = 'png', option
 
 export async function exportBrowserPairWithWithoutBorders(spec, datasets, format = 'png') {
   const exportDatasets = await resolveExportDatasets(spec, datasets);
+  const themeBorders = COLOR_THEMES[spec?.theme]?.borders || '#ffffff';
+  const curBorder = String(spec?.colors?.borders || '').trim().toLowerCase();
+  const bordersColor = !curBorder || curBorder === 'none' || curBorder === 'transparent'
+    ? themeBorders
+    : spec.colors.borders;
 
   const specWithBorders = {
     ...spec,
+    colors: {
+      ...(spec?.colors || {}),
+      borders: bordersColor,
+    },
     layers: {
       ...(spec?.layers || {}),
       showBorders: true,

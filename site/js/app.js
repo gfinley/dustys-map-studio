@@ -6,11 +6,12 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=19';
+} from './schema.js?v=20';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
   fetchGeoBoundariesLayer,
+  filterGeoJsonToAlaska,
   getAdmin1Catalog,
   getCitiesInBounds,
   getCountryCatalog,
@@ -19,14 +20,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=19';
+} from './data-loader.js?v=20';
 import {
   buildProjection,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=19';
+} from './cartography.js?v=20';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -35,15 +36,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=19';
+} from './exporter.js?v=20';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=19';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=19';
+} from './presets.js?v=20';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=20';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -53,13 +54,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=19';
+} from './controls.js?v=20';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=19';
+} from './shadow.js?v=20';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -70,7 +71,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=19';
+} from './timeline.js?v=20';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -97,6 +98,46 @@ const VALID_GEOJSON_TYPES = new Set([
   'MultiPolygon',
   'GeometryCollection',
 ]);
+
+const PALETTE_KEYS = [
+  'land',
+  'water',
+  'borders',
+  'coastline',
+  'rivers',
+  'text',
+  'admin1',
+  'bathymetry',
+  'urban',
+];
+
+const PALETTE_LAYER_LINKS = {
+  land: 'showLand',
+  borders: 'showBorders',
+  coastline: 'showCoastlines',
+  rivers: 'showRivers',
+  admin1: 'showAdmin1',
+  bathymetry: 'showBathymetry',
+  urban: 'showUrbanAreas',
+};
+
+const PALETTE_FALLBACKS = {
+  land: '#4a4a4a',
+  water: '#d1cfcf',
+  borders: '#ffffff',
+  coastline: '#111111',
+  rivers: '#73a9ca',
+  text: '#111111',
+  admin1: '#737373',
+  bathymetry: '#bfbdbd',
+  urban: '#636363',
+};
+
+function isNoneColor(val) {
+  if (typeof val !== 'string') return false;
+  const cleaned = val.trim().toLowerCase();
+  return cleaned === 'none' || cleaned === 'transparent';
+}
 
 const state = {
   spec: null,
@@ -134,6 +175,7 @@ const state = {
   proAvailable: false,
   proStatusText: '',
   activePresetId: '',
+  lastPaletteColors: {},
   loadRequestToken: 0,
   searchAbortController: null,
   wheelCommitTimer: null,
@@ -142,6 +184,25 @@ const state = {
   pendingCoordsEvent: null,
   coordsRafId: 0,
 };
+
+function resolveRestoredPaletteColor(key) {
+  const remembered = state.lastPaletteColors[key];
+  if (remembered && !isNoneColor(remembered)) {
+    return remembered;
+  }
+  const theme = COLOR_THEMES[state.spec?.theme] || COLOR_THEMES.dusty_prime;
+  const fromTheme = theme?.[key];
+  if (fromTheme && !isNoneColor(fromTheme)) {
+    return fromTheme;
+  }
+  if (key === 'coastline') {
+    const borders = state.spec?.colors?.borders;
+    if (borders && !isNoneColor(borders) && borders.toLowerCase() !== '#ffffff') {
+      return borders;
+    }
+  }
+  return PALETTE_FALLBACKS[key] || '#4a4a4a';
+}
 
 function loadInitialSpec() {
   const fromHash = decodeSpecFromHash(window.location.hash);
@@ -235,6 +296,7 @@ function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynami
       const next = { ...layer };
       if (
         typeof patch.colors.land === 'string' &&
+        !isNoneColor(patch.colors.land) &&
         String(layer.color || '').toLowerCase() === String(prevColors.land || '').toLowerCase()
       ) {
         next.color = patch.colors.land;
@@ -581,8 +643,12 @@ function renderNow() {
     // Draw subtle placeholder background while initial TopoJSON loads
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.fillStyle = state.spec.colors?.water || '#d1cfcf';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (isNoneColor(state.spec.colors?.water)) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = state.spec.colors?.water || '#d1cfcf';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
     state.lastProjection = buildProjection(state.spec, canvas.width, canvas.height);
     state.renderedShadows = [];
@@ -2125,6 +2191,9 @@ function buildCallbacks() {
           stroke: defaultHighlightStrokes.has(curStroke) ? theme.highlightStroke : country.stroke,
         };
       });
+      const hasPrimaryLand = (state.spec.customGeoJsonLayers || []).some(
+        (l) => l && l.visible !== false && l.role === 'land',
+      );
       patchSpec({
         theme: themeId,
         colors: {
@@ -2141,28 +2210,110 @@ function buildCallbacks() {
           text: theme.text,
           textHalo: theme.textHalo,
         },
+        ...(isNoneColor(state.spec.colors?.land) && !hasPrimaryLand
+          ? { layers: { showLand: true } }
+          : {}),
         highlightedCountries: updatedCountries,
       });
       showToast(`Applied theme: ${theme.label}`, 'info', 2000);
     },
 
-    onToggleCoastlineNone: () => {
-      const currentlyNone = !state.spec.colors.coastline || state.spec.colors.coastline === 'none';
-      if (currentlyNone) {
-        const fallback =
-          state.spec.colors.borders && state.spec.colors.borders !== '#ffffff'
-            ? state.spec.colors.borders
-            : '#111111';
-        patchSpec({
-          colors: { coastline: fallback },
-          layers: { showCoastlines: true },
-        });
-      } else {
-        patchSpec({
-          colors: { coastline: 'none' },
-          layers: { showCoastlines: false },
-        });
+    onPickPaletteColor: (key, value, opts = {}) => {
+      if (!PALETTE_KEYS.includes(key)) return;
+      state.lastPaletteColors[key] = value;
+      const wasNone = isNoneColor(state.spec.colors?.[key]);
+      const layerKey = PALETTE_LAYER_LINKS[key];
+      const patch = { colors: { [key]: value } };
+      if (layerKey && (wasNone || key === 'coastline')) {
+        patch.layers = { [layerKey]: true };
       }
+      patchSpec(patch, opts);
+    },
+
+    onTogglePaletteColorNone: (key) => {
+      if (!PALETTE_KEYS.includes(key)) return;
+      const current = state.spec.colors?.[key];
+      const currentlyNone = !current || isNoneColor(current);
+      const layerKey = PALETTE_LAYER_LINKS[key];
+
+      if (currentlyNone) {
+        const restored = resolveRestoredPaletteColor(key);
+        const patch = { colors: { [key]: restored } };
+        if (layerKey) {
+          patch.layers = { [layerKey]: true };
+        }
+        patchSpec(patch);
+      } else {
+        state.lastPaletteColors[key] = current;
+        const patch = { colors: { [key]: 'none' } };
+        if (layerKey) {
+          patch.layers = { [layerKey]: false };
+        }
+        patchSpec(patch);
+      }
+    },
+
+    onToggleAllPaletteColorsOff: () => {
+      const colors = state.spec.colors || {};
+      const allOff = PALETTE_KEYS.every((k) => !colors[k] || isNoneColor(colors[k]));
+      if (allOff) {
+        const restoredColors = {};
+        for (const k of PALETTE_KEYS) {
+          restoredColors[k] = resolveRestoredPaletteColor(k);
+        }
+        const theme = COLOR_THEMES[state.spec?.theme] || COLOR_THEMES.dusty_prime;
+        if (theme && isNoneColor(theme.coastline) && !state.lastPaletteColors.coastline) {
+          restoredColors.coastline = 'none';
+        }
+        patchSpec({
+          colors: restoredColors,
+          layers: { showLand: true },
+        });
+        showToast('Restored palette choices', 'info', 2200);
+        return;
+      }
+
+      const nextColors = {};
+      const nextLayers = {};
+      for (const k of PALETTE_KEYS) {
+        if (colors[k] && !isNoneColor(colors[k])) {
+          state.lastPaletteColors[k] = colors[k];
+        }
+        nextColors[k] = 'none';
+        if (PALETTE_LAYER_LINKS[k]) {
+          nextLayers[PALETTE_LAYER_LINKS[k]] = false;
+        }
+      }
+      patchSpec({
+        colors: nextColors,
+        layers: nextLayers,
+      });
+      showToast('All palette choices toggled off — pick a country or Alaska to isolate it', 'info', 3000);
+    },
+
+    onResetPaletteColors: () => {
+      const theme = COLOR_THEMES[state.spec?.theme] || COLOR_THEMES.dusty_prime;
+      if (!theme) return;
+      const nextColors = {};
+      for (const k of PALETTE_KEYS) {
+        nextColors[k] = theme[k];
+      }
+      patchSpec({
+        colors: nextColors,
+        layers: {
+          showLand: true,
+          showCoastlines: !isNoneColor(theme.coastline),
+        },
+      });
+      showToast(`Reset palette to ${theme.label}`, 'info', 2200);
+    },
+
+    onToggleLayerWithColor: (layerKey, colorKey, enabled) => {
+      const patch = { layers: { [layerKey]: Boolean(enabled) } };
+      if (enabled && colorKey && isNoneColor(state.spec.colors?.[colorKey])) {
+        patch.colors = { [colorKey]: resolveRestoredPaletteColor(colorKey) };
+      }
+      patchSpec(patch);
     },
 
     onToggleMode: (targetMode) => {
@@ -2183,10 +2334,15 @@ function buildCallbacks() {
         const label = `${countryName} (${level} OSM)`;
         const colors = state.spec.colors || {};
         const layersSpec = state.spec.layers || {};
+        const primaryFill = !isNoneColor(colors.land) && colors.land
+          ? colors.land
+          : resolveRestoredPaletteColor('land');
+        const admin1Stroke = !isNoneColor(colors.admin1) ? colors.admin1 : null;
+        const borderStroke = !isNoneColor(colors.borders) ? colors.borders : null;
         const landStroke =
           level === 'ADM0'
-            ? (layersSpec.showCoastlines && colors.coastline && colors.coastline !== 'none' ? colors.coastline : 'none')
-            : (colors.admin1 || colors.borders || '#737373');
+            ? (layersSpec.showCoastlines && colors.coastline && !isNoneColor(colors.coastline) ? colors.coastline : 'none')
+            : (admin1Stroke || borderStroke || 'none');
         const layer = asPrimaryLand
           ? {
               id: `gb_${iso3}_${level}`,
@@ -2195,7 +2351,7 @@ function buildCallbacks() {
               data: result.data,
               visible: true,
               role: 'land',
-              color: colors.land || '#4a4a4a',
+              color: primaryFill,
               strokeColor: landStroke,
               fillOpacity: 1.0,
               strokeWidth: level === 'ADM0' ? (layersSpec.showCoastlines ? (layersSpec.coastlineWidth || 0.75) : 0.6) : level === 'ADM2' ? 0.5 : 0.7,
@@ -2502,12 +2658,17 @@ function buildCallbacks() {
       const colors = state.spec.colors || {};
       if (promoting) {
         const isAdm0 = /ADM0/i.test(cur.label || '') || /ADM0/i.test(cur.id || '');
+        const primaryFill = !isNoneColor(colors.land) && colors.land
+          ? colors.land
+          : resolveRestoredPaletteColor('land');
+        const admin1Stroke = !isNoneColor(colors.admin1) ? colors.admin1 : null;
+        const borderStroke = !isNoneColor(colors.borders) ? colors.borders : null;
         next[idx] = {
           ...cur,
           visible: true,
           role: 'land',
-          color: colors.land || '#4a4a4a',
-          strokeColor: isAdm0 ? 'none' : (colors.admin1 || colors.borders || '#737373'),
+          color: primaryFill,
+          strokeColor: isAdm0 ? 'none' : (admin1Stroke || borderStroke || 'none'),
           fillOpacity: 1.0,
           strokeWidth: isAdm0 ? 0.6 : 0.7,
           dashed: false,
@@ -2525,9 +2686,15 @@ function buildCallbacks() {
           strokeColor: null,
         };
         const stillHasLand = next.some((l) => l?.visible !== false && l?.role === 'land');
+        const restorePatch = stillHasLand
+          ? {}
+          : {
+              layers: { showLand: true },
+              ...(isNoneColor(colors.land) ? { colors: { land: resolveRestoredPaletteColor('land') } } : {}),
+            };
         patchSpec({
           customGeoJsonLayers: next,
-          ...(stillHasLand ? {} : { layers: { showLand: true } }),
+          ...restorePatch,
         });
         showToast(
           stillHasLand
@@ -2540,7 +2707,11 @@ function buildCallbacks() {
     },
 
     onRestoreDefaultLand: () => {
-      patchSpec({ layers: { showLand: true } });
+      const patch = { layers: { showLand: true } };
+      if (isNoneColor(state.spec.colors?.land)) {
+        patch.colors = { land: resolveRestoredPaletteColor('land') };
+      }
+      patchSpec(patch);
       showToast('Default land shading restored', 'info', 2200);
     },
 
@@ -3111,7 +3282,10 @@ async function hydrateRemoteGeoJsonLayers() {
   await Promise.all(
     pending.map(async (layer) => {
       try {
-        const data = await fetchCustomGeoJson(layer.url);
+        let data = await fetchCustomGeoJson(layer.url);
+        if (typeof layer.id === 'string' && layer.id.startsWith('gb_US-AK_')) {
+          data = filterGeoJsonToAlaska(data);
+        }
         fetched.set(layer.id || layer.url, data);
       } catch {
         // Leave layer intact if remote GeoJSON temporarily unavailable

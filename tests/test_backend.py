@@ -565,6 +565,76 @@ class TestBackendAPI(unittest.TestCase):
             self.assertLess(abs(center_px[1] - 102), 8)
             self.assertLess(abs(center_px[2] - 51), 8)
 
+    def test_alaska_only_isolated_with_all_palette_none_transparent_png(self) -> None:
+        """Alaska (Only) renders isolated with transparent ocean PNG and white-composited JPEG when all palette colors are 'none'."""
+        spec = MapSpec.model_validate(
+            {
+                "title": "Alaska Isolated",
+                "projection": "mercator",
+                "detailLevel": "50m",
+                "center": {"lat": 64.5, "lon": -152.0},
+                "span": {"lonDeg": 32.0, "latDeg": 16.0},
+                "page": {"preset": "custom", "widthIn": 3.0, "heightIn": 2.0, "dpi": 100, "showFrameBorder": False},
+                "colors": {
+                    "land": "none",
+                    "water": "none",
+                    "borders": "none",
+                    "coastline": "none",
+                    "rivers": "none",
+                    "text": "none",
+                    "admin1": "none",
+                    "bathymetry": "none",
+                    "urban": "none",
+                },
+                "layers": {
+                    "showLand": False,
+                    "showBorders": False,
+                    "showCoastlines": False,
+                    "showLakes": False,
+                    "showRivers": False,
+                    "showAdmin1": False,
+                    "showBathymetry": False,
+                    "showUrbanAreas": False,
+                },
+                "highlightedCountries": [
+                    {
+                        "id": "US-AK",
+                        "name": "Alaska (Only)",
+                        "fill": "#cc3333",
+                        "stroke": "#ffffff",
+                        "hatch": "none",
+                    }
+                ],
+                "cities": [
+                    {"id": "anc", "name": "Anchorage", "lat": 61.2181, "lon": -149.9003, "style": "dot"}
+                ],
+                "ornaments": {
+                    "scaleBar": {"enabled": False},
+                    "locatorGlobe": {"enabled": False},
+                    "northArrow": {"enabled": False},
+                    "legend": {"enabled": False},
+                },
+            }
+        )
+        png_bytes = render_map(spec, "png")
+        with Image.open(BytesIO(png_bytes)).convert("RGBA") as img:
+            # Corner over ocean/outside Alaska should be transparent (alpha == 0)
+            corner_px = img.getpixel((5, img.height - 5))
+            self.assertEqual(corner_px[3], 0)
+            # Center in interior Alaska (~64.5N, 152W) should be shaded #cc3333 (204, 51, 51, 255)
+            center_px = img.getpixel((img.width // 2, img.height // 2))
+            self.assertEqual(center_px[3], 255)
+            self.assertLess(abs(center_px[0] - 204), 12)
+            self.assertLess(abs(center_px[1] - 51), 12)
+            self.assertLess(abs(center_px[2] - 51), 12)
+
+        jpg_bytes = render_map(spec, "jpeg")
+        with Image.open(BytesIO(jpg_bytes)).convert("RGB") as img:
+            corner_rgb = img.getpixel((5, img.height - 5))
+            self.assertGreater(corner_rgb[0], 245)
+            self.assertGreater(corner_rgb[1], 245)
+            self.assertGreater(corner_rgb[2], 245)
+
 
 if __name__ == "__main__":
     unittest.main()

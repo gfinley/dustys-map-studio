@@ -149,6 +149,13 @@ def resolve_admin1_scale(spec: MapSpec) -> str:
     return "10m" if max_span <= 35.0 else "50m"
 
 
+def _is_none_color(value: str | None) -> bool:
+    """Return True when a palette color is explicitly toggled off ('none' or 'transparent')."""
+    if not value:
+        return False
+    return value.strip().lower() in ("none", "transparent")
+
+
 def _valid_color(value: str | None, fallback: str) -> str:
     """Return value when it is a valid non-none Matplotlib color, else fallback."""
     if not value:
@@ -638,6 +645,44 @@ def _load_countries_index(scale: str) -> tuple[tuple[Any, dict[str, str]], ...]:
     return ()
 
 
+def _is_alaska_only_target(target_id: str, target_name: str) -> bool:
+    """Return True when a country selection targets the Alaska (Only) virtual entry."""
+    return target_id == "us-ak" or target_name in ("alaska (only)", "alaska")
+
+
+def _extract_alaska_geometries(
+    countries: tuple[tuple[Any, dict[str, str]], ...]
+) -> list[Any]:
+    """Extract Alaska-only polygons (>= 50 deg N) from USA Natural Earth country geometry."""
+    usa_geoms: list[Any] = []
+    for geom, attrs in countries:
+        if (
+            attrs.get("ISO_N3") == "840"
+            or attrs.get("ADM0_A3") == "usa"
+            or attrs.get("ISO_A3") == "usa"
+            or attrs.get("ADMIN") in ("united states of america", "united states")
+        ):
+            usa_geoms.append(geom)
+
+    alaska_polys: list[Polygon] = []
+    for geom in usa_geoms:
+        if isinstance(geom, Polygon):
+            if geom.bounds[1] >= 50.0:
+                alaska_polys.append(geom)
+        elif isinstance(geom, MultiPolygon):
+            for poly in geom.geoms:
+                if not poly.is_empty and poly.bounds[1] >= 50.0:
+                    alaska_polys.append(poly)
+
+    if alaska_polys:
+        return [alaska_polys[0]] if len(alaska_polys) == 1 else [MultiPolygon(alaska_polys)]
+
+    admin1_records = _load_admin1_polygons_index()
+    if admin1_records:
+        return _match_admin1_geometries("US-AK", "Alaska", admin1_records)
+    return []
+
+
 def _match_country_geometries(
     hc: HighlightedCountry, countries: tuple[tuple[Any, dict[str, str]], ...]
 ) -> list[Any]:
@@ -645,6 +690,9 @@ def _match_country_geometries(
     target_id = hc.id.strip().lower()
     target_id_z = target_id.zfill(3) if target_id.isdigit() else ""
     target_name = hc.name.strip().lower()
+
+    if _is_alaska_only_target(target_id, target_name):
+        return _extract_alaska_geometries(countries)
 
     primary_id_keys = ("iso_n3", "iso_n3_eh", "un_a3", "adm0_a3", "iso_a3", "iso_a3_eh")
     primary_name_keys = ("name", "name_long", "admin", "formal_en", "name_sort", "brk_name")
@@ -1108,6 +1156,26 @@ def _draw_region_shadows(
                 )
 
 
+def _filter_gdf_to_alaska(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Filter a USA GeoDataFrame (ADM1/ADM2) down to Alaska-only features."""
+    if gdf.empty:
+        return gdf
+    keep_mask = gdf.geometry.bounds["miny"] >= 50.0
+    for col in ("shapeISO", "iso_3166_2", "ISO_3166_2"):
+        if col in gdf.columns:
+            vals = gdf[col].astype(str).str.strip().str.upper()
+            keep_mask = keep_mask | (vals == "US-AK") | vals.str.startswith("US-AK-")
+    for col in ("shapeName", "name", "NAME"):
+        if col in gdf.columns:
+            vals = gdf[col].astype(str).str.strip().str.lower()
+            keep_mask = keep_mask | (vals == "alaska")
+    for col in ("STATEFP", "statefp"):
+        if col in gdf.columns:
+            vals = gdf[col].astype(str).str.strip()
+            keep_mask = keep_mask | (vals == "02")
+    return gdf[keep_mask].copy()
+
+
 def fetch_geoboundaries_geojson(
     iso3: str,
     level: str = "ADM1",
@@ -1116,12 +1184,16 @@ def fetch_geoboundaries_geojson(
     """Fetch and repair OSM-derived ADM0/ADM1/ADM2 GeoJSON from geoBoundaries.org."""
     code = iso3.strip().upper()
     adm_level = level.strip().upper()
-    if not re.fullmatch(r"[A-Z]{3}", code):
+    is_alaska_only = code == "US-AK"
+    if not is_alaska_only and not re.fullmatch(r"[A-Z]{3}", code):
         raise ValueError(f"Invalid ISO-3 country code: {iso3!r}")
     if adm_level not in ("ADM0", "ADM1", "ADM2"):
         raise ValueError(f"Unsupported administrative level: {level!r}")
 
-    meta_url = f"https://www.geoboundaries.org/api/current/gbOpen/{code}/{adm_level}/"
+    fetch_code = "USA" if is_alaska_only else code
+    fetch_level = ("ADM2" if adm_level == "ADM2" else "ADM1") if is_alaska_only else adm_level
+
+    meta_url = f"https://www.geoboundaries.org/api/current/gbOpen/{fetch_code}/{fetch_level}/"
     meta_resp = requests.get(meta_url, timeout=15)
     meta_resp.raise_for_status()
     meta = meta_resp.json()
@@ -1133,10 +1205,16 @@ def fetch_geoboundaries_geojson(
     if not gj_url:
         raise ValueError(f"geoBoundaries {adm_level} data is not available for {code}.")
 
-    inspected = inspect_geojson(url=gj_url)
+    if is_alaska_only:
+        gdf = _filter_gdf_to_alaska(_load_geojson_gdf(url=gj_url, data=None))
+        inspected = inspect_geojson(data=json.loads(gdf.to_json()))
+        inspected["boundaryName"] = "Alaska (Only)"
+    else:
+        inspected = inspect_geojson(url=gj_url)
+        inspected["boundaryName"] = meta.get("boundaryName") or code
+
     inspected["iso3"] = code
     inspected["admLevel"] = adm_level
-    inspected["boundaryName"] = meta.get("boundaryName") or code
     inspected["source"] = meta.get("boundarySource") or "geoBoundaries / OpenStreetMap"
     inspected["url"] = gj_url
     return inspected
@@ -1271,6 +1349,8 @@ def _draw_single_geojson_layer(
 ) -> None:
     """Load and render one visible CustomGeoJsonLayer onto ax."""
     gdf = _load_geojson_gdf(url=layer.url, data=layer.data)
+    if layer.data is None and layer.id.startswith("gb_US-AK_"):
+        gdf = _filter_gdf_to_alaska(gdf)
     if gdf.empty:
         return
 
@@ -1380,7 +1460,7 @@ def _draw_cities(
     limits: tuple[float, float, float, float],
 ) -> None:
     """Render city markers and pixel-offset haloed labels."""
-    if not spec.cities:
+    if not spec.cities or _is_none_color(spec.colors.text):
         return
     xmin, xmax, ymin, ymax = limits
     geodetic = ccrs.PlateCarree()
@@ -2283,32 +2363,37 @@ def _draw_title_banner(fig: Figure, spec: MapSpec) -> bool:
     return True
 
 
-def _export_figure(fig: Figure, fmt: str, dpi: int) -> bytes:
+def _export_figure(fig: Figure, fmt: str, dpi: int, transparent: bool = False) -> bytes:
     """Render Figure via the requested Matplotlib canvas into raw image/document bytes."""
     fmt_lower = fmt.lower()
     buf = io.BytesIO()
 
     if fmt_lower == "png":
         FigureCanvasAgg(fig)
-        fig.savefig(buf, format="png", dpi=dpi)
+        fig.savefig(buf, format="png", dpi=dpi, transparent=transparent)
         return buf.getvalue()
 
     if fmt_lower in ("jpeg", "jpg"):
         canvas = FigureCanvasAgg(fig)
         canvas.draw()
         rgba = np.asarray(canvas.buffer_rgba())
-        pil_img = Image.fromarray(rgba, mode="RGBA").convert("RGB")
+        pil_rgba = Image.fromarray(rgba, mode="RGBA")
+        if transparent:
+            white_bg = Image.new("RGBA", pil_rgba.size, (255, 255, 255, 255))
+            pil_img = Image.alpha_composite(white_bg, pil_rgba).convert("RGB")
+        else:
+            pil_img = pil_rgba.convert("RGB")
         pil_img.save(buf, format="JPEG", quality=95, dpi=(dpi, dpi))
         return buf.getvalue()
 
     if fmt_lower == "pdf":
         FigureCanvasPdf(fig)
-        fig.savefig(buf, format="pdf", dpi=dpi)
+        fig.savefig(buf, format="pdf", dpi=dpi, transparent=transparent)
         return buf.getvalue()
 
     if fmt_lower == "svg":
         FigureCanvasSVG(fig)
-        fig.savefig(buf, format="svg")
+        fig.savefig(buf, format="svg", transparent=transparent)
         return buf.getvalue()
 
     raise ValueError(f"Unsupported render format: {fmt!r}")
@@ -2330,6 +2415,15 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
         figsize = (spec.page.widthIn, spec.page.heightIn)
 
     fig = Figure(figsize=figsize, dpi=dpi)
+    water_is_none = _is_none_color(spec.colors.water)
+    land_is_none = _is_none_color(spec.colors.land)
+    borders_is_none = _is_none_color(spec.colors.borders)
+    coast_is_none = _is_none_color(spec.colors.coastline)
+    rivers_is_none = _is_none_color(spec.colors.rivers)
+    admin1_is_none = _is_none_color(spec.colors.admin1)
+    bathy_is_none = _is_none_color(spec.colors.bathymetry)
+    urban_is_none = _is_none_color(spec.colors.urban)
+
     water_color = _valid_color(spec.colors.water, "#d1cfcf")
     land_color = _valid_color(spec.colors.land, "#4a4a4a")
     border_color = _valid_color(spec.colors.borders, "#ffffff")
@@ -2338,11 +2432,21 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
     admin1_color = _valid_color(spec.colors.admin1, "#737373")
     bathy_color = _valid_color(spec.colors.bathymetry, "#bfbdbd")
     urban_color = _valid_color(spec.colors.urban, "#636363")
+    has_coast_stroke = bool(spec.layers.showCoastlines and not coast_is_none)
 
-    fig.patch.set_facecolor(water_color)
+    if water_is_none:
+        fig.patch.set_facecolor("none")
+        fig.patch.set_alpha(0.0)
+    else:
+        fig.patch.set_facecolor(water_color)
+
     proj = _build_projection(spec)
     ax = fig.add_axes([0.0, 0.0, 1.0, 1.0], projection=proj)
-    ax.set_facecolor(water_color)
+    if water_is_none:
+        ax.set_facecolor("none")
+        ax.patch.set_alpha(0.0)
+    else:
+        ax.set_facecolor(water_color)
 
     limits = _configure_extent(ax, spec, proj)
     scale = resolve_scale(spec)
@@ -2356,11 +2460,11 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
     gshhs_land_geoms: list[Any] = []
     gshhs_lake_geoms: list[Any] = []
     if not basemap_active:
-        if ne_scale != "10m":
+        if ne_scale != "10m" and not water_is_none:
             _add_ne_layer(
                 ax, "physical", "ocean", ne_scale, facecolor=water_color, edgecolor="none", zorder=1
             )
-        if spec.layers.showBathymetry:
+        if spec.layers.showBathymetry and not bathy_is_none:
             _add_ne_layer_bbox(
                 ax,
                 spec,
@@ -2384,11 +2488,16 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
                 zorder=1.5,
             )
 
-        if spec.layers.showLand:
+        if spec.layers.showLand and not land_is_none:
             gshhs_scale = _resolve_gshhs_scale(spec, scale)
             if gshhs_scale is not None:
                 used_gshhs, gshhs_land_geoms, gshhs_lake_geoms = _draw_gshhs_land_and_lakes(
-                    ax, spec, gshhs_scale, land_color, water_color, coast_color
+                    ax,
+                    spec,
+                    gshhs_scale,
+                    land_color,
+                    "none" if water_is_none else water_color,
+                    "none" if coast_is_none else coast_color,
                 )
 
             if not used_gshhs:
@@ -2415,12 +2524,12 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
                         "minor_islands",
                         "10m",
                         facecolor=land_color,
-                        edgecolor=coast_color if spec.layers.showCoastlines else "none",
-                        linewidth=spec.layers.coastlineWidth * 0.8 if spec.layers.showCoastlines else 0.0,
+                        edgecolor=coast_color if has_coast_stroke else "none",
+                        linewidth=spec.layers.coastlineWidth * 0.8 if has_coast_stroke else 0.0,
                         zorder=2.1,
                     )
 
-        if not used_gshhs and spec.layers.showLakes:
+        if not used_gshhs and spec.layers.showLakes and (not water_is_none or has_coast_stroke):
             lakes_scale = "50m" if ne_scale == "110m" else ne_scale
             _add_ne_layer_bbox(
                 ax,
@@ -2428,16 +2537,16 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
                 "physical",
                 "lakes",
                 lakes_scale,
-                facecolor=water_color,
-                edgecolor=coast_color if (spec.layers.showLand and spec.layers.showCoastlines) else "none",
-                linewidth=spec.layers.coastlineWidth * 0.7 if (spec.layers.showLand and spec.layers.showCoastlines) else 0.0,
+                facecolor="none" if water_is_none else water_color,
+                edgecolor=coast_color if (spec.layers.showLand and has_coast_stroke) else "none",
+                linewidth=spec.layers.coastlineWidth * 0.7 if (spec.layers.showLand and has_coast_stroke) else 0.0,
                 zorder=4.2,
             )
 
     # 2b. Primary Land GeoJSON layers (e.g. OSM Ultra-Detail replacing default land)
     _draw_custom_geojson_layers(ax, spec, role_filter="land")
 
-    if spec.layers.showUrbanAreas:
+    if spec.layers.showUrbanAreas and not urban_is_none:
         urban_scale = "10m" if ne_scale == "10m" else "50m"
         _add_ne_layer_bbox(
             ax,
@@ -2451,7 +2560,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
             zorder=2.3,
         )
 
-    if spec.layers.showRivers:
+    if spec.layers.showRivers and not rivers_is_none:
         _add_ne_layer_bbox(
             ax,
             spec,
@@ -2464,7 +2573,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
             zorder=3,
         )
 
-    if spec.layers.showLand and spec.layers.showCoastlines and not used_gshhs:
+    if spec.layers.showLand and has_coast_stroke and not used_gshhs:
         _add_ne_layer_bbox(
             ax,
             spec,
@@ -2477,7 +2586,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
             zorder=3.2,
         )
 
-    if spec.layers.showAdmin1:
+    if spec.layers.showAdmin1 and not admin1_is_none:
         admin1_scale = resolve_admin1_scale(spec)
         _add_ne_layer_bbox(
             ax,
@@ -2506,7 +2615,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
     _draw_custom_geojson_layers(ax, spec, role_filter="overlay")
 
     # 5. International borders
-    if spec.layers.showBorders:
+    if spec.layers.showBorders and not borders_is_none:
         _add_ne_layer_bbox(
             ax,
             spec,
@@ -2544,4 +2653,4 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
             geo_spine.set_edgecolor(_valid_color(spec.colors.text, "#111111"))
             geo_spine.set_linewidth(1.0)
 
-    return _export_figure(fig, fmt_lower, dpi)
+    return _export_figure(fig, fmt_lower, dpi, transparent=water_is_none)

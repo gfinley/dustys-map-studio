@@ -671,19 +671,161 @@ export async function ensureDatasets(
   };
 }
 
+export const ALASKA_ONLY_COUNTRY = {
+  id: 'US-AK',
+  name: 'Alaska (Only)',
+};
+
+const alaskaFeatureCache = new WeakMap();
+
+export function isAlaskaOnlySelection(id, name = '') {
+  const normId = id != null ? String(id).trim().toLowerCase() : '';
+  const normName = typeof name === 'string' ? name.trim().toLowerCase() : '';
+  return normId === 'us-ak' || normName === 'alaska (only)' || normName === 'alaska';
+}
+
+function isAlaskaBBox(bbox) {
+  if (!Array.isArray(bbox) || bbox.length < 4) return false;
+  const minLat = bbox[1];
+  return Number.isFinite(minLat) && minLat >= 50.0;
+}
+
+/**
+ * Extract an Alaska-only GeoJSON Feature from the USA MultiPolygon in a world-atlas
+ * countries FeatureCollection (all Alaska mainland + Aleutian polygons lie >= 50°N,
+ * cleanly separated from the contiguous 48 states <= 49.38°N and Hawaii <= 29°N).
+ */
+export function extractAlaskaOnlyFeature(countries) {
+  const features = countries?.features;
+  if (!Array.isArray(features)) return null;
+  if (alaskaFeatureCache.has(countries)) {
+    return alaskaFeatureCache.get(countries);
+  }
+
+  let usaFeature = null;
+  for (let i = 0; i < features.length; i += 1) {
+    const f = features[i];
+    const fId = f?.id != null ? String(f.id).trim() : '';
+    const fName = typeof f?.properties?.name === 'string' ? f.properties.name.trim().toLowerCase() : '';
+    if (fId === '840' || fName === 'united states of america' || fName === 'united states') {
+      usaFeature = f;
+      break;
+    }
+  }
+
+  if (!usaFeature?.geometry) {
+    alaskaFeatureCache.set(countries, null);
+    return null;
+  }
+
+  const geom = usaFeature.geometry;
+  let polyList = [];
+  if (geom.type === 'Polygon') {
+    polyList = [geom.coordinates];
+  } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
+    polyList = geom.coordinates;
+  }
+
+  const alaskaPolys = [];
+  for (let i = 0; i < polyList.length; i += 1) {
+    const polyCoords = polyList[i];
+    const bbox = computeCoordsBBox(polyCoords);
+    if (isAlaskaBBox(bbox)) {
+      alaskaPolys.push(polyCoords);
+    }
+  }
+
+  if (!alaskaPolys.length) {
+    alaskaFeatureCache.set(countries, null);
+    return null;
+  }
+
+  const feature = {
+    type: 'Feature',
+    id: ALASKA_ONLY_COUNTRY.id,
+    properties: {
+      name: ALASKA_ONLY_COUNTRY.name,
+      iso_3166_2: 'US-AK',
+      adm0_id: '840',
+    },
+    geometry:
+      alaskaPolys.length === 1
+        ? { type: 'Polygon', coordinates: alaskaPolys[0] }
+        : { type: 'MultiPolygon', coordinates: alaskaPolys },
+    _bbox: computeCoordsBBox(alaskaPolys),
+  };
+
+  alaskaFeatureCache.set(countries, feature);
+  return feature;
+}
+
+/**
+ * Filter a GeoJSON payload (such as geoBoundaries USA ADM1/ADM2) down to Alaska-only features.
+ */
+export function filterGeoJsonToAlaska(geojson) {
+  const validated = validateGeoJson(geojson);
+  const features =
+    validated.type === 'FeatureCollection'
+      ? validated.features
+      : validated.type === 'Feature'
+        ? [validated]
+        : [{ type: 'Feature', properties: {}, geometry: validated }];
+
+  const matched = [];
+  for (let i = 0; i < features.length; i += 1) {
+    const f = features[i];
+    if (!f?.geometry) continue;
+    const props = f.properties || {};
+    const shapeIso = String(props.shapeISO || props.iso_3166_2 || props.ISO_3166_2 || '').trim().toUpperCase();
+    const shapeName = String(props.shapeName || props.name || props.NAME || '').trim().toLowerCase();
+    const stateFp = String(props.STATEFP || props.statefp || '').trim();
+
+    const byProp =
+      shapeIso === 'US-AK' ||
+      shapeIso.startsWith('US-AK-') ||
+      shapeName === 'alaska' ||
+      stateFp === '02';
+
+    const bbox = computeCoordsBBox(f.geometry.coordinates);
+    if (byProp || isAlaskaBBox(bbox)) {
+      matched.push(f);
+    }
+  }
+
+  if (!matched.length) {
+    throw new Error('Could not find Alaska geometry in USA boundary dataset.');
+  }
+
+  return attachFeatureBBoxes(
+    sanitizeGeoJsonWinding({
+      type: 'FeatureCollection',
+      features: matched,
+    }),
+  );
+}
+
 export function getCountryCatalog(dataset) {
   const features = dataset?.countries?.features;
   if (!Array.isArray(features)) return [];
 
   const catalog = [];
+  let hasUsa = false;
   for (let i = 0; i < features.length; i += 1) {
     const f = features[i];
     const name = typeof f?.properties?.name === 'string' ? f.properties.name.trim() : '';
     if (!name) continue;
+    const id = f.id != null ? String(f.id) : '';
+    if (id === '840' || name.toLowerCase() === 'united states of america' || name.toLowerCase() === 'united states') {
+      hasUsa = true;
+    }
     catalog.push({
-      id: f.id != null ? String(f.id) : '',
+      id,
       name,
     });
+  }
+
+  if (hasUsa && !catalog.some((c) => c.id === ALASKA_ONLY_COUNTRY.id)) {
+    catalog.push({ ...ALASKA_ONLY_COUNTRY });
   }
 
   catalog.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
@@ -739,6 +881,9 @@ const ISO_N3_TO_ISO3 = {
 };
 
 export function resolveIso3FromNumericId(id) {
+  if (isAlaskaOnlySelection(id)) {
+    return 'US-AK';
+  }
   const key = String(id || '').trim().padStart(3, '0');
   return ISO_N3_TO_ISO3[key] || null;
 }
@@ -746,36 +891,45 @@ export function resolveIso3FromNumericId(id) {
 /**
  * Fetch OSM-derived ultra-granular ADM0/ADM1/ADM2 boundaries from geoBoundaries.org.
  * Uses simplified GeoJSON by default for fast browser rendering, or full vertices when requested.
+ * Also supports 'US-AK' (Alaska Only) by filtering USA ADM1 (for ADM0/ADM1) or USA ADM2 (boroughs).
  */
 export async function fetchGeoBoundariesLayer(iso3, admLevel = 'ADM1', { fullVertices = false } = {}) {
   const code = String(iso3 || '').trim().toUpperCase();
   const level = ['ADM0', 'ADM1', 'ADM2'].includes(String(admLevel).toUpperCase())
     ? String(admLevel).toUpperCase()
     : 'ADM1';
-  if (!/^[A-Z]{3}$/.test(code)) {
+
+  const isAlaskaOnly = code === 'US-AK';
+  if (!isAlaskaOnly && !/^[A-Z]{3}$/.test(code)) {
     throw new Error(`Invalid ISO-3 country code: "${iso3}"`);
   }
 
-  const metaUrl = `https://www.geoboundaries.org/api/current/gbOpen/${code}/${level}/`;
+  const fetchCode = isAlaskaOnly ? 'USA' : code;
+  const fetchLevel = isAlaskaOnly ? (level === 'ADM2' ? 'ADM2' : 'ADM1') : level;
+
+  const metaUrl = `https://www.geoboundaries.org/api/current/gbOpen/${fetchCode}/${fetchLevel}/`;
   const meta = await fetchJsonCached(metaUrl);
   const gjUrl = fullVertices
     ? (meta?.gjDownloadURL || meta?.simplifiedGeometryGeoJSON)
     : (meta?.simplifiedGeometryGeoJSON || meta?.gjDownloadURL);
 
   if (!gjUrl) {
-    throw new Error(`geoBoundaries ${level} data is not available for ${code}.`);
+    throw new Error(`geoBoundaries ${level} data is not available for ${isAlaskaOnly ? 'Alaska (Only)' : code}.`);
   }
 
-  const data = await fetchJsonCached(gjUrl);
+  const rawData = await fetchJsonCached(gjUrl);
+  const processedData = isAlaskaOnly ? filterGeoJsonToAlaska(rawData) : validateGeoJson(rawData);
   return {
     iso3: code,
     admLevel: level,
-    boundaryName: meta?.boundaryName || code,
-    admUnitCount: Number(meta?.admUnitCount) || 0,
+    boundaryName: isAlaskaOnly ? ALASKA_ONLY_COUNTRY.name : (meta?.boundaryName || code),
+    admUnitCount: isAlaskaOnly
+      ? (processedData?.features?.length || 1)
+      : (Number(meta?.admUnitCount) || 0),
     maxVertices: Number(meta?.maxVertices) || 0,
     source: meta?.boundarySource || 'geoBoundaries / OpenStreetMap',
     url: gjUrl,
-    data: validateGeoJson(data),
+    data: processedData,
   };
 }
 

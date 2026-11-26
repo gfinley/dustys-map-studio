@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=19" />
+  <link rel="stylesheet" href="./styles/main.css?v=20" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -200,46 +200,76 @@
               <div id="theme-swatches" class="theme-grid"></div>
 
               <div class="divider"></div>
-              <h3 class="subhead">Fine-Tune Palette</h3>
+              <div class="subhead-row">
+                <h3 class="subhead">Fine-Tune Palette</h3>
+                <div class="subhead-actions">
+                  <button id="btn-palette-all-off" class="btn-chip" type="button" title="Toggle off all palette choices (great for isolated country or Alaska maps)">All Off</button>
+                  <button id="btn-palette-reset" class="btn-chip" type="button" title="Restore palette colors from the active theme">Reset</button>
+                </div>
+              </div>
               <div class="color-grid">
                 <label class="color-field" for="color-land">
                   <span>Land</span>
-                  <input id="color-land" type="color" />
+                  <div class="color-combo">
+                    <input id="color-land" type="color" />
+                    <button id="btn-land-none" class="btn-chip" type="button" title="Toggle no default land fill" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-water">
                   <span>Water</span>
-                  <input id="color-water" type="color" />
+                  <div class="color-combo">
+                    <input id="color-water" type="color" />
+                    <button id="btn-water-none" class="btn-chip" type="button" title="Toggle transparent water / background" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-borders">
                   <span>Borders</span>
-                  <input id="color-borders" type="color" />
+                  <div class="color-combo">
+                    <input id="color-borders" type="color" />
+                    <button id="btn-borders-none" class="btn-chip" type="button" title="Toggle no national borders" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-coastline">
                   <span>Coastline</span>
                   <div class="color-combo">
                     <input id="color-coastline" type="color" />
-                    <button id="btn-coastline-none" class="btn-chip" type="button" title="Toggle no coastline stroke">None</button>
+                    <button id="btn-coastline-none" class="btn-chip" type="button" title="Toggle no coastline stroke" aria-pressed="false">None</button>
                   </div>
                 </label>
                 <label class="color-field" for="color-rivers">
                   <span>Rivers</span>
-                  <input id="color-rivers" type="color" />
+                  <div class="color-combo">
+                    <input id="color-rivers" type="color" />
+                    <button id="btn-rivers-none" class="btn-chip" type="button" title="Toggle no rivers" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-text">
                   <span>Labels</span>
-                  <input id="color-text" type="color" />
+                  <div class="color-combo">
+                    <input id="color-text" type="color" />
+                    <button id="btn-text-none" class="btn-chip" type="button" title="Toggle no city labels &amp; pins" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-admin1">
                   <span>States</span>
-                  <input id="color-admin1" type="color" />
+                  <div class="color-combo">
+                    <input id="color-admin1" type="color" />
+                    <button id="btn-admin1-none" class="btn-chip" type="button" title="Toggle no state / province lines" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-bathymetry">
                   <span>Ocean Shelf</span>
-                  <input id="color-bathymetry" type="color" />
+                  <div class="color-combo">
+                    <input id="color-bathymetry" type="color" />
+                    <button id="btn-bathymetry-none" class="btn-chip" type="button" title="Toggle no ocean shelf contours" aria-pressed="false">None</button>
+                  </div>
                 </label>
                 <label class="color-field" for="color-urban">
                   <span>Urban</span>
-                  <input id="color-urban" type="color" />
+                  <div class="color-combo">
+                    <input id="color-urban" type="color" />
+                    <button id="btn-urban-none" class="btn-chip" type="button" title="Toggle no urban metro footprints" aria-pressed="false">None</button>
+                  </div>
                 </label>
               </div>
             </div>
@@ -433,7 +463,7 @@
               </button>
 
               <div class="field-stack">
-                <input id="country-filter-input" type="search" placeholder="Filter country list (e.g. Poland, Norway)..." />
+                <input id="country-filter-input" type="search" placeholder="Filter country list (e.g. Poland, Norway, Alaska)..." />
                 <div class="input-row">
                   <select id="country-select" aria-label="Select country to highlight"></select>
                   <button id="btn-add-country" class="btn btn-secondary btn-sm" type="button">Add Country</button>
@@ -955,6 +985,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=19"></script>
+  <script type="module" src="./js/app.js?v=20"></script>
 </body>
 </html>
