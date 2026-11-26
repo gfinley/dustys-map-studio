@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=12';
+} from './schema.js?v=13';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,13 +19,13 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=12';
+} from './data-loader.js?v=13';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=12';
+} from './cartography.js?v=13';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -34,9 +34,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=12';
-import { REGION_PRESETS } from './presets.js?v=12';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=12';
+} from './exporter.js?v=13';
+import { REGION_PRESETS } from './presets.js?v=13';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=13';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -46,13 +46,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=12';
+} from './controls.js?v=13';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=12';
+} from './shadow.js?v=13';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -1093,7 +1093,7 @@ function validateLocalGeoJson(data) {
   return data;
 }
 
-async function addGeoJsonLayer({ label, url = null, data }) {
+async function addGeoJsonLayer({ label, url = null, data, style = {} }) {
   if (state.proAvailable) {
     try {
       await inspectGeoJsonViaPythonPro({ url, data: url ? null : data });
@@ -1108,11 +1108,11 @@ async function addGeoJsonLayer({ label, url = null, data }) {
     url,
     data,
     visible: true,
-    color: '#d97706',
-    fillOpacity: 0.35,
-    strokeWidth: 1.6,
-    dashed: false,
-    hatch: 'none',
+    color: style?.color || '#d97706',
+    fillOpacity: Number.isFinite(Number(style?.fillOpacity)) ? Number(style.fillOpacity) : 0.35,
+    strokeWidth: Number.isFinite(Number(style?.strokeWidth)) ? Number(style.strokeWidth) : 1.6,
+    dashed: Boolean(style?.dashed),
+    hatch: style?.hatch || 'none',
   };
 
   patchSpec({
@@ -1157,6 +1157,7 @@ function buildCallbacks() {
       if (!preset) return;
       state.activePresetId = preset.id;
       commitSpec(structuredClone(preset.spec), { commitHistory: true, keepPreset: true });
+      void hydrateRemoteGeoJsonLayers();
       showToast(`Loaded preset: ${preset.label}`, 'success', 2400);
     },
 
@@ -1648,7 +1649,7 @@ function buildCallbacks() {
       }
     },
 
-    onLoadGeoJsonUrl: async (url, customLabel = '') => {
+    onLoadGeoJsonUrl: async (url, customLabel = '', style = {}) => {
       try {
         setLoadingProgress(true, 'Fetching custom GeoJSON...');
         const data = await fetchCustomGeoJson(url);
@@ -1659,7 +1660,7 @@ function buildCallbacks() {
             /\.(geo)?json$/i,
             '',
           );
-        await addGeoJsonLayer({ label: derivedName, url, data });
+        await addGeoJsonLayer({ label: derivedName, url, data, style });
         const urlInput = document.getElementById('geojson-url-input');
         if (urlInput && !customLabel) urlInput.value = '';
       } catch (err) {

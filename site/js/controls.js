@@ -6,10 +6,10 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=12';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=12';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=12';
-import { formatArea } from './shadow.js?v=12';
+} from './schema.js?v=13';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=13';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=13';
+import { formatArea } from './shadow.js?v=13';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -852,7 +852,7 @@ function populateStaticOptions(callbacks) {
       chip.addEventListener('click', () => {
         const input = $('geojson-url-input');
         if (input) input.value = ex.url;
-        callbacks.onLoadGeoJsonUrl?.(ex.url, ex.label);
+        callbacks.onLoadGeoJsonUrl?.(ex.url, ex.label, ex.style);
       });
       examplesRow.appendChild(chip);
     }

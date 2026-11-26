@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=12';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=13';
 
 function makePresetSpec(overrides) {
   const base = createDefaultMapSpec();
@@ -421,9 +421,96 @@ export const REGION_PRESETS = [
       },
     }),
   },
+  {
+    id: 'se_asia_1941_airfields',
+    label: 'SE Asia & W. Pacific (1941 Airfields)',
+    description:
+      'December 1941 theater framing across the Philippines, Malaya/Singapore, Borneo, Dutch East Indies, Indochina, and Thailand with military and civilian land airfield overlays.',
+    spec: makePresetSpec({
+      title: 'Southeast Asia & Western Pacific — 1941 Airfields',
+      showTitle: false,
+      projection: 'mercator',
+      detailLevel: '50m',
+      center: { lat: 5.5, lon: 113.5 },
+      span: { lonDeg: 44.0, latDeg: 35.0 },
+      page: {
+        preset: 'book_landscape',
+        widthIn: 7.0,
+        heightIn: 4.6,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 0.9,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: true,
+        graticuleStepDeg: 10,
+      },
+      highlightedCountries: [],
+      cities: [
+        { id: 'manila_1941', name: 'Manila', lat: 14.5995, lon: 120.9842, style: 'capital', dx: -8, dy: -4 },
+        { id: 'singapore_1941', name: 'Singapore', lat: 1.3521, lon: 103.8198, style: 'capital', dx: -8, dy: 6 },
+        { id: 'batavia_1941', name: 'Batavia', lat: -6.2088, lon: 106.8456, style: 'capital', dx: -8, dy: 6 },
+        { id: 'saigon_1941', name: 'Saigon', lat: 10.8231, lon: 106.6297, style: 'dot', dx: 7, dy: 4 },
+        { id: 'bangkok_1941', name: 'Bangkok', lat: 13.7563, lon: 100.5018, style: 'capital', dx: -8, dy: -5 },
+      ],
+      customGeoJsonLayers: [
+        {
+          id: 'airfields_1941_military',
+          label: '1941 Military Land Airfields',
+          url: './data/airfields_1941_se_asia_western_pacific_military.geojson',
+          data: null,
+          visible: true,
+          color: '#b91c1c',
+          fillOpacity: 0.9,
+          strokeWidth: 1.5,
+          dashed: false,
+          hatch: 'none',
+        },
+        {
+          id: 'airfields_1941_civilian',
+          label: '1941 Civilian Land Airfields',
+          url: './data/airfields_1941_se_asia_western_pacific_civilian.geojson',
+          data: null,
+          visible: true,
+          color: '#1d4ed8',
+          fillOpacity: 0.9,
+          strokeWidth: 1.4,
+          dashed: false,
+          hatch: 'none',
+        },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: false, position: 'top-right', sizePct: 20, showExtentBox: true },
+        legend: { enabled: true, position: 'bottom-right' },
+      },
+    }),
+  },
 ];
 
 export const GEOJSON_EXAMPLES = [
+  {
+    label: '1941 SE Asia Airfields — Military (94)',
+    url: './data/airfields_1941_se_asia_western_pacific_military.geojson',
+    style: { color: '#b91c1c', fillOpacity: 0.9, strokeWidth: 1.5 },
+  },
+  {
+    label: '1941 SE Asia Airfields — Civilian (69)',
+    url: './data/airfields_1941_se_asia_western_pacific_civilian.geojson',
+    style: { color: '#1d4ed8', fillOpacity: 0.9, strokeWidth: 1.4 },
+  },
+  {
+    label: '1941 SE Asia Airfields — All Land (163)',
+    url: './data/airfields_1941_se_asia_western_pacific.geojson',
+    style: { color: '#d97706', fillOpacity: 0.9, strokeWidth: 1.4 },
+  },
   {
     label: 'Ukraine National Boundary (geoBoundaries)',
     url: 'https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/UKR/ADM0/geoBoundaries-UKR-ADM0_simplified.geojson',

@@ -1,0 +1,2751 @@
+{
+  "type": "FeatureCollection",
+  "name": "1941 Southeast Asia & Western Pacific Land Airfields — Civilian",
+  "bbox": [
+    97.975,
+    -9.6694,
+    125.6458,
+    21.0408
+  ],
+  "metadata": {
+    "timeframe": "Late 1941 (Eve of the Pacific War, December 1941)",
+    "geographic_scope": "Southeast Asia & Western Pacific: Philippines, British Malaya & Singapore, Borneo (Sarawak & Dutch Kalimantan), Dutch East Indies (Java, Sumatra, Sulawesi, Lesser Sundas, Moluccas, Dutch New Guinea) & Portuguese Timor, French Indochina, and Thailand (Siam)",
+    "facility_scope": "Land airfields only (seaplane bases and flying-boat water anchorages excluded)",
+    "crs": "EPSG:4326 (WGS84, RFC 7946 [longitude, latitude])",
+    "primary_sources": [
+      "London Gazette Supplement (1948), Report on RAF Operations in Malaya and N.E.I. 1941-42, Appendix A (Situation at RAF Stations in Malaya, 8 Dec 1941)",
+      "USAAF Far East Air Force (FEAF) & Philippine Department Air Force 1941 Order of Battle and Airfield Summaries (US Army CMH / USAF Historical Studies)",
+      "Militaire Luchtvaart van het KNIL (ML-KNIL) 30 Nov 1941 Order of Battle & KNILM 1938-1941 Civil Route Network Records",
+      "U.S. War Department, A Survey of Thailand (Siam) (March 1941), Appendix I (Airdromes and Landing Grounds) & Royal Thai Air Force Historical Archives",
+      "Vichy French Armee de l'Air & Imperial Japanese Southern French Indochina Occupation Records (1940-1941)"
+    ],
+    "title": "1941 Southeast Asia & Western Pacific Land Airfields — Civilian",
+    "layer_filter": "category == 'civilian'",
+    "feature_count": 69,
+    "category_counts": {
+      "civilian": 69
+    },
+    "dual_use_count": 23,
+    "region_counts": {
+      "Borneo": 3,
+      "Dutch East Indies": 18,
+      "French Indochina": 10,
+      "Malaya & Singapore": 8,
+      "Philippines": 20,
+      "Thailand": 10
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ph-grace-park",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.9917,
+          14.6514
+        ]
+      },
+      "properties": {
+        "id": "ph-grace-park",
+        "name": "Grace Park Airfield",
+        "alternate_names": [
+          "Manila North Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Philippine Civil Aviation / PATCO & INAEC",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass/dirt commercial field north of Manila",
+        "status_dec_1941": "operational",
+        "notes": "Opened in 1935 as one of Manila's earliest commercial airports, used by INAEC, flying schools, and civil charter operators.",
+        "modern_equivalent": "Defunct (Grace Park, Caloocan City)",
+        "source_confidence": "high",
+        "title": "Grace Park Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-loakan-baguio",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.6197,
+          16.375
+        ]
+      },
+      "properties": {
+        "id": "ph-loakan-baguio",
+        "name": "Loakan Airport (Baguio)",
+        "alternate_names": [
+          "Baguio Airport"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Philippine Air Lines (PAL) / Commonwealth Bureau of Aeronautics",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "High-elevation mountain runway (~4,250 ft ASL)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1934; destination of Philippine Air Lines' inaugural commercial flight on 15 Mar 1941; bombed 8 Dec 1941.",
+        "modern_equivalent": "Loakan Airport (BAG / RPUB)",
+        "source_confidence": "high",
+        "title": "Loakan Airport (Baguio)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-laoag-gabu",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.5317,
+          18.1781
+        ]
+      },
+      "properties": {
+        "id": "ph-laoag-gabu",
+        "name": "Laoag (Gabu) Airfield",
+        "alternate_names": [
+          "Gabu Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal graded sand/grass landing field",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war northern Luzon commercial landing field; rapidly seized by Japanese forces in Dec 1941 for forward fighter ops.",
+        "modern_equivalent": "Laoag International Airport (LAO / RPLI)",
+        "source_confidence": "high",
+        "title": "Laoag (Gabu) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-aparri",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.6625,
+          18.3536
+        ]
+      },
+      "properties": {
+        "id": "ph-aparri",
+        "name": "Aparri Airfield",
+        "alternate_names": [
+          "Camalaniugan / Aparri Strip"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal grass/dirt landing ground near Cagayan River mouth",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war civil landing field on Luzon's northern coast; primary objective of Japanese Tanaka Detachment landing on 10 Dec 1941.",
+        "modern_equivalent": "Defunct (Aparri, Cagayan)",
+        "source_confidence": "high",
+        "title": "Aparri Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-vigan-mindoro",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3564,
+          17.5547
+        ]
+      },
+      "properties": {
+        "id": "ph-vigan-mindoro",
+        "name": "Vigan (Mindoro) Airfield",
+        "alternate_names": [
+          "Vigan Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Short coastal dirt landing ground southwest of Vigan",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war Ilocos civil landing field; captured by Japanese landing force on 10 Dec 1941.",
+        "modern_equivalent": "Mindoro Airport, Vigan (RPUQ)",
+        "source_confidence": "high",
+        "title": "Vigan (Mindoro) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-tuguegarao",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.7331,
+          17.6433
+        ]
+      },
+      "properties": {
+        "id": "ph-tuguegarao",
+        "name": "Tuguegarao Airfield",
+        "alternate_names": [
+          "Tuguegarao Landing Field"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Cagayan Valley grass/dirt landing field",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war Cagayan Valley civil airfield opened in the 1930s; captured by Japan in Dec 1941.",
+        "modern_equivalent": "Tuguegarao Airport (TUG / RPUT)",
+        "source_confidence": "high",
+        "title": "Tuguegarao Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-paracale",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          122.7797,
+          14.2747
+        ]
+      },
+      "properties": {
+        "id": "ph-paracale",
+        "name": "Paracale Airfield",
+        "alternate_names": [
+          "Jose Panganiban Airstrip"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "PATCO / Philippine Air Lines (mining service)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Commercial dirt airstrip serving Camarines Norte gold-mining district",
+        "status_dec_1941": "operational",
+        "notes": "Active pre-war commercial gold-mining route destination served from Manila (Nielson Field).",
+        "modern_equivalent": "Defunct (Paracale / Jose Panganiban, Camarines Norte)",
+        "source_confidence": "high",
+        "title": "Paracale Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-legazpi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          123.7353,
+          13.1575
+        ]
+      },
+      "properties": {
+        "id": "ph-legazpi",
+        "name": "Legazpi Airfield",
+        "alternate_names": [
+          "Legaspi Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics / PAL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil landing field at foot of Mount Mayon",
+        "status_dec_1941": "operational",
+        "notes": "Key southern Luzon commercial stop; captured by Japanese Kimura Detachment on 12 Dec 1941 for IJNAS Zero operations.",
+        "modern_equivalent": "Old Legazpi Airport (RPLP)",
+        "source_confidence": "high",
+        "title": "Legazpi Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-naga",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          123.2703,
+          13.5847
+        ]
+      },
+      "properties": {
+        "id": "ph-naga",
+        "name": "Naga Airfield",
+        "alternate_names": [
+          "Pili Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics / PAL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Graded grass/dirt Bicol regional airfield",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war Bicol Peninsula commercial airfield serving Naga and Camarines Sur.",
+        "modern_equivalent": "Naga Airport (WNP / RPUN)",
+        "source_confidence": "high",
+        "title": "Naga Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-lahug-cebu",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          123.9022,
+          10.3292
+        ]
+      },
+      "properties": {
+        "id": "ph-lahug-cebu",
+        "name": "Lahug Airfield (Cebu)",
+        "alternate_names": [
+          "Cebu Airport",
+          "Lahug Airport"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Visayas",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "INAEC / PAL / PAAC",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Graded grass/coral runway northeast of Cebu City",
+        "status_dec_1941": "operational",
+        "notes": "Opened in the 1930s as Cebu's main pre-war civil commercial airport; also used by PAAC and USAAF transit aircraft.",
+        "modern_equivalent": "Defunct (Cebu IT Park, Lahug, Cebu City)",
+        "source_confidence": "high",
+        "title": "Lahug Airfield (Cebu)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-mandurriao-iloilo",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          122.5453,
+          10.7131
+        ]
+      },
+      "properties": {
+        "id": "ph-mandurriao-iloilo",
+        "name": "Mandurriao Airfield (Iloilo)",
+        "alternate_names": [
+          "Iloilo Airport"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Visayas",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Iloilo-Negros Air Express Co. (INAEC)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Commercial grass/dirt airport on Panay",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1937 as headquarters and primary Visayan hub of INAEC (operating Stinson & Sikorsky aircraft).",
+        "modern_equivalent": "Defunct (Iloilo Business Park, Mandurriao)",
+        "source_confidence": "high",
+        "title": "Mandurriao Airfield (Iloilo)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-bacolod",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          122.9297,
+          10.6425
+        ]
+      },
+      "properties": {
+        "id": "ph-bacolod",
+        "name": "Bacolod Airfield",
+        "alternate_names": [
+          "Bacolod Airport"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Visayas",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Iloilo-Negros Air Express Co. (INAEC)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Commercial grass/dirt airport on Negros Occidental coast",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1936 as INAEC's major Negros terminal connecting Bacolod, Iloilo, Cebu, and Manila.",
+        "modern_equivalent": "Defunct (Old Bacolod City Domestic Airport)",
+        "source_confidence": "high",
+        "title": "Bacolod Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-tacloban",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          125.0278,
+          11.2275
+        ]
+      },
+      "properties": {
+        "id": "ph-tacloban",
+        "name": "Tacloban Airfield",
+        "alternate_names": [
+          "San Jose Airfield (Leyte)"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Visayas",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "coral_gravel",
+        "runway_notes_1941": "Pre-war sandy/coral strip on Cataisan Peninsula",
+        "status_dec_1941": "operational",
+        "notes": "Established in the late 1930s as Leyte's civil landing field; later famously expanded by US forces in Oct 1944.",
+        "modern_equivalent": "Daniel Z. Romualdez Airport (TAC / RPVA)",
+        "source_confidence": "high",
+        "title": "Tacloban Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-san-jose-mindoro",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.0467,
+          12.3614
+        ]
+      },
+      "properties": {
+        "id": "ph-san-jose-mindoro",
+        "name": "San Jose (Mindoro) Airfield",
+        "alternate_names": [
+          "Mindoro Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Mindoro",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics / Philippine Milling Co.",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil/estate grass landing strip",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war Mindoro commercial and sugar-estate landing field linking Manila and the western Visayas.",
+        "modern_equivalent": "San Jose Airport (SJI / RPUH)",
+        "source_confidence": "high",
+        "title": "San Jose (Mindoro) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-puerto-princesa",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          118.7589,
+          9.7422
+        ]
+      },
+      "properties": {
+        "id": "ph-puerto-princesa",
+        "name": "Puerto Princesa Airfield",
+        "alternate_names": [
+          "Palawan Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Palawan",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "coral_gravel",
+        "runway_notes_1941": "Pre-war Commonwealth civil landing ground on Palawan",
+        "status_dec_1941": "operational",
+        "notes": "Established pre-war for civil mail and administrative flights; later expanded into a major military base during WWII.",
+        "modern_equivalent": "Puerto Princesa International Airport (PPS / RPVP)",
+        "source_confidence": "high",
+        "title": "Puerto Princesa Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-zamboanga",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          122.0597,
+          6.9225
+        ]
+      },
+      "properties": {
+        "id": "ph-zamboanga",
+        "name": "Zamboanga (San Roque) Airfield",
+        "alternate_names": [
+          "Moret Field",
+          "San Roque Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Mindanao",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics / USAAF auxiliary",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war coastal grass/dirt landing field",
+        "status_dec_1941": "operational",
+        "notes": "Key southwestern Mindanao civil and mail airport overlooking Basilan Strait; also used as military staging stop.",
+        "modern_equivalent": "Zamboanga International Airport (ZAM / RPMZ)",
+        "source_confidence": "high",
+        "title": "Zamboanga (San Roque) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-davao",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          125.6458,
+          7.1256
+        ]
+      },
+      "properties": {
+        "id": "ph-davao",
+        "name": "Davao Airfield",
+        "alternate_names": [
+          "Sasa Airfield",
+          "Matina Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Philippines",
+        "subregion": "Mindanao",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "INAEC / Commonwealth Bureau of Aeronautics",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war commercial grass/dirt strip near Davao Gulf",
+        "status_dec_1941": "operational",
+        "notes": "Southern Mindanao commercial airport; captured by Japan on 20 Dec 1941 and used to launch attacks on the Dutch East Indies.",
+        "modern_equivalent": "Francisco Bangoy International Airport (DVO / RPMD)",
+        "source_confidence": "high",
+        "title": "Davao Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-cagayan-mindanao",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.6111,
+          8.4156
+        ]
+      },
+      "properties": {
+        "id": "ph-cagayan-mindanao",
+        "name": "Cagayan de Misamis Airfield",
+        "alternate_names": [
+          "Carmen Airfield",
+          "Lumbia Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Mindanao",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics / INAEC",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil landing field serving northern Mindanao coast",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war commercial landing ground serving Cagayan de Misamis prior to expansion of nearby Del Monte bomber complex.",
+        "modern_equivalent": "Old Lumbia Airport (RPML)",
+        "source_confidence": "high",
+        "title": "Cagayan de Misamis Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-cotabato",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.21,
+          7.1653
+        ]
+      },
+      "properties": {
+        "id": "ph-cotabato",
+        "name": "Cotabato Airfield",
+        "alternate_names": [
+          "Awang Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Mindanao",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war central Mindanao grass landing field",
+        "status_dec_1941": "operational",
+        "notes": "Established in the 1930s for Commonwealth civil administrative and commercial air links in Cotabato.",
+        "modern_equivalent": "Awang Airport (CBO / RPMC)",
+        "source_confidence": "high",
+        "title": "Cotabato Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-surigao",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          125.4794,
+          9.7575
+        ]
+      },
+      "properties": {
+        "id": "ph-surigao",
+        "name": "Surigao Airfield",
+        "alternate_names": [
+          "Surigao Landing Field"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Philippines",
+        "subregion": "Mindanao",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Commonwealth Bureau of Aeronautics / Mining Charter",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Pre-war civil/mining dirt landing strip in NE Mindanao",
+        "status_dec_1941": "operational",
+        "notes": "Served pre-war Surigao gold-mining operations and inter-island commercial flights.",
+        "modern_equivalent": "Surigao Airport (SUG / RPMS)",
+        "source_confidence": "high",
+        "title": "Surigao Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sg-kallang-airport",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.8742,
+          1.3072
+        ]
+      },
+      "properties": {
+        "id": "sg-kallang-airport",
+        "name": "Kallang Airport",
+        "alternate_names": [
+          "RAF Kallang",
+          "Singapore Civil Airport"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "Malaya & Singapore",
+        "subregion": "Singapore",
+        "territory_1941": "Straits Settlements (Singapore)",
+        "modern_country": "Singapore",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Straits Settlements Civil Aviation / BOAC, Qantas, KNILM, Wearne's (RAF in Dec 1941)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Circular 1,000-yd / 1,400-yd grass civil aerodrome built on reclaimed Kallang Basin",
+        "status_dec_1941": "operational",
+        "notes": "Opened June 1937 as Singapore's flagship international civil airport; operated by RAF/RAAF fighter squadrons (Nos. 243 & 488 Sqns) during the defense of Singapore.",
+        "modern_equivalent": "Defunct (Kallang Basin / Old Kallang Airport Terminal preserved)",
+        "source_confidence": "high",
+        "title": "Kallang Airport",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-penang-bayan-lepas",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.2769,
+          5.2972
+        ]
+      },
+      "properties": {
+        "id": "my-penang-bayan-lepas",
+        "name": "Penang (Bayan Lepas) Civil Aerodrome",
+        "alternate_names": [
+          "Bayan Lepas Aerodrome",
+          "Penang Airport"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "Straits Settlements (Penang)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Straits Settlements Civil Aviation / Imperial Airways & Wearne's",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Limited grass civil aerodrome (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1935 as Penang's civil airport on the London-Singapore-Australia Empire air route.",
+        "modern_equivalent": "Penang International Airport (PEN / WMKP)",
+        "source_confidence": "high",
+        "title": "Penang (Bayan Lepas) Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-kuala-lumpur-sungai-besi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.7025,
+          3.1122
+        ]
+      },
+      "properties": {
+        "id": "my-kuala-lumpur-sungai-besi",
+        "name": "Kuala Lumpur (Sungai Besi) Civil Aerodrome",
+        "alternate_names": [
+          "Simpang Airport",
+          "Sungai Besi Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Malaya & Singapore",
+        "subregion": "South Malaya",
+        "territory_1941": "British Malaya (Selangor, FMS)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "FMS Civil Aviation / Wearne's (RAF No. 153 MU in 1941)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass civil aerodrome: 1,315 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1930 as Kuala Lumpur's civil airport; also housed RAF No. 153 Maintenance Unit from June 1941.",
+        "modern_equivalent": "Defunct (Bandar Malaysia / Former RMAF Sungai Besi, WMKF)",
+        "source_confidence": "high",
+        "title": "Kuala Lumpur (Sungai Besi) Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-ipoh-civil",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.0922,
+          4.5678
+        ]
+      },
+      "properties": {
+        "id": "my-ipoh-civil",
+        "name": "Ipoh Civil Aerodrome",
+        "alternate_names": [
+          "Ipoh Airport"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Malaya & Singapore",
+        "subregion": "Central Malaya",
+        "territory_1941": "British Malaya (Perak, FMS)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "FMS Civil Aviation / Wearne's (RAF concentration base Dec 1941)",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Grass plus tarmac runway: 1,400 yds; RAF hutments nearly complete",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1937 as Perak civil airport serving Kinta Valley tin district; used by RAAF Nos. 21 & 453 Sqns during Dec 1941 retreat.",
+        "modern_equivalent": "Sultan Azlan Shah Airport (IPH / WMKI)",
+        "source_confidence": "high",
+        "title": "Ipoh Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-taiping-civil",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.7183,
+          4.8639
+        ]
+      },
+      "properties": {
+        "id": "my-taiping-civil",
+        "name": "Taiping (Tekah) Civil Aerodrome",
+        "alternate_names": [
+          "Tekah Aerodrome"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Malaya & Singapore",
+        "subregion": "Central Malaya",
+        "territory_1941": "British Malaya (Perak, FMS)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "FMS Civil Aviation (RAF satellite for Ipoh in 1941)",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Grass plus tarmac runway: 1,400 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1930 as Malaya's oldest civil aerodrome; served as RAF satellite dispersal strip for Ipoh in Dec 1941.",
+        "modern_equivalent": "Tekah Airport (TPG / WMBI)",
+        "source_confidence": "high",
+        "title": "Taiping (Tekah) Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-sitiawan-civil",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.6992,
+          4.2164
+        ]
+      },
+      "properties": {
+        "id": "my-sitiawan-civil",
+        "name": "Sitiawan Civil Aerodrome",
+        "alternate_names": [
+          "Sitiawan Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Malaya & Singapore",
+        "subregion": "Central Malaya",
+        "territory_1941": "British Malaya (Perak, FMS)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "FMS Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two grass strips: 1,000 yds & 800 yds; guard room only (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war civil landing field on Perak coast guarded by Indian State Troops.",
+        "modern_equivalent": "Sitiawan Airport (SWY / WMBA)",
+        "source_confidence": "high",
+        "title": "Sitiawan Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-port-swettenham-civil",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.3917,
+          3.0056
+        ]
+      },
+      "properties": {
+        "id": "my-port-swettenham-civil",
+        "name": "Port Swettenham Civil Aerodrome",
+        "alternate_names": [
+          "Port Klang Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Malaya & Singapore",
+        "subregion": "South Malaya",
+        "territory_1941": "British Malaya (Selangor, FMS)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "FMS Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass strip with tarmac center: 1,000 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war civil landing ground serving Selangor's principal seaport (modern Port Klang).",
+        "modern_equivalent": "Defunct (Port Klang, Selangor)",
+        "source_confidence": "high",
+        "title": "Port Swettenham Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-batu-pahat-civil",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.9894,
+          1.8558
+        ]
+      },
+      "properties": {
+        "id": "my-batu-pahat-civil",
+        "name": "Batu Pahat Civil Aerodrome",
+        "alternate_names": [
+          "Batu Pahat Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Malaya & Singapore",
+        "subregion": "South Malaya",
+        "territory_1941": "British Malaya (Johore)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Johore Civil Aviation (RAF satellite for Kluang)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass runway: 1,400 yds; POL stores & AIF infantry guard (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war Johore civil airfield designated as an RAF dispersal satellite for Kluang.",
+        "modern_equivalent": "Defunct (Batu Pahat, Johore)",
+        "source_confidence": "high",
+        "title": "Batu Pahat Civil Aerodrome",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-miri-lutong",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.0,
+          4.4667
+        ]
+      },
+      "properties": {
+        "id": "my-miri-lutong",
+        "name": "Miri / Lutong Airfield",
+        "alternate_names": [
+          "Lutong Airstrip",
+          "Miri Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Borneo",
+        "subregion": "Sarawak",
+        "territory_1941": "Kingdom of Sarawak (British Protectorate)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire (Sarawak)",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Sarawak Oilfields Ltd. (Shell) / Sarawak Government",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal company/civil landing strip near Lutong oil refinery",
+        "status_dec_1941": "operational",
+        "notes": "Active pre-war oilfield landing ground; rendered unusable by British demolition teams on 9 Dec 1941 ahead of the 16 Dec Japanese landing.",
+        "modern_equivalent": "Defunct (Old Lutong Airstrip, Miri)",
+        "source_confidence": "high",
+        "title": "Miri / Lutong Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-bintulu-strip",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.0444,
+          3.1717
+        ]
+      },
+      "properties": {
+        "id": "my-bintulu-strip",
+        "name": "Bintulu Landing Ground",
+        "alternate_names": [
+          "Bintulu Airstrip"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Borneo",
+        "subregion": "Sarawak",
+        "territory_1941": "Kingdom of Sarawak (British Protectorate)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire (Sarawak)",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Sarawak Government",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal grass/dirt emergency strip (begun 1934, work paused 1938)",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "One of only three pre-war airfields in all of British Borneo (alongside Kuching and Miri).",
+        "modern_equivalent": "Defunct (Old Bintulu Airport site)",
+        "source_confidence": "high",
+        "title": "Bintulu Landing Ground",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-pontianak-sungai-durian",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          109.4039,
+          -0.1508
+        ]
+      },
+      "properties": {
+        "id": "id-pontianak-sungai-durian",
+        "name": "Pontianak (Sungai Durian) Airfield",
+        "alternate_names": [
+          "Soengai Doerian Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Borneo",
+        "subregion": "West Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil airfield southeast of Pontianak",
+        "status_dec_1941": "operational",
+        "notes": "Served West Borneo civil/administrative flights alongside the nearby MLD seaplane base on the Kapuas River.",
+        "modern_equivalent": "Supadio International Airport (PNK / WIOO)",
+        "source_confidence": "high",
+        "title": "Pontianak (Sungai Durian) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-kemayoran-batavia",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8506,
+          -6.1539
+        ]
+      },
+      "properties": {
+        "id": "id-kemayoran-batavia",
+        "name": "Kemayoran Airport (Batavia)",
+        "alternate_names": [
+          "Kemajoran Airport",
+          "Batavia International Airport"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / KLM / Qantas",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Modern paved runways opened July 1940 as Batavia's flagship civil airport",
+        "status_dec_1941": "operational",
+        "notes": "Premier international civil airport of the Dutch East Indies (replaced Tjililitan for scheduled KLM/KNILM passenger traffic in 1940).",
+        "modern_equivalent": "Defunct (Kemayoran, Central Jakarta)",
+        "source_confidence": "high",
+        "title": "Kemayoran Airport (Batavia)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-darmo-surabaya",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.7289,
+          -7.2914
+        ]
+      },
+      "properties": {
+        "id": "id-darmo-surabaya",
+        "name": "Darmo Airfield (Surabaya)",
+        "alternate_names": [
+          "Soerabaja Civil Airport"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil grass/hard airport opened 1929",
+        "status_dec_1941": "operational",
+        "notes": "Surabaya's main pre-war KNILM commercial airport on the Batavia-Surabaya-Bali-Australia trunk route.",
+        "modern_equivalent": "Defunct (Darmo, Surabaya)",
+        "source_confidence": "high",
+        "title": "Darmo Airfield (Surabaya)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-semarang-simongan",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          110.3756,
+          -6.9714
+        ]
+      },
+      "properties": {
+        "id": "id-semarang-simongan",
+        "name": "Semarang (Simongan / Kalibanteng) Airport",
+        "alternate_names": [
+          "Simongan Airfield",
+          "Kalibanteng Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "North-coast civil airport opened 1928 on KNILM Java trunk line",
+        "status_dec_1941": "operational",
+        "notes": "Regular daily KNILM commercial stop between Batavia, Bandung, and Surabaya.",
+        "modern_equivalent": "Jenderal Ahmad Yani International Airport (SRG / WAHS)",
+        "source_confidence": "high",
+        "title": "Semarang (Simongan / Kalibanteng) Airport",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tegal",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          109.1267,
+          -6.885
+        ]
+      },
+      "properties": {
+        "id": "id-tegal",
+        "name": "Tegal Airfield",
+        "alternate_names": [
+          "Tegal Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Intermediate north-coast civil landing ground",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war civil emergency and regional landing strip on the Batavia-Semarang air corridor.",
+        "modern_equivalent": "Defunct (Tegal, Central Java)",
+        "source_confidence": "high",
+        "title": "Tegal Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-cirebon-penggung",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          108.5403,
+          -6.7561
+        ]
+      },
+      "properties": {
+        "id": "id-cirebon-penggung",
+        "name": "Cheribon (Penggung) Airfield",
+        "alternate_names": [
+          "Cirebon Airfield",
+          "Penggung Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil landing field south of Cheribon (Cirebon)",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war coastal civil airfield linking Batavia/Bandung with Central Java.",
+        "modern_equivalent": "Cakrabhuwana Airport (CBN / WICD)",
+        "source_confidence": "high",
+        "title": "Cheribon (Penggung) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-cilacap",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          109.0339,
+          -7.645
+        ]
+      },
+      "properties": {
+        "id": "id-cilacap",
+        "name": "Tjilatjap (Cilacap) Airfield",
+        "alternate_names": [
+          "Cilacap Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war south-coast civil landing ground near Java's sole major Indian Ocean port",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war civil strip near Tjilatjap harbor, later a crucial Allied evacuation port in Feb-Mar 1942.",
+        "modern_equivalent": "Tunggul Wulung Airport (CXP / WAHL)",
+        "source_confidence": "high",
+        "title": "Tjilatjap (Cilacap) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-medan-polonia",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.6717,
+          3.5581
+        ]
+      },
+      "properties": {
+        "id": "id-medan-polonia",
+        "name": "Medan (Polonia) Airport",
+        "alternate_names": [
+          "Polonia Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / KLM (ML-KNIL staging)",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Opened 1928; major international civil airport for North Sumatra",
+        "status_dec_1941": "operational",
+        "notes": "Primary KLM Amsterdam-Batavia and KNILM Sumatra trunk airport serving the Deli plantation region.",
+        "modern_equivalent": "Soewondo Air Force Base / Former Polonia Airport (WIMK)",
+        "source_confidence": "high",
+        "title": "Medan (Polonia) Airport",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-padang-tabing",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.3519,
+          -0.875
+        ]
+      },
+      "properties": {
+        "id": "id-padang-tabing",
+        "name": "Padang (Tabing) Airfield",
+        "alternate_names": [
+          "Tabing Airport"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1937 on West Sumatra coast north of Padang",
+        "status_dec_1941": "operational",
+        "notes": "Principal West Sumatra civil airport and Allied staging field along Sumatra's Indian Ocean flank.",
+        "modern_equivalent": "Sutan Sjahrir Air Force Base / Former Tabing Airport (WIMG)",
+        "source_confidence": "high",
+        "title": "Padang (Tabing) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-pekanbaru-simpang-tiga",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.4444,
+          0.4608
+        ]
+      },
+      "properties": {
+        "id": "id-pekanbaru-simpang-tiga",
+        "name": "Pekanbaru (Simpang Tiga) Airfield",
+        "alternate_names": [
+          "Pakanbaroe Airfield",
+          "Simpang Tiga"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Built 1930s in central Sumatra (Riau)",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war central Sumatra civil and staging airfield connecting Medan, Palembang, and Singapore.",
+        "modern_equivalent": "Sultan Syarif Kasim II International Airport (PKU / WIBB)",
+        "source_confidence": "high",
+        "title": "Pekanbaru (Simpang Tiga) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-jambi-paal-merah",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.6444,
+          -1.6381
+        ]
+      },
+      "properties": {
+        "id": "id-jambi-paal-merah",
+        "name": "Jambi (Paal Merah) Airfield",
+        "alternate_names": [
+          "Djambi Airfield",
+          "Paal Merah"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / BPM Oil",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil & oil-district airfield southeast of Jambi",
+        "status_dec_1941": "operational",
+        "notes": "Served KNILM regional routes and Dutch oil exploration in central-southern Sumatra.",
+        "modern_equivalent": "Sultan Thaha Airport (DJB / WIJJ)",
+        "source_confidence": "high",
+        "title": "Jambi (Paal Merah) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-pangkal-pinang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.1392,
+          -2.1622
+        ]
+      },
+      "properties": {
+        "id": "id-pangkal-pinang",
+        "name": "Pangkal Pinang Airfield (Bangka)",
+        "alternate_names": [
+          "Bangka Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra (Bangka)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil airport serving Bangka Island tin mines",
+        "status_dec_1941": "operational",
+        "notes": "Regular KNILM commercial destination between Batavia, Palembang, and Singapore.",
+        "modern_equivalent": "Depati Amir Airport (PGK / WIPK)",
+        "source_confidence": "high",
+        "title": "Pangkal Pinang Airfield (Bangka)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tanjung-pandan",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.755,
+          -2.7456
+        ]
+      },
+      "properties": {
+        "id": "id-tanjung-pandan",
+        "name": "Tanjung Pandan (Buluh Tumbang) Airfield",
+        "alternate_names": [
+          "Billiton Airfield",
+          "Tandjong Pandan"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra (Belitung)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / Billiton Tin Company",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil & auxiliary airfield on Belitung (Billiton) Island",
+        "status_dec_1941": "operational",
+        "notes": "Served KNILM flights to Belitung tin mines and functioned as an Allied staging field across the Karimata Strait.",
+        "modern_equivalent": "H.A.S. Hanandjoeddin International Airport (TJQ / WIKT)",
+        "source_confidence": "high",
+        "title": "Tanjung Pandan (Buluh Tumbang) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-bengkulu-padang-kemiling",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.3389,
+          -3.8636
+        ]
+      },
+      "properties": {
+        "id": "id-bengkulu-padang-kemiling",
+        "name": "Bengkulu (Padang Kemiling) Airfield",
+        "alternate_names": [
+          "Benkoelen Airfield",
+          "Padang Kemiling"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war southwestern Sumatra civil landing ground",
+        "status_dec_1941": "operational",
+        "notes": "Colonial civil landing strip on Sumatra's Indian Ocean coast serving Bencoolen (Bengkulu).",
+        "modern_equivalent": "Fatmawati Soekarno Airport (BKS / WIGG)",
+        "source_confidence": "high",
+        "title": "Bengkulu (Padang Kemiling) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-manado-mapanget",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.9258,
+          1.5492
+        ]
+      },
+      "properties": {
+        "id": "id-manado-mapanget",
+        "name": "Manado I (Mapanget) Airfield",
+        "alternate_names": [
+          "Mapanget Airfield",
+          "Menado I"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Sulawesi (Celebes)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / ML-KNIL auxiliary",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war civil airfield northeast of Manado",
+        "status_dec_1941": "operational",
+        "notes": "Designated Manado I; pre-war northern Celebes civil airport defended by KNIL forces alongside Manado II (Langoan) in Jan 1942.",
+        "modern_equivalent": "Sam Ratulangi International Airport (MDC / WAMM)",
+        "source_confidence": "high",
+        "title": "Manado I (Mapanget) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-denpasar-tuban",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          115.1672,
+          -8.7481
+        ]
+      },
+      "properties": {
+        "id": "id-denpasar-tuban",
+        "name": "Denpasar (Tuban) Airport",
+        "alternate_names": [
+          "Tuban Airfield",
+          "Bali Airport"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Lesser Sunda Islands (Bali)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM (ML-KNIL staging)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1937 on southern Bali isthmus",
+        "status_dec_1941": "operational",
+        "notes": "Key KNILM commercial stop on the Batavia-Surabaya-Kupang-Sydney air route; captured by Japan in Feb 1942.",
+        "modern_equivalent": "I Gusti Ngurah Rai International Airport (DPS / WADD)",
+        "source_confidence": "high",
+        "title": "Denpasar (Tuban) Airport",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-rambang-lombok",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          116.5667,
+          -8.7167
+        ]
+      },
+      "properties": {
+        "id": "id-rambang-lombok",
+        "name": "Rambang Airfield (Lombok)",
+        "alternate_names": [
+          "Lombok Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Dutch East Indies",
+        "subregion": "Lesser Sunda Islands (Lombok)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war east-coast Lombok emergency/staging grass strip",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war Dutch colonial staging and emergency landing ground along the Java-Timor-Australia air ferry route.",
+        "modern_equivalent": "Defunct (Rambang / Labuhan Haji, East Lombok)",
+        "source_confidence": "high",
+        "title": "Rambang Airfield (Lombok)",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-waingapu-sumba",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3017,
+          -9.6694
+        ]
+      },
+      "properties": {
+        "id": "id-waingapu-sumba",
+        "name": "Waingapu (Mau Hau) Airfield",
+        "alternate_names": [
+          "Mau Hau Airfield",
+          "Sumba Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Dutch East Indies",
+        "subregion": "Lesser Sunda Islands (Sumba)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "KNILM / Dutch East Indies Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war Sumba civil/emergency landing strip",
+        "status_dec_1941": "operational",
+        "notes": "Intermediate staging strip between Bali/Lombok and Timor on the NEI-Australia air ferry route.",
+        "modern_equivalent": "Umbu Mehang Kunda Airport (WGP / WADW)",
+        "source_confidence": "high",
+        "title": "Waingapu (Mau Hau) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "tl-dili-airfield",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          125.5247,
+          -8.5464
+        ]
+      },
+      "properties": {
+        "id": "tl-dili-airfield",
+        "name": "Dili Airfield",
+        "alternate_names": [
+          "Dilli Airfield",
+          "Comoro Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Dutch East Indies",
+        "subregion": "Lesser Sunda Islands (Timor)",
+        "territory_1941": "Portuguese Timor",
+        "modern_country": "Timor-Leste",
+        "control_dec_1941": "Portugal (Neutral; Allied force landed 17 Dec 1941)",
+        "alignment_dec_1941": "Neutral (Portuguese Timor)",
+        "operator_1941": "Portuguese Colonial Administration / Qantas & Dai Nippon Airways (1941 survey)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal grass/dirt civil landing strip west of Dili",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war civil landing field in neutral Portuguese Timor used by Qantas Empire flights and pre-war Japanese survey flights from Palau.",
+        "modern_equivalent": "Presidente Nicolau Lobato International Airport (DIL / WPDL)",
+        "source_confidence": "high",
+        "title": "Dili Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-hanoi-gia-lam",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.8861,
+          21.0408
+        ]
+      },
+      "properties": {
+        "id": "vn-hanoi-gia-lam",
+        "name": "Hanoi — Gia Lam Airport",
+        "alternate_names": [
+          "Gia Lam Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "French Indochina",
+        "subregion": "Tonkin",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (shared from Sept 1940)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Air France / Civil Aviation (IJAAS occupied Sept 1940)",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Opened 1936 across the Red River as Hanoi's international civil airport",
+        "status_dec_1941": "operational",
+        "notes": "Terminus of Air France's Paris-Bangkok-Hanoi-Hong Kong commercial trunk route; occupied by Japanese troops on 26 Sept 1940.",
+        "modern_equivalent": "Gia Lam Airport (VVGL)",
+        "source_confidence": "high",
+        "title": "Hanoi — Gia Lam Airport",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-hue-phu-bai",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.7028,
+          16.4014
+        ]
+      },
+      "properties": {
+        "id": "vn-hue-phu-bai",
+        "name": "Hue (Phu Bai) Airfield",
+        "alternate_names": [
+          "Phu Bai Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "French Indochina",
+        "subregion": "Annam",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "French Colonial Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1940 southeast of imperial capital Hue",
+        "status_dec_1941": "operational",
+        "notes": "Constructed by the French colonial administration in 1940 to serve the imperial court and administration in Hue.",
+        "modern_equivalent": "Phu Bai International Airport (HUI / VVPB)",
+        "source_confidence": "high",
+        "title": "Hue (Phu Bai) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-vinh",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.6708,
+          18.7375
+        ]
+      },
+      "properties": {
+        "id": "vn-vinh",
+        "name": "Vinh Airfield",
+        "alternate_names": [
+          "Vinh Aerodrome"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "French Indochina",
+        "subregion": "Annam",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "French Colonial Civil Aviation / Air France",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Built 1937 as coastal intermediate civil airfield",
+        "status_dec_1941": "operational",
+        "notes": "Served northern Annam on the Hanoi-Tourane-Saigon colonial air mail route.",
+        "modern_equivalent": "Vinh International Airport (VII / VVVH)",
+        "source_confidence": "high",
+        "title": "Vinh Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-phan-thiet",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          108.05,
+          10.9
+        ]
+      },
+      "properties": {
+        "id": "vn-phan-thiet",
+        "name": "Phan Thiet Airfield",
+        "alternate_names": [
+          "Phanthiet Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "French Indochina",
+        "subregion": "Annam",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "French Colonial Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war coastal civil landing ground in southern Annam",
+        "status_dec_1941": "operational",
+        "notes": "Intermediate coastal airfield between Saigon and Nha Trang; accessible to Japanese aircraft after July 1941.",
+        "modern_equivalent": "Defunct (Phan Thiet, Binh Thuan)",
+        "source_confidence": "high",
+        "title": "Phan Thiet Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-dalat-cam-ly",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          108.4167,
+          11.9444
+        ]
+      },
+      "properties": {
+        "id": "vn-dalat-cam-ly",
+        "name": "Dalat (Cam Ly) Airfield",
+        "alternate_names": [
+          "Cam Ly Airstrip"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "French Indochina",
+        "subregion": "Annam",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "French Colonial Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Highland civil airstrip serving the French hill station of Dalat",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war colonial administrative and resort civil airfield in the Central Highlands.",
+        "modern_equivalent": "Defunct (Cam Ly Airport, Da Lat)",
+        "source_confidence": "high",
+        "title": "Dalat (Cam Ly) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kh-phnom-penh-pochentong",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          104.8442,
+          11.5467
+        ]
+      },
+      "properties": {
+        "id": "kh-phnom-penh-pochentong",
+        "name": "Phnom Penh (Pochentong) Airport",
+        "alternate_names": [
+          "Pochentong Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "international_civil_airport",
+        "region": "French Indochina",
+        "subregion": "Cambodia",
+        "territory_1941": "French Indochina",
+        "modern_country": "Cambodia",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Air France / Colonial Civil Aviation (IJAAS from July 1941)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Cambodia's primary pre-war civil airport west of Phnom Penh",
+        "status_dec_1941": "operational",
+        "notes": "Opened in the 1930s for civil mail/passenger service linking Saigon and Bangkok; occupied by Japanese forces in July 1941.",
+        "modern_equivalent": "Phnom Penh International Airport (PNH / VDPP)",
+        "source_confidence": "high",
+        "title": "Phnom Penh (Pochentong) Airport",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "la-vientiane-wattay",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.5633,
+          17.9883
+        ]
+      },
+      "properties": {
+        "id": "la-vientiane-wattay",
+        "name": "Vientiane (Wattay) Airfield",
+        "alternate_names": [
+          "Wattay Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "French Indochina",
+        "subregion": "Laos",
+        "territory_1941": "French Indochina",
+        "modern_country": "Laos",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "Air France / French Colonial Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war Mekong valley civil airport west of Vientiane",
+        "status_dec_1941": "operational",
+        "notes": "Principal civil airport of French Laos, served by Air France's Bangkok-Vientiane-Hanoi route.",
+        "modern_equivalent": "Wattay International Airport (VTE / VLVT)",
+        "source_confidence": "high",
+        "title": "Vientiane (Wattay) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "la-seno-savannakhet",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.0,
+          16.6667
+        ]
+      },
+      "properties": {
+        "id": "la-seno-savannakhet",
+        "name": "Seno (Savannakhet) Airfield",
+        "alternate_names": [
+          "Savannakhet Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "French Indochina",
+        "subregion": "Laos",
+        "territory_1941": "French Indochina",
+        "modern_country": "Laos",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "French Colonial Civil Aviation / Armee de l'Air transit",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war central Laos civil & colonial transit airfield",
+        "status_dec_1941": "operational",
+        "notes": "Key Mekong corridor landing ground in central Laos used for colonial mail and administrative flights.",
+        "modern_equivalent": "Defunct (Seno / Savannakhet area, Laos)",
+        "source_confidence": "high",
+        "title": "Seno (Savannakhet) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "la-luang-prabang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.1608,
+          19.8972
+        ]
+      },
+      "properties": {
+        "id": "la-luang-prabang",
+        "name": "Luang Prabang Airfield",
+        "alternate_names": [
+          "Luang Prabang Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "French Indochina",
+        "subregion": "Laos",
+        "territory_1941": "French Indochina",
+        "modern_country": "Laos",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "French Colonial Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war northern Laos royal-capital landing strip",
+        "status_dec_1941": "operational",
+        "notes": "Colonial civil landing field linking the royal capital of Luang Prabang with Vientiane and Hanoi.",
+        "modern_equivalent": "Luang Prabang International Airport (LPQ / VLLB)",
+        "source_confidence": "high",
+        "title": "Luang Prabang Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "la-pakse",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.7814,
+          15.1322
+        ]
+      },
+      "properties": {
+        "id": "la-pakse",
+        "name": "Pakse Airfield",
+        "alternate_names": [
+          "Pakse Landing Ground"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "French Indochina",
+        "subregion": "Laos",
+        "territory_1941": "French Indochina",
+        "modern_country": "Laos",
+        "control_dec_1941": "Vichy France",
+        "alignment_dec_1941": "Vichy French / Japanese Access",
+        "operator_1941": "French Colonial Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war southern Laos civil landing field on the Mekong",
+        "status_dec_1941": "operational",
+        "notes": "Served southern Laos colonial administration and airmail routes connecting to Saigon and Phnom Penh.",
+        "modern_equivalent": "Pakse International Airport (PKZ / VLPS)",
+        "source_confidence": "high",
+        "title": "Pakse Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-chiang-mai",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.9625,
+          18.7669
+        ]
+      },
+      "properties": {
+        "id": "th-chiang-mai",
+        "name": "Chiang Mai Airfield",
+        "alternate_names": [
+          "Chiengmai Airfield",
+          "Suthep Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand / RTAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1921 (Suthep); northern railhead civil airport",
+        "status_dec_1941": "operational",
+        "notes": "Principal northern Thai civil airport linking Chiang Mai with Bangkok, Mae Hong Son, and Chiang Rai; also used by RTAF & IJAAF from late Dec 1941.",
+        "modern_equivalent": "Chiang Mai International Airport (CNX / VTCC)",
+        "source_confidence": "high",
+        "title": "Chiang Mai Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-chiang-rai-old",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.8268,
+          19.8894
+        ]
+      },
+      "properties": {
+        "id": "th-chiang-rai-old",
+        "name": "Chiang Rai (Old) Airfield",
+        "alternate_names": [
+          "Chiengrai Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand / RTAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Established 1924 south of Chiang Rai town",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war far-northern Thai airmail and RTAF staging field near the Shan States (Burma) border.",
+        "modern_equivalent": "Defunct (Old Chiang Rai Airport / Wing 416)",
+        "source_confidence": "high",
+        "title": "Chiang Rai (Old) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-mae-hong-son",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          97.975,
+          19.3019
+        ]
+      },
+      "properties": {
+        "id": "th-mae-hong-son",
+        "name": "Mae Hong Son Airstrip",
+        "alternate_names": [
+          "Mehongson Airstrip"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1939 as remote mountain civil airmail strip",
+        "status_dec_1941": "operational",
+        "notes": "Built to provide commercial airmail and passenger access to Thailand's remote northwestern border valley; confirmed operational in 1940-41 US War Dept. surveys.",
+        "modern_equivalent": "Mae Hong Son Airport (HGN / VTCH)",
+        "source_confidence": "high",
+        "title": "Mae Hong Son Airstrip",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-phrae",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.1653,
+          18.1322
+        ]
+      },
+      "properties": {
+        "id": "th-phrae",
+        "name": "Phrae Airfield",
+        "alternate_names": [
+          "Prae Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war northern civil airmail landing ground",
+        "status_dec_1941": "operational",
+        "notes": "Regular stop on the pre-war Bangkok-Phitsanulok-Phrae-Chiang Mai civil airmail route.",
+        "modern_equivalent": "Phrae Airport (PRH / VTCP)",
+        "source_confidence": "high",
+        "title": "Phrae Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-phitsanulok",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.2792,
+          16.7828
+        ]
+      },
+      "properties": {
+        "id": "th-phitsanulok",
+        "name": "Phitsanulok Airfield",
+        "alternate_names": [
+          "Pitsanulok Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand / RTAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war commercial & airmail junction airfield",
+        "status_dec_1941": "operational",
+        "notes": "Important pre-war Aerial Transport Co. of Thailand hub connecting Bangkok with northern Thailand.",
+        "modern_equivalent": "Phitsanulok Airport / RTAF Wing 46 (PHS / VTPP)",
+        "source_confidence": "high",
+        "title": "Phitsanulok Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-khon-kaen",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.7836,
+          16.4667
+        ]
+      },
+      "properties": {
+        "id": "th-khon-kaen",
+        "name": "Khon Kaen Airfield",
+        "alternate_names": [
+          "Khonkaen Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Northeastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war Isan civil airmail landing field",
+        "status_dec_1941": "operational",
+        "notes": "Regular stop on the Aerial Transport Co. of Thailand's northeastern commercial airmail network (opened 1931).",
+        "modern_equivalent": "Khon Kaen International Airport (KKC / VTUK)",
+        "source_confidence": "high",
+        "title": "Khon Kaen Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-roi-et",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.65,
+          16.05
+        ]
+      },
+      "properties": {
+        "id": "th-roi-et",
+        "name": "Roi Et Airfield",
+        "alternate_names": [
+          "Roi-Et Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Northeastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war Isan civil airmail landing field",
+        "status_dec_1941": "operational",
+        "notes": "Early Aerial Transport Co. of Thailand airmail stop linking Korat with Nakhon Phanom and Ubon.",
+        "modern_equivalent": "Defunct (Old Roi Et Airstrip)",
+        "source_confidence": "high",
+        "title": "Roi Et Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-surat-thani-bandon",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.1356,
+          9.1325
+        ]
+      },
+      "properties": {
+        "id": "th-surat-thani-bandon",
+        "name": "Surat Thani (Bandon) Airfield",
+        "alternate_names": [
+          "Bandon Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand (Japanese landing 8 Dec 1941)",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Thai Civil Aviation / RTAF staging",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war Kra Isthmus civil landing ground near Bandon Bay",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war southern civil landing strip on the peninsula corridor; near Japanese landing site on 8 Dec 1941.",
+        "modern_equivalent": "Surat Thani International Airport / RTAF Wing 7 (URT / VTSB)",
+        "source_confidence": "high",
+        "title": "Surat Thani (Bandon) Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-phuket",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          98.3169,
+          8.1131
+        ]
+      },
+      "properties": {
+        "id": "th-phuket",
+        "name": "Phuket Airfield",
+        "alternate_names": [
+          "Bhuket Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "domestic_civil_airport",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Aerial Transport Co. of Thailand / Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1933 on northwestern Phuket Island",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war southern civil airport serving Phuket's tin-mining industry and Bangkok-Penang regional connections.",
+        "modern_equivalent": "Phuket International Airport (HKT / VTSP)",
+        "source_confidence": "high",
+        "title": "Phuket Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-hua-hin",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.9514,
+          12.6361
+        ]
+      },
+      "properties": {
+        "id": "th-hua-hin",
+        "name": "Hua Hin Airfield",
+        "alternate_names": [
+          "Bo Fai Airfield"
+        ],
+        "category": "civilian",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "civil_landing_ground",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Thai Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war coastal civil & royal-resort landing ground",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war coastal civil strip along the upper Gulf of Thailand railway corridor.",
+        "modern_equivalent": "Hua Hin Airport (HHQ / VTPH)",
+        "source_confidence": "high",
+        "title": "Hua Hin Airfield",
+        "marker-color": "#1d4ed8",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    }
+  ]
+}

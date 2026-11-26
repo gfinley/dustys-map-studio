@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import math
+from pathlib import Path
 import re
 import threading
 from typing import Any
@@ -1164,15 +1165,38 @@ def _normalize_geojson_features(raw: Any) -> list[dict[str, Any]]:
     raise ValueError(f"Unsupported GeoJSON root type: {gtype!r}")
 
 
+def _resolve_local_site_geojson(url: str) -> Path | None:
+    """Safely resolve a site-local relative GeoJSON URL strictly within ``site/``."""
+    stripped = url.strip()
+    if stripped.startswith(("http://", "https://")):
+        return None
+    rel = stripped[2:] if stripped.startswith("./") else stripped.lstrip("/")
+    if not rel:
+        return None
+    site_root = (Path(__file__).resolve().parent.parent / "site").resolve()
+    candidate = (site_root / rel).resolve()
+    try:
+        candidate.relative_to(site_root)
+    except ValueError as exc:
+        raise ValueError(f"GeoJSON path escapes site directory: {url!r}") from exc
+    if not candidate.is_file():
+        raise ValueError(f"Local GeoJSON file not found: {url!r}")
+    return candidate
+
+
 def _load_geojson_gdf(url: str | None, data: dict[str, Any] | None) -> gpd.GeoDataFrame:
     """Load, validate, and repair GeoJSON features into an EPSG:4326 GeoDataFrame."""
     raw = data
     if raw is None:
         if not url:
             raise ValueError("Provide either 'url' or 'data' for GeoJSON inspection.")
-        resp = requests.get(url, timeout=15)
-        resp.raise_for_status()
-        raw = resp.json()
+        local_path = _resolve_local_site_geojson(url)
+        if local_path is not None:
+            raw = json.loads(local_path.read_text(encoding="utf-8"))
+        else:
+            resp = requests.get(url, timeout=15)
+            resp.raise_for_status()
+            raw = resp.json()
 
     features = _normalize_geojson_features(raw)
     if not features:

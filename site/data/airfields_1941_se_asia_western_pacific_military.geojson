@@ -1,0 +1,3753 @@
+{
+  "type": "FeatureCollection",
+  "name": "1941 Southeast Asia & Western Pacific Land Airfields — Military",
+  "bbox": [
+    95.3397,
+    -10.1717,
+    133.4383,
+    21.4
+  ],
+  "metadata": {
+    "timeframe": "Late 1941 (Eve of the Pacific War, December 1941)",
+    "geographic_scope": "Southeast Asia & Western Pacific: Philippines, British Malaya & Singapore, Borneo (Sarawak & Dutch Kalimantan), Dutch East Indies (Java, Sumatra, Sulawesi, Lesser Sundas, Moluccas, Dutch New Guinea) & Portuguese Timor, French Indochina, and Thailand (Siam)",
+    "facility_scope": "Land airfields only (seaplane bases and flying-boat water anchorages excluded)",
+    "crs": "EPSG:4326 (WGS84, RFC 7946 [longitude, latitude])",
+    "primary_sources": [
+      "London Gazette Supplement (1948), Report on RAF Operations in Malaya and N.E.I. 1941-42, Appendix A (Situation at RAF Stations in Malaya, 8 Dec 1941)",
+      "USAAF Far East Air Force (FEAF) & Philippine Department Air Force 1941 Order of Battle and Airfield Summaries (US Army CMH / USAF Historical Studies)",
+      "Militaire Luchtvaart van het KNIL (ML-KNIL) 30 Nov 1941 Order of Battle & KNILM 1938-1941 Civil Route Network Records",
+      "U.S. War Department, A Survey of Thailand (Siam) (March 1941), Appendix I (Airdromes and Landing Grounds) & Royal Thai Air Force Historical Archives",
+      "Vichy French Armee de l'Air & Imperial Japanese Southern French Indochina Occupation Records (1940-1941)"
+    ],
+    "title": "1941 Southeast Asia & Western Pacific Land Airfields — Military",
+    "layer_filter": "category == 'military'",
+    "feature_count": 94,
+    "category_counts": {
+      "military": 94
+    },
+    "dual_use_count": 29,
+    "region_counts": {
+      "Borneo": 7,
+      "Dutch East Indies": 24,
+      "French Indochina": 15,
+      "Malaya & Singapore": 18,
+      "Philippines": 15,
+      "Thailand": 15
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ph-clark-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.5597,
+          15.1858
+        ]
+      },
+      "properties": {
+        "id": "ph-clark-field",
+        "name": "Clark Field",
+        "alternate_names": [
+          "Fort Stotsenburg",
+          "Clark Air Base"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Multiple graded grass/sod strips; main Luzon heavy bomber field",
+        "status_dec_1941": "operational",
+        "notes": "HQ 5th Bomber Command, 19th Bomb Group (B-17C/D) & 24th Pursuit Group (20th PS P-40B); devastated in 8 Dec 1941 air raid.",
+        "modern_equivalent": "Clark International Airport (CRK / RPLC)",
+        "source_confidence": "high",
+        "title": "Clark Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-nichols-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.0194,
+          14.5086
+        ]
+      },
+      "properties": {
+        "id": "ph-nichols-field",
+        "name": "Nichols Field",
+        "alternate_names": [
+          "Camp Nichols",
+          "Villamor Air Base"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "concrete",
+        "runway_notes_1941": "Concrete runway under completion late 1941 — only hard-surfaced military runway in PH",
+        "status_dec_1941": "operational",
+        "notes": "Base of 17th & 21st Pursuit Squadrons (P-40E), 2d Observation Squadron, and Philippine Air Depot.",
+        "modern_equivalent": "Ninoy Aquino International Airport / Villamor Air Base (MNL / RPLL)",
+        "source_confidence": "high",
+        "title": "Nichols Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-nielson-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.0236,
+          14.5547
+        ]
+      },
+      "properties": {
+        "id": "ph-nielson-field",
+        "name": "Nielson Field",
+        "alternate_names": [
+          "Nielson Airport",
+          "Makati Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF FEAF HQ / Philippine Air Lines (pre-Oct 1941)",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Intersecting paved runways in Makati (modern Ayala & Paseo de Roxas avenues)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1937 as Manila's premier commercial airport (PATCO/PAL); commandeered in Oct 1941 as Far East Air Force HQ.",
+        "modern_equivalent": "Defunct (Ayala Triangle / Makati CBD)",
+        "source_confidence": "high",
+        "title": "Nielson Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-zablan-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.0642,
+          14.6114
+        ]
+      },
+      "properties": {
+        "id": "ph-zablan-field",
+        "name": "Zablan Field",
+        "alternate_names": [
+          "Camp Murphy Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Philippine Army Air Corps (inducted into USAAF FEAF)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Graded grass strip adjacent to Camp Murphy",
+        "status_dec_1941": "operational",
+        "notes": "First Philippine Army Air Corps airfield (opened 1935); home to 6th Pursuit Squadron (Boeing P-26A) in Dec 1941.",
+        "modern_equivalent": "Defunct (Camp General Emilio Aguinaldo, Quezon City)",
+        "source_confidence": "high",
+        "title": "Zablan Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-iba-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          119.9683,
+          15.3258
+        ]
+      },
+      "properties": {
+        "id": "ph-iba-field",
+        "name": "Iba Field",
+        "alternate_names": [
+          "Iba Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Coastal sandy/dirt pursuit strip on Zambales shore",
+        "status_dec_1941": "operational",
+        "notes": "Base of 3d Pursuit Squadron (P-40E) and Luzon's sole operational SCR-270 early-warning radar; destroyed 8 Dec 1941.",
+        "modern_equivalent": "Iba Airport (RPUI)",
+        "source_confidence": "high",
+        "title": "Iba Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-del-carmen-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.4922,
+          14.9864
+        ]
+      },
+      "properties": {
+        "id": "ph-del-carmen-field",
+        "name": "Del Carmen Field",
+        "alternate_names": [
+          "Floridablanca Airfield",
+          "Basa Air Base"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Newly graded dirt pursuit strip (~4,500 ft); dusty conditions",
+        "status_dec_1941": "operational",
+        "notes": "Constructed 1941 by 803rd Engineer Aviation Bn as Clark satellite; base of 34th Pursuit Squadron (P-35A).",
+        "modern_equivalent": "Basa Air Base (RPUF)",
+        "source_confidence": "high",
+        "title": "Del Carmen Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-rosales-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.6147,
+          15.8936
+        ]
+      },
+      "properties": {
+        "id": "ph-rosales-field",
+        "name": "Rosales Field",
+        "alternate_names": [
+          "Carmen Airfield",
+          "Rosales Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Graded dirt dispersal strip on Lingayen Plain",
+        "status_dec_1941": "operational",
+        "notes": "Constructed in 1941 as northern Luzon heavy bomber/pursuit dispersal airfield.",
+        "modern_equivalent": "Defunct (Carmen / Rosales, Pangasinan)",
+        "source_confidence": "high",
+        "title": "Rosales Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-odonnell-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.4981,
+          15.3589
+        ]
+      },
+      "properties": {
+        "id": "ph-odonnell-field",
+        "name": "O'Donnell Field",
+        "alternate_names": [
+          "Camp O'Donnell Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Auxiliary dirt strip constructed Nov-Dec 1941",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "Built by Company A, 803rd Engineer Aviation Bn northwest of Clark Field as dispersal strip.",
+        "modern_equivalent": "Defunct (Crow Valley / Capas, Tarlac)",
+        "source_confidence": "high",
+        "title": "O'Donnell Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-san-marcelino-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.1558,
+          14.9786
+        ]
+      },
+      "properties": {
+        "id": "ph-san-marcelino-field",
+        "name": "San Marcelino Field",
+        "alternate_names": [
+          "San Marcelino Airstrip"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Auxiliary dirt pursuit strip northwest of Subic Bay",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "Begun in Nov 1941 as pursuit dispersal strip; later expanded during 1945 campaign.",
+        "modern_equivalent": "Defunct (San Marcelino, Zambales)",
+        "source_confidence": "high",
+        "title": "San Marcelino Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-bataan-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.5944,
+          14.4778
+        ]
+      },
+      "properties": {
+        "id": "ph-bataan-field",
+        "name": "Bataan Field",
+        "alternate_names": [
+          "Richards' Folly",
+          "Lamao Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "2,000-ft dirt strip graded early 1941 (lengthened to 5,100 ft late Dec 1941)",
+        "status_dec_1941": "operational",
+        "notes": "Originally dubbed 'Richards' Folly' on Manila Bay side of Bataan; became primary fighter strip during the Siege of Bataan.",
+        "modern_equivalent": "Defunct (Lamao / Mariveles, Bataan)",
+        "source_confidence": "high",
+        "title": "Bataan Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-maniquis-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.6069,
+          15.4875
+        ]
+      },
+      "properties": {
+        "id": "ph-maniquis-field",
+        "name": "Maniquis Field",
+        "alternate_names": [
+          "Camp Ord Airfield",
+          "Tarlac Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Philippine Army Air Corps / USAAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass military training and auxiliary landing field near Camp Ord",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war PAAC/US Army auxiliary airfield serving San Miguel / Tarlac training area.",
+        "modern_equivalent": "Defunct (Tarlac City / Camp Servillano Aquino)",
+        "source_confidence": "high",
+        "title": "Maniquis Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-batangas-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          121.0575,
+          13.7889
+        ]
+      },
+      "properties": {
+        "id": "ph-batangas-field",
+        "name": "Batangas Field",
+        "alternate_names": [
+          "Batangas Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Philippine Army Air Corps (FEAF)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Graded grass/dirt military landing field north of Batangas town",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war PAAC field; 6th Pursuit Squadron P-26A fighters engaged Japanese aircraft here on 12 Dec 1941.",
+        "modern_equivalent": "Defunct (Batangas City)",
+        "source_confidence": "high",
+        "title": "Batangas Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-del-monte-no1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.8333,
+          8.3616
+        ]
+      },
+      "properties": {
+        "id": "ph-del-monte-no1",
+        "name": "Del Monte Field No. 1",
+        "alternate_names": [
+          "Del Monte Airfield",
+          "Tankulan Field"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Philippines",
+        "subregion": "Mindanao",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF (Far East Air Force)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Heavy bomber sod meadow runway on pineapple plantation, completed 4 Dec 1941",
+        "status_dec_1941": "operational",
+        "notes": "Strategic B-17 dispersal base in Bukidnon; 16 B-17s of 14th & 93d BS arrived 6 Dec 1941, escaping the Clark Field disaster.",
+        "modern_equivalent": "Defunct (Dicklum, Manolo Fortich, Bukidnon)",
+        "source_confidence": "high",
+        "title": "Del Monte Field No. 1",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-kindley-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.5986,
+          14.3878
+        ]
+      },
+      "properties": {
+        "id": "ph-kindley-field",
+        "name": "Kindley Field",
+        "alternate_names": [
+          "Corregidor Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "US Army (Harbor Defenses of Manila & Subic Bays)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Short (~2,000 ft) graded dirt liaison strip on Corregidor's eastern tail",
+        "status_dec_1941": "operational",
+        "notes": "Constructed in the 1920s for Army courier and observation aircraft supporting Fort Mills.",
+        "modern_equivalent": "Defunct (Corregidor Island, Cavite)",
+        "source_confidence": "high",
+        "title": "Kindley Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ph-plaridel-field",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.8528,
+          14.8906
+        ]
+      },
+      "properties": {
+        "id": "ph-plaridel-field",
+        "name": "Plaridel Field",
+        "alternate_names": [
+          "Plaridel Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Philippines",
+        "subregion": "Luzon",
+        "territory_1941": "Commonwealth of the Philippines",
+        "modern_country": "Philippines",
+        "control_dec_1941": "United States / Philippine Commonwealth",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "USAAF / PAAC",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Graded grass auxiliary/liaison strip north of Manila",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war liaison and emergency landing field in Bulacan along the central Luzon corridor.",
+        "modern_equivalent": "Plaridel Airport (RPUX)",
+        "source_confidence": "high",
+        "title": "Plaridel Field",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sg-raf-seletar",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.8675,
+          1.4169
+        ]
+      },
+      "properties": {
+        "id": "sg-raf-seletar",
+        "name": "RAF Seletar",
+        "alternate_names": [
+          "Seletar Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "Singapore",
+        "territory_1941": "Straits Settlements (Singapore)",
+        "modern_country": "Singapore",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force (Far East Command)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Complete grass aerodrome: 1,400 yds (London Gazette App. A); major landplane & maintenance base",
+        "status_dec_1941": "operational",
+        "notes": "Primary RAF Far East station (opened 1928) hosting torpedo-bomber squadrons (Nos. 36 & 100 Sqns) and main aircraft depot. (Also had adjacent seaplane slipways; included here as a major landplane station.)",
+        "modern_equivalent": "Seletar Airport (XSP / WSSL)",
+        "source_confidence": "high",
+        "title": "RAF Seletar",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sg-raf-tengah",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.7089,
+          1.3872
+        ]
+      },
+      "properties": {
+        "id": "sg-raf-tengah",
+        "name": "RAF Tengah",
+        "alternate_names": [
+          "Tengah Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "Singapore",
+        "territory_1941": "Straits Settlements (Singapore)",
+        "modern_country": "Singapore",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF",
+        "surface_1941": "concrete",
+        "runway_notes_1941": "Concrete runway plus 1,400-yd grass landing ground (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1939; main RAF bomber station on western Singapore Island (No. 34 Sqn Blenheims & Borneo GR reserve).",
+        "modern_equivalent": "Tengah Air Base (WSAT)",
+        "source_confidence": "high",
+        "title": "RAF Tengah",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sg-raf-sembawang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.8128,
+          1.4253
+        ]
+      },
+      "properties": {
+        "id": "sg-raf-sembawang",
+        "name": "RAF Sembawang",
+        "alternate_names": [
+          "Sembawang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "Singapore",
+        "territory_1941": "Straits Settlements (Singapore)",
+        "modern_country": "Singapore",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass runway: 1,380 yds (hard runways deferred as of 8 Dec 1941)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1940 near Singapore Naval Base; HQ RAAF Far East and home to No. 453 Sqn RAAF Buffalos & No. 8 Sqn RAAF Hudsons.",
+        "modern_equivalent": "Sembawang Air Base (WSAG)",
+        "source_confidence": "high",
+        "title": "RAF Sembawang",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-kota-bharu",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.2931,
+          6.1669
+        ]
+      },
+      "properties": {
+        "id": "my-raf-kota-bharu",
+        "name": "RAF Kota Bharu",
+        "alternate_names": [
+          "Pengkalan Chepa Airfield",
+          "Kota Bahru"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "North-East Malaya",
+        "territory_1941": "British Malaya (Kelantan)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass runway: 1,600 yds, being extended (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Home to No. 1 Sqn RAAF Hudsons & No. 36 Sqn detachment; target of the opening Japanese amphibious assault of the Pacific War on 8 Dec 1941.",
+        "modern_equivalent": "Sultan Ismail Petra Airport (KBR / WMKC)",
+        "source_confidence": "high",
+        "title": "RAF Kota Bharu",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-gong-kedah",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.49,
+          5.7986
+        ]
+      },
+      "properties": {
+        "id": "my-raf-gong-kedah",
+        "name": "RAF Gong Kedah",
+        "alternate_names": [
+          "Gong Kedak"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Malaya & Singapore",
+        "subregion": "North-East Malaya",
+        "territory_1941": "British Malaya (Kelantan / Terengganu)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Hard-surfaced runway: 2,000 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Major forward bomber airfield in northeastern Malaya; bombed on 8 Dec 1941 and evacuated shortly after the Kota Bharu landing.",
+        "modern_equivalent": "RMAF Gong Kedak Air Base (WMGK)",
+        "source_confidence": "high",
+        "title": "RAF Gong Kedah",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-machang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.2264,
+          5.7647
+        ]
+      },
+      "properties": {
+        "id": "my-raf-machang",
+        "name": "RAF Machang",
+        "alternate_names": [
+          "Machang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Malaya & Singapore",
+        "subregion": "North-East Malaya",
+        "territory_1941": "British Malaya (Kelantan)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Hard-surfaced runway: 1,600 yds (2nd 1,200-yd strip in hand, London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Forward fighter concentration airfield in Kelantan; abandoned during the initial British withdrawal from northeast Malaya.",
+        "modern_equivalent": "Defunct (Machang, Kelantan)",
+        "source_confidence": "high",
+        "title": "RAF Machang",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-alor-star",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.3981,
+          6.1897
+        ]
+      },
+      "properties": {
+        "id": "my-raf-alor-star",
+        "name": "RAF Alor Star",
+        "alternate_names": [
+          "Kepala Batas Airfield",
+          "Alor Setar"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "British Malaya (Kedah)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Hard-surfaced runway: 1,400 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1929 as civil aerodrome and expanded into major RAF bomber station (No. 62 Sqn Blenheims); heavily bombed 8 Dec 1941.",
+        "modern_equivalent": "Sultan Abdul Halim Airport (AOR / WMKA)",
+        "source_confidence": "high",
+        "title": "RAF Alor Star",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-sungei-patani",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.4911,
+          5.6542
+        ]
+      },
+      "properties": {
+        "id": "my-raf-sungei-patani",
+        "name": "RAF Sungei Patani",
+        "alternate_names": [
+          "Sungai Petani Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "British Malaya (Kedah)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two grass runways: 1,400 yds and 1,200 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Main northern fighter station; base of No. 21 Sqn RAAF Buffalos & No. 27 Sqn RAF Blenheim night fighters; bombed 8 Dec 1941.",
+        "modern_equivalent": "Defunct (Sungai Petani, Kedah)",
+        "source_confidence": "high",
+        "title": "RAF Sungei Patani",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-butterworth",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.3911,
+          5.4658
+        ]
+      },
+      "properties": {
+        "id": "my-raf-butterworth",
+        "name": "RAF Butterworth",
+        "alternate_names": [
+          "Butterworth Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "Straits Settlements (Province Wellesley)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Hard runway 1,600 yds being extended to 2,000 yds; 2nd runway in hand",
+        "status_dec_1941": "operational",
+        "notes": "Completed Oct 1941 for RAF/RAAF general reconnaissance and fighter defense of Penang; attacked 8 Dec 1941.",
+        "modern_equivalent": "RMAF Butterworth Air Base (BWH / WMKB)",
+        "source_confidence": "high",
+        "title": "RAF Butterworth",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-kuala-ketil",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.6486,
+          5.6033
+        ]
+      },
+      "properties": {
+        "id": "my-raf-kuala-ketil",
+        "name": "RAF Kuala Ketil",
+        "alternate_names": [
+          "Kuala Ketil Landing Ground"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "British Malaya (Kedah)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Tarmac runway: 1,400 yds; guard room, POL & bomb stores (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "RAF dispersal satellite airfield for RAF Sungei Patani in southern Kedah.",
+        "modern_equivalent": "Defunct (Kuala Ketil, Kedah)",
+        "source_confidence": "high",
+        "title": "RAF Kuala Ketil",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-jabi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.4642,
+          6.1394
+        ]
+      },
+      "properties": {
+        "id": "my-raf-jabi",
+        "name": "RAF Jabi",
+        "alternate_names": [
+          "Jabi Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "British Malaya (Kedah)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "1,400 yds graded but not yet surfaced on 8 Dec 1941 (London Gazette App. A)",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "Forward NW Malaya bomber dispersal site east of Alor Star.",
+        "modern_equivalent": "Defunct (Jabi / Pokok Sena, Kedah)",
+        "source_confidence": "high",
+        "title": "RAF Jabi",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-lubok-kiap",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.4833,
+          5.4833
+        ]
+      },
+      "properties": {
+        "id": "my-raf-lubok-kiap",
+        "name": "RAF Lubok Kiap",
+        "alternate_names": [
+          "Lubok Kiap Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "British Malaya (Kedah / Province Wellesley)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Hard runway 1,600 yds + 1,200 yds partly graded; hutments nearing completion",
+        "status_dec_1941": "operational",
+        "notes": "Newly built NW Malaya bomber station inland from Butterworth, partly occupied on 8 Dec 1941.",
+        "modern_equivalent": "Defunct (Lubok Kiap / Padang Serai area, Kedah)",
+        "source_confidence": "high",
+        "title": "RAF Lubok Kiap",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-malakoff",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.4611,
+          5.4694
+        ]
+      },
+      "properties": {
+        "id": "my-raf-malakoff",
+        "name": "RAF Malakoff",
+        "alternate_names": [
+          "Malakoff Estate Strip"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "Straits Settlements (Province Wellesley)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "1,600-yd strip, grading incomplete and no buildings on 8 Dec 1941",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "Satellite dispersal airfield for RAF Lubok Kiap on Malakoff Estate.",
+        "modern_equivalent": "Defunct (Tasek Gelugor, Penang)",
+        "source_confidence": "high",
+        "title": "RAF Malakoff",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-sungei-bakap",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.495,
+          5.2225
+        ]
+      },
+      "properties": {
+        "id": "my-raf-sungei-bakap",
+        "name": "RAF Sungei Bakap",
+        "alternate_names": [
+          "Sungai Bakap Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Malaya & Singapore",
+        "subregion": "North-West Malaya",
+        "territory_1941": "Straits Settlements (Province Wellesley)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "2,000-yd strip (1,400 yds soled but unsurfaced on 8 Dec 1941)",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "RAF satellite landing ground for RAF Butterworth in southern Province Wellesley.",
+        "modern_equivalent": "Defunct (Sungai Bakap, Penang)",
+        "source_confidence": "high",
+        "title": "RAF Sungei Bakap",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-kuantan",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.2092,
+          3.7753
+        ]
+      },
+      "properties": {
+        "id": "my-raf-kuantan",
+        "name": "RAF Kuantan",
+        "alternate_names": [
+          "Kuantan Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "East Malaya",
+        "territory_1941": "British Malaya (Pahang)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two grass runways: 1,500 yds and 1,200 yds; accommodation for 2 squadrons",
+        "status_dec_1941": "operational",
+        "notes": "Key east-coast base (No. 8 Sqn RAAF Hudsons & No. 60 Sqn RAF Blenheims); heavily bombed 9 Dec 1941 just prior to the sinking of Force Z nearby.",
+        "modern_equivalent": "Sultan Haji Ahmad Shah Airport / RMAF Kuantan (KUA / WMKD)",
+        "source_confidence": "high",
+        "title": "RAF Kuantan",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-kluang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.3069,
+          2.0414
+        ]
+      },
+      "properties": {
+        "id": "my-raf-kluang",
+        "name": "RAF Kluang",
+        "alternate_names": [
+          "Kluang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Malaya & Singapore",
+        "subregion": "South Malaya",
+        "territory_1941": "British Malaya (Johore)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force / RAAF / ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two grass runways: 1,600 yds & 1,200 yds; hard runway commenced",
+        "status_dec_1941": "operational",
+        "notes": "Major southern Malaya fighter/bomber concentration base in Johore; hosted RAF, RAAF, and reinforcing Dutch ML-KNIL units.",
+        "modern_equivalent": "Kluang Airport / Army Aviation Base (WMAP)",
+        "source_confidence": "high",
+        "title": "RAF Kluang",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-kahang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.5625,
+          2.2125
+        ]
+      },
+      "properties": {
+        "id": "my-raf-kahang",
+        "name": "RAF Kahang",
+        "alternate_names": [
+          "Kahang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Malaya & Singapore",
+        "subregion": "South Malaya",
+        "territory_1941": "British Malaya (Johore)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two grass runways: 1,400 yds & 1,300 yds (London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "General reconnaissance airfield in eastern Johore defending approaches from Mersing and Endau.",
+        "modern_equivalent": "Defunct (Kahang, Johore)",
+        "source_confidence": "high",
+        "title": "RAF Kahang",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-raf-tebrau",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.7889,
+          1.5472
+        ]
+      },
+      "properties": {
+        "id": "my-raf-tebrau",
+        "name": "RAF Tebrau",
+        "alternate_names": [
+          "Tebrau Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Malaya & Singapore",
+        "subregion": "South Malaya",
+        "territory_1941": "British Malaya (Johore)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "Royal Air Force",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Hard runway 1,200 yds (2nd 2,000-yd runway in hand, London Gazette App. A)",
+        "status_dec_1941": "operational",
+        "notes": "Southern Johore airfield immediately north of the Singapore Causeway.",
+        "modern_equivalent": "Defunct (Tebrau / Johor Bahru)",
+        "source_confidence": "high",
+        "title": "RAF Tebrau",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "my-kuching-7th-mile",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          110.3469,
+          1.4847
+        ]
+      },
+      "properties": {
+        "id": "my-kuching-7th-mile",
+        "name": "Kuching Airfield (7th Mile)",
+        "alternate_names": [
+          "Bukit Stabar Airfield",
+          "Kuching Aerodrome"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Borneo",
+        "subregion": "Sarawak",
+        "territory_1941": "Kingdom of Sarawak (British Protectorate)",
+        "modern_country": "Malaysia",
+        "control_dec_1941": "British Empire (Sarawak)",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "RAF / Sarawak Government",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Graded grass/laterite airfield 7 miles south of Kuching (opened 1938)",
+        "status_dec_1941": "operational",
+        "notes": "Principal airfield in British Borneo in Dec 1941; defended by 2/15th Punjab Regiment and captured by Japan on 25 Dec 1941.",
+        "modern_equivalent": "Kuching International Airport (KCH / WBGG)",
+        "source_confidence": "high",
+        "title": "Kuching Airfield (7th Mile)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-singkawang-ii",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          109.7131,
+          1.1319
+        ]
+      },
+      "properties": {
+        "id": "id-singkawang-ii",
+        "name": "Singkawang II Airfield (Ledo)",
+        "alternate_names": [
+          "Sanggau Ledo Airfield",
+          "Ledo Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "secret_dispersal_airfield",
+        "region": "Borneo",
+        "subregion": "West Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (Royal Netherlands East Indies Army Air Force)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Camouflaged secret jungle airbase near Sanggau Ledo",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war ML-KNIL secret airfield near the Sarawak border; hosted Glenn Martin bombers and Brewster 339D fighters attacking Japanese convoys off Kuching in Dec 1941.",
+        "modern_equivalent": "Harry Hadisoemantri Air Force Base (Sanggau Ledo)",
+        "source_confidence": "high",
+        "title": "Singkawang II Airfield (Ledo)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-samarinda-ii",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          115.76,
+          -0.2036
+        ]
+      },
+      "properties": {
+        "id": "id-samarinda-ii",
+        "name": "Samarinda II Airfield (Melak)",
+        "alternate_names": [
+          "Melak Airfield",
+          "Melalan Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "secret_dispersal_airfield",
+        "region": "Borneo",
+        "subregion": "East Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two camouflaged parallel jungle runways between Melak and Long Iram (begun 1940)",
+        "status_dec_1941": "operational",
+        "notes": "Remarkable secret ML-KNIL jungle base deep up the Mahakam River; hosted 2-VLG-I Martin bombers & 1-VLG-V Brewster fighters in Dec 1941.",
+        "modern_equivalent": "Melalan Airport (GHS / WALE)",
+        "source_confidence": "high",
+        "title": "Samarinda II Airfield (Melak)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tarakan-juata",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          117.5656,
+          3.3267
+        ]
+      },
+      "properties": {
+        "id": "id-tarakan-juata",
+        "name": "Tarakan (Juata) Airfield",
+        "alternate_names": [
+          "Juwata Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Borneo",
+        "subregion": "North Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / KNILM",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Graded oil-island airfield serving Tarakan oilfields",
+        "status_dec_1941": "operational",
+        "notes": "Hosted Patrouille Butner (1-VLG-I Martin bombers) and KNILM flights; primary target of Japanese invasion of Tarakan (Jan 1942).",
+        "modern_equivalent": "Juwata International Airport (TRK / WAQQ)",
+        "source_confidence": "high",
+        "title": "Tarakan (Juata) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-balikpapan-manggar",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          116.8944,
+          -1.2683
+        ]
+      },
+      "properties": {
+        "id": "id-balikpapan-manggar",
+        "name": "Balikpapan (Manggar) Airfield",
+        "alternate_names": [
+          "Sepinggan Airfield",
+          "Manggar Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Borneo",
+        "subregion": "East Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / KNILM / BPM Shell",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal airfield east of Balikpapan oil refineries",
+        "status_dec_1941": "operational",
+        "notes": "Protected Dutch Borneo's vital oil port and served KNILM civil routes; captured by Japan in Jan 1942.",
+        "modern_equivalent": "Sultan Aji Muhammad Sulaiman Sepinggan Airport (BPN / WALL)",
+        "source_confidence": "high",
+        "title": "Balikpapan (Manggar) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-banjarmasin-ulin",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.7625,
+          -3.4422
+        ]
+      },
+      "properties": {
+        "id": "id-banjarmasin-ulin",
+        "name": "Banjarmasin (Ulin) Airfield",
+        "alternate_names": [
+          "Oelin Airfield",
+          "Bandjarmasin Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Borneo",
+        "subregion": "South Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / KNILM",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Completed 1936; strategic southern Borneo airfield",
+        "status_dec_1941": "operational",
+        "notes": "Major civil (KNILM) and military staging base directly opposite Java across the Java Sea.",
+        "modern_equivalent": "Syamsudin Noor International Airport (BDJ / WAOO)",
+        "source_confidence": "high",
+        "title": "Banjarmasin (Ulin) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-kotawaringin-pangkalanbun",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          111.6733,
+          -2.7053
+        ]
+      },
+      "properties": {
+        "id": "id-kotawaringin-pangkalanbun",
+        "name": "Kotawaringin (Pangkalanbun) Airfield",
+        "alternate_names": [
+          "Pangkalanbun Airfield",
+          "Iskandar Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Borneo",
+        "subregion": "Central Kalimantan",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war ML-KNIL dispersal airfield in southwestern Borneo",
+        "status_dec_1941": "operational",
+        "notes": "Constructed pre-war by Dutch colonial authorities as a staging and dispersal field linking Java and Borneo.",
+        "modern_equivalent": "Iskandar Airport (PKN / WAOI)",
+        "source_confidence": "high",
+        "title": "Kotawaringin (Pangkalanbun) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-andir-bandung",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.5764,
+          -6.9006
+        ]
+      },
+      "properties": {
+        "id": "id-andir-bandung",
+        "name": "Andir Airfield (Bandung)",
+        "alternate_names": [
+          "Bandoeng Airfield",
+          "Vliegveld Andir"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VLG-I HQ & Tech School) / KNILM main technical base",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Major paved/grass military & civil aerodrome on Bandung plateau",
+        "status_dec_1941": "operational",
+        "notes": "Headquarters of ML-KNIL 1st Air Group (Martin 139 bombers), ML-KNIL Technical School, and KNILM's primary engineering base.",
+        "modern_equivalent": "Husein Sastranegara International Airport (BDO / WICC)",
+        "source_confidence": "high",
+        "title": "Andir Airfield (Bandung)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-kalidjati",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          107.6517,
+          -6.5394
+        ]
+      },
+      "properties": {
+        "id": "id-kalidjati",
+        "name": "Kalidjati Airfield (Subang)",
+        "alternate_names": [
+          "Kalijati Airfield",
+          "Vliegveld Kalidjati"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (Flight School & Recon Squadrons)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Oldest military airfield in Indonesia (built 1916); large grass/hard complex",
+        "status_dec_1941": "operational",
+        "notes": "Home to ML-KNIL Flight School and VkA-3, VkA-4, & VkA-5 reconnaissance squadrons; site of the Dutch surrender of Java in Mar 1942.",
+        "modern_equivalent": "Suryadarma Air Force Base (WIHK)",
+        "source_confidence": "high",
+        "title": "Kalidjati Airfield (Subang)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tjililitan-batavia",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8911,
+          -6.2667
+        ]
+      },
+      "properties": {
+        "id": "id-tjililitan-batavia",
+        "name": "Tjililitan Airfield (Batavia)",
+        "alternate_names": [
+          "Cililitan Airfield",
+          "Batavia Military Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VLG-III) / KNILM headquarters",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Major military & civil airfield southeast of Batavia",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1924; home to ML-KNIL 3rd Air Group (three squadrons of Martin 139 bombers) and original KNILM headquarters.",
+        "modern_equivalent": "Halim Perdanakusuma International Airport (HLP / WIHH)",
+        "source_confidence": "high",
+        "title": "Tjililitan Airfield (Batavia)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-semplak-bogor",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7594,
+          -6.5444
+        ]
+      },
+      "properties": {
+        "id": "id-semplak-bogor",
+        "name": "Semplak Airfield (Buitenzorg)",
+        "alternate_names": [
+          "Buitenzorg Airfield",
+          "Atang Sendjaja"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VLG-V)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Major fighter airbase northwest of Buitenzorg (Bogor)",
+        "status_dec_1941": "operational",
+        "notes": "Base of ML-KNIL 5th Air Group (Brewster 339D Buffalo fighters) defending West Java and Batavia.",
+        "modern_equivalent": "Atang Sendjaja Air Force Base (WIAJ)",
+        "source_confidence": "high",
+        "title": "Semplak Airfield (Buitenzorg)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tjikembar-sukabumi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7878,
+          -6.9686
+        ]
+      },
+      "properties": {
+        "id": "id-tjikembar-sukabumi",
+        "name": "Tjikembar Airfield (Sukabumi)",
+        "alternate_names": [
+          "Cikembar Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VkA-1)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war West Java reconnaissance airfield",
+        "status_dec_1941": "operational",
+        "notes": "Base of ML-KNIL Verkenningsafdeling 1 (Curtiss-Wright CW-22 Falcon reconnaissance aircraft) on 30 Nov 1941.",
+        "modern_equivalent": "Defunct (Cikembar, Sukabumi, West Java)",
+        "source_confidence": "high",
+        "title": "Tjikembar Airfield (Sukabumi)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tjisaoek-tangerang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6333,
+          -6.3167
+        ]
+      },
+      "properties": {
+        "id": "id-tjisaoek-tangerang",
+        "name": "Tjisaoek (Cisauk) Airfield",
+        "alternate_names": [
+          "Cisauk Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Dispersal fighter/bomber grass strip west of Batavia",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war ML-KNIL satellite and emergency dispersal airfield in West Java (Tangerang area).",
+        "modern_equivalent": "Defunct (Cisauk / Budiarto area, Tangerang)",
+        "source_confidence": "high",
+        "title": "Tjisaoek (Cisauk) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tasikmalaya-cibeureum",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          108.2464,
+          -7.3458
+        ]
+      },
+      "properties": {
+        "id": "id-tasikmalaya-cibeureum",
+        "name": "Tasikmalaya (Cibeureum) Airfield",
+        "alternate_names": [
+          "Tjibeureum Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war southeastern West Java military landing ground",
+        "status_dec_1941": "operational",
+        "notes": "ML-KNIL auxiliary airfield in Priangan highlands used for dispersal and training.",
+        "modern_equivalent": "Wiriadinata Air Force Base / Airport (TSY / WICM)",
+        "source_confidence": "high",
+        "title": "Tasikmalaya (Cibeureum) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-maguwo-yogyakarta",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          110.4317,
+          -7.7881
+        ]
+      },
+      "properties": {
+        "id": "id-maguwo-yogyakarta",
+        "name": "Maguwo Airfield (Djokjakarta)",
+        "alternate_names": [
+          "Magoewo Airfield",
+          "Djokjakarta Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VkA-2)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1940 as Central Java military airfield",
+        "status_dec_1941": "operational",
+        "notes": "Base of ML-KNIL Verkenningsafdeling 2 (CW-22 & Fokker C.X) on 30 Nov 1941.",
+        "modern_equivalent": "Adisutjipto International Airport (JOG / WARJ)",
+        "source_confidence": "high",
+        "title": "Maguwo Airfield (Djokjakarta)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-maospati-madiun",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          111.4342,
+          -7.6158
+        ]
+      },
+      "properties": {
+        "id": "id-maospati-madiun",
+        "name": "Maospati Airfield (Madiun)",
+        "alternate_names": [
+          "Madioen Airfield",
+          "Iswahyudi"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VLG-IV HQ & Air Depot)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Major East Java fighter airbase & aircraft depot (opened 1939)",
+        "status_dec_1941": "operational",
+        "notes": "Home to ML-KNIL 4th Air Group (Curtiss Hawk 75A-7 & CW-21B Interceptors) and ML-KNIL main aircraft depot.",
+        "modern_equivalent": "Iswahjudi Air Force Base (WARI)",
+        "source_confidence": "high",
+        "title": "Maospati Airfield (Madiun)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-singosari-malang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.7144,
+          -7.9267
+        ]
+      },
+      "properties": {
+        "id": "id-singosari-malang",
+        "name": "Singosari Airfield (Malang)",
+        "alternate_names": [
+          "Bugis Airfield",
+          "Malang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (VLG-II)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Major heavy bomber aerodrome near Malang (built 1937-40)",
+        "status_dec_1941": "operational",
+        "notes": "Base of ML-KNIL 2nd Air Group (Martin 139 bombers) and bomber flight school; later hosted USAAF B-17s in early 1942.",
+        "modern_equivalent": "Abdul Rachman Saleh Airport (MLG / WARA)",
+        "source_confidence": "high",
+        "title": "Singosari Airfield (Malang)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-ngoro-blimbing",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.25,
+          -7.6833
+        ]
+      },
+      "properties": {
+        "id": "id-ngoro-blimbing",
+        "name": "Ngoro (Blimbing) Secret Airfield",
+        "alternate_names": [
+          "Blimbing Airfield",
+          "Ngoro Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "secret_dispersal_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Two 4,000-ft camouflaged sod runways with jungle dispersal taxiways",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war ML-KNIL secret fighter airfield ~50 miles south of Surabaya; later hosted USAAF 17th Pursuit Squadron (Provisional) P-40s.",
+        "modern_equivalent": "Defunct (Ngoro, Jombang Regency, East Java)",
+        "source_confidence": "high",
+        "title": "Ngoro (Blimbing) Secret Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-perak-surabaya",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          112.725,
+          -7.2167
+        ]
+      },
+      "properties": {
+        "id": "id-perak-surabaya",
+        "name": "Perak Airfield (Surabaya)",
+        "alternate_names": [
+          "Tandjong Perak Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Java",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / MLD landplane section",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Landplane aerodrome adjacent to Tandjong Perak port in Surabaya",
+        "status_dec_1941": "operational",
+        "notes": "Surabaya's primary military landplane field (distinct from the nearby Morokrembangan flying-boat base).",
+        "modern_equivalent": "Defunct (Tanjung Perak / Surabaya Port area)",
+        "source_confidence": "high",
+        "title": "Perak Airfield (Surabaya)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-palembang-p1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          104.7,
+          -2.8983
+        ]
+      },
+      "properties": {
+        "id": "id-palembang-p1",
+        "name": "Palembang P1 (Talang Betutu) Airfield",
+        "alternate_names": [
+          "Talang Betutu Airfield",
+          "Palembang I"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / KNILM / KLM (RAF reinforced early 1942)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Major civil & military airfield northwest of Palembang oil refineries",
+        "status_dec_1941": "operational",
+        "notes": "Opened 1920s as KNILM/KLM trunk stop and upgraded into primary Allied air defense base for Sumatra's oilfields; target of Japanese paratroop drop Feb 1942.",
+        "modern_equivalent": "Sultan Mahmud Badaruddin II International Airport (PLM / WIPP)",
+        "source_confidence": "high",
+        "title": "Palembang P1 (Talang Betutu) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-palembang-p2",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          104.355,
+          -3.285
+        ]
+      },
+      "properties": {
+        "id": "id-palembang-p2",
+        "name": "Palembang P2 (Prabumulih / Karang Endah)",
+        "alternate_names": [
+          "P2 Airfield",
+          "Karang Endah Airfield",
+          "Prabumulih Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "secret_dispersal_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL (2-VLG-I from late Dec 1941)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Camouflaged secret jungle airfield constructed in 1941 SW of Palembang",
+        "status_dec_1941": "under_construction_usable",
+        "notes": "Built in 1941 as a secret heavy bomber base hidden in jungle near Karang Endah; entered operational ML-KNIL use in late Dec 1941.",
+        "modern_equivalent": "Defunct (Karang Endah, Muara Enim / Prabumulih, South Sumatra)",
+        "source_confidence": "high",
+        "title": "Palembang P2 (Prabumulih / Karang Endah)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-kutaraja-blang-bintang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          95.4203,
+          5.5236
+        ]
+      },
+      "properties": {
+        "id": "id-kutaraja-blang-bintang",
+        "name": "Kutaraja (Blang Bintang) Airfield",
+        "alternate_names": [
+          "Koetaradja Airfield",
+          "Blang Bintang Airfield",
+          "Lho Nga"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / KNILM",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Built 1936 near Koetaradja (Banda Aceh) at Sumatra's northern tip",
+        "status_dec_1941": "operational",
+        "notes": "Northernmost Dutch East Indies land airfield guarding the western approach to the Malacca Strait.",
+        "modern_equivalent": "Sultan Iskandar Muda International Airport (BTJ / WITT)",
+        "source_confidence": "high",
+        "title": "Kutaraja (Blang Bintang) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-sabang-weh",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          95.3397,
+          5.8742
+        ]
+      },
+      "properties": {
+        "id": "id-sabang-weh",
+        "name": "Sabang Airfield (Weh Island)",
+        "alternate_names": [
+          "Pulau Weh Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / Dutch Colonial Administration",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war island landing ground above Sabang coaling port",
+        "status_dec_1941": "operational",
+        "notes": "Guarded the strategic deepwater port of Sabang at the northern entrance to the Strait of Malacca.",
+        "modern_equivalent": "Maimun Saleh Airport (SBG / WIAB)",
+        "source_confidence": "high",
+        "title": "Sabang Airfield (Weh Island)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-tanjung-karang-branti",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.1789,
+          -5.2422
+        ]
+      },
+      "properties": {
+        "id": "id-tanjung-karang-branti",
+        "name": "Tanjung Karang (Branti) Airfield",
+        "alternate_names": [
+          "Tandjong Karang",
+          "Branti Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Sumatra",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / Civil Aviation",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war southern Sumatra airfield north of Teluk Betung",
+        "status_dec_1941": "operational",
+        "notes": "Strategic Sunda Strait airfield linking southern Sumatra and West Java.",
+        "modern_equivalent": "Radin Inten II International Airport (TKG / WILL)",
+        "source_confidence": "high",
+        "title": "Tanjung Karang (Branti) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-manado-langoan",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          124.855,
+          1.1483
+        ]
+      },
+      "properties": {
+        "id": "id-manado-langoan",
+        "name": "Manado II (Langoan / Kalawiran) Airfield",
+        "alternate_names": [
+          "Langowan Airfield",
+          "Kalawiran Airfield",
+          "Menado II"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Sulawesi (Celebes)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Inland Minahasa military airfield south of Lake Tondano (built late 1930s)",
+        "status_dec_1941": "operational",
+        "notes": "Designated Manado II; strategic northern Celebes military airfield and target of Japan's first-ever paratroop assault (1st Yokosuka SNLF) on 11 Jan 1942.",
+        "modern_equivalent": "Defunct (Kalawiran / Langowan, Minahasa, North Sulawesi)",
+        "source_confidence": "high",
+        "title": "Manado II (Langoan / Kalawiran) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-kendari-ii",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          122.4181,
+          -4.0817
+        ]
+      },
+      "properties": {
+        "id": "id-kendari-ii",
+        "name": "Kendari II Airfield",
+        "alternate_names": [
+          "Wolter Monginsidi Airfield",
+          "Kendari Airbase"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Sulawesi (Celebes)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Constructed 1937-1941; one of the finest all-weather military airbases in the NEI",
+        "status_dec_1941": "operational",
+        "notes": "Highly prized strategic bomber base commanding the Banda Sea and Java approaches; captured by Japan Jan 1942 and used to bomb Darwin and Surabaya.",
+        "modern_equivalent": "Haluoleo Airport / Air Force Base (KDI / WAWW)",
+        "source_confidence": "high",
+        "title": "Kendari II Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-makassar-mandai",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          119.5542,
+          -5.0617
+        ]
+      },
+      "properties": {
+        "id": "id-makassar-mandai",
+        "name": "Makassar (Mandai) Airfield",
+        "alternate_names": [
+          "Mandai Airfield",
+          "Kadieng Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Sulawesi (Celebes)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / KNILM",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Opened 1937 north of Makassar (Maros)",
+        "status_dec_1941": "operational",
+        "notes": "Principal southern Celebes military and KNILM civil airfield commanding the southern Makassar Strait.",
+        "modern_equivalent": "Sultan Hasanuddin International Airport (UPG / WAAA)",
+        "source_confidence": "high",
+        "title": "Makassar (Mandai) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-kupang-penfui",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          123.6711,
+          -10.1717
+        ]
+      },
+      "properties": {
+        "id": "id-kupang-penfui",
+        "name": "Kupang (Penfui) Airfield",
+        "alternate_names": [
+          "Koepang Airfield",
+          "Penfoei Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Lesser Sunda Islands (Timor)",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / RAAF (Dec 1941) / KNILM & Qantas",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Opened 1928; vital all-weather airfield on Dutch West Timor",
+        "status_dec_1941": "operational",
+        "notes": "Critical stepping-stone between Australia (Darwin) and Java for KNILM/Qantas civil airliners and Allied bombers; RAAF No. 2 Sqn Hudsons deployed Dec 1941.",
+        "modern_equivalent": "El Tari International Airport (KOE / WATT)",
+        "source_confidence": "high",
+        "title": "Kupang (Penfui) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-laha-ambon",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          128.0892,
+          -3.7103
+        ]
+      },
+      "properties": {
+        "id": "id-laha-ambon",
+        "name": "Laha Airfield (Ambon)",
+        "alternate_names": [
+          "Ambon Airfield",
+          "Amboina Land Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Dutch East Indies",
+        "subregion": "Moluccas",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / RAAF (No. 2 & No. 13 Sqns Dec 1941)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Built 1940-41 on north shore of Ambon Bay",
+        "status_dec_1941": "operational",
+        "notes": "Strategic eastern NEI landplane base (separate from Halong seaplane base); ML-KNIL Brewster fighters arrived 3 Dec 1941, joined by RAAF Hudsons.",
+        "modern_equivalent": "Pattimura International Airport (AMQ / WAPP)",
+        "source_confidence": "high",
+        "title": "Laha Airfield (Ambon)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-namlea-buru",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          127.0906,
+          -3.2356
+        ]
+      },
+      "properties": {
+        "id": "id-namlea-buru",
+        "name": "Namlea Airfield (Buru)",
+        "alternate_names": [
+          "Boeroe Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Dutch East Indies",
+        "subregion": "Moluccas",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war Dutch colonial auxiliary military landing strip on Buru Island",
+        "status_dec_1941": "operational",
+        "notes": "Emergency and forward staging land strip west of Ambon supporting Molucca Sea air patrols.",
+        "modern_equivalent": "Namlea Airport (NAM / WAPR)",
+        "source_confidence": "high",
+        "title": "Namlea Airfield (Buru)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "id-babo-new-guinea",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          133.4383,
+          -2.5322
+        ]
+      },
+      "properties": {
+        "id": "id-babo-new-guinea",
+        "name": "Babo Airfield",
+        "alternate_names": [
+          "Babo Strip"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Dutch East Indies",
+        "subregion": "Dutch New Guinea",
+        "territory_1941": "Dutch East Indies",
+        "modern_country": "Indonesia",
+        "control_dec_1941": "Netherlands",
+        "alignment_dec_1941": "Allied",
+        "operator_1941": "ML-KNIL / NNGPM Oil Company",
+        "surface_1941": "coral_gravel",
+        "runway_notes_1941": "Constructed 1936 by oil consortium; upgraded by ML-KNIL in 1941",
+        "status_dec_1941": "operational",
+        "notes": "Easternmost operational ML-KNIL land airfield in the Dutch East Indies (Bintuni Bay, Vogelkop); staged RAAF & Dutch patrols in late 1941.",
+        "modern_equivalent": "Babo Airport (BXB / WASO)",
+        "source_confidence": "high",
+        "title": "Babo Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-tan-son-nhut",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6519,
+          10.8189
+        ]
+      },
+      "properties": {
+        "id": "vn-tan-son-nhut",
+        "name": "Tan Son Nhut Airfield (Saigon)",
+        "alternate_names": [
+          "Saigon Airport",
+          "Tan Son Nhat"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "French Indochina",
+        "subregion": "Cochinchina",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJNAS 22nd Air Flotilla / Vichy Armee de l'Air / Air France",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Major international paved/laterite airbase north of Saigon",
+        "status_dec_1941": "operational",
+        "notes": "Premier pre-war Air France & Armee de l'Air hub; occupied July 1941 by Japan and used by Genzan/Mihoro Kokutai G3M/G4M bombers to sink Force Z (10 Dec 1941).",
+        "modern_equivalent": "Tan Son Nhat International Airport (SGN / VVTS)",
+        "source_confidence": "high",
+        "title": "Tan Son Nhut Airfield (Saigon)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-bien-hoa",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.8183,
+          10.9767
+        ]
+      },
+      "properties": {
+        "id": "vn-bien-hoa",
+        "name": "Bien Hoa Airfield",
+        "alternate_names": [
+          "Bien-Hoa Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "French Indochina",
+        "subregion": "Cochinchina",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Vichy Armee de l'Air / Imperial Japanese Army Air Service (IJAAS)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Major military airbase northeast of Saigon",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war French Armee de l'Air base occupied by Japanese air units in July 1941 to support the Malaya campaign.",
+        "modern_equivalent": "Bien Hoa Air Base (VVBH)",
+        "source_confidence": "high",
+        "title": "Bien Hoa Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-thu-dau-mot",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.6639,
+          10.9806
+        ]
+      },
+      "properties": {
+        "id": "vn-thu-dau-mot",
+        "name": "Thu Dau Mot Airfield",
+        "alternate_names": [
+          "Thudaumot Airfield",
+          "Phu Loi Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "French Indochina",
+        "subregion": "Cochinchina",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJNAS (Kanoya / Mihoro Kokutai) / Vichy France",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Military bomber airfield north of Saigon (expanded late 1941)",
+        "status_dec_1941": "operational",
+        "notes": "Occupied by Japan July 1941; major launch base for IJNAS G4M1 'Betty' and G3M2 'Nell' bombers attacking Singapore and Force Z in Dec 1941.",
+        "modern_equivalent": "Defunct (Phu Loi / Thu Dau Mot, Binh Duong)",
+        "source_confidence": "high",
+        "title": "Thu Dau Mot Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-soc-trang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.9756,
+          9.5858
+        ]
+      },
+      "properties": {
+        "id": "vn-soc-trang",
+        "name": "Soc Trang Airfield",
+        "alternate_names": [
+          "Soctrang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "French Indochina",
+        "subregion": "Cochinchina",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJNAS / IJAAS (3rd Air Division) / Vichy France",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Southern Mekong Delta military airbase",
+        "status_dec_1941": "operational",
+        "notes": "Occupied by Japan July 1941; critical forward base for IJNAS A6M Zeroes and bombers covering the 8 Dec 1941 Malaya invasion fleet.",
+        "modern_equivalent": "Defunct (Soc Trang, Mekong Delta)",
+        "source_confidence": "high",
+        "title": "Soc Trang Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-phu-quoc",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.9631,
+          10.2272
+        ]
+      },
+      "properties": {
+        "id": "vn-phu-quoc",
+        "name": "Phu Quoc (Duong Dong) Airfield",
+        "alternate_names": [
+          "Duong Dong Airstrip"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "French Indochina",
+        "subregion": "Cochinchina",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (late 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJAAS (3rd Air Division)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Forward island fighter staging strip in Gulf of Thailand",
+        "status_dec_1941": "operational",
+        "notes": "Prepared in late 1941 as the closest Indochinese fighter strip to Thailand and northern Malaya (launched Ki-27/Ki-43 escort sorties 8 Dec 1941).",
+        "modern_equivalent": "Defunct (Old Duong Dong Airport, Phu Quoc)",
+        "source_confidence": "high",
+        "title": "Phu Quoc (Duong Dong) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-tourane-da-nang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          108.1994,
+          16.0439
+        ]
+      },
+      "properties": {
+        "id": "vn-tourane-da-nang",
+        "name": "Tourane (Da Nang) Airfield",
+        "alternate_names": [
+          "Da Nang Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "French Indochina",
+        "subregion": "Annam",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Vichy Armee de l'Air / Imperial Japan / Air France",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Major central Annam coastal airfield (built 1930s)",
+        "status_dec_1941": "operational",
+        "notes": "Key military and Air France relay base midway between Hanoi and Saigon; occupied by Japanese forces in July 1941.",
+        "modern_equivalent": "Da Nang International Airport (DAD / VVDN)",
+        "source_confidence": "high",
+        "title": "Tourane (Da Nang) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-nha-trang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          109.1922,
+          12.2275
+        ]
+      },
+      "properties": {
+        "id": "vn-nha-trang",
+        "name": "Nha Trang Airfield",
+        "alternate_names": [
+          "Nhatrang Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Annam",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Vichy Armee de l'Air / Imperial Japan",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal military & civil airfield in southern Annam",
+        "status_dec_1941": "operational",
+        "notes": "Occupied by Japan in July 1941 to provide air cover over Cam Ranh Bay invasion convoy staging area.",
+        "modern_equivalent": "Defunct (Old Nha Trang Air Base)",
+        "source_confidence": "high",
+        "title": "Nha Trang Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-hanoi-bach-mai",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.8406,
+          21.0003
+        ]
+      },
+      "properties": {
+        "id": "vn-hanoi-bach-mai",
+        "name": "Hanoi — Bach Mai Airfield",
+        "alternate_names": [
+          "Bach Mai Airbase"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "French Indochina",
+        "subregion": "Tonkin",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied Sept 1940)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Vichy Armee de l'Air / IJAAS",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Main French colonial military airbase in Hanoi (opened 1918)",
+        "status_dec_1941": "operational",
+        "notes": "Primary Armee de l'Air Tonkin airbase; used by Japanese air forces after the Sept 1940 Northern Indochina occupation.",
+        "modern_equivalent": "Defunct (Bach Mai / Truong Chinh area, Hanoi)",
+        "source_confidence": "high",
+        "title": "Hanoi — Bach Mai Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-tong-son-tay",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.4833,
+          21.1167
+        ]
+      },
+      "properties": {
+        "id": "vn-tong-son-tay",
+        "name": "Tong Airfield (Son Tay)",
+        "alternate_names": [
+          "Son Tay Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Tonkin",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "Vichy Armee de l'Air",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war French colonial military bomber/training airfield west of Hanoi",
+        "status_dec_1941": "operational",
+        "notes": "Major Armee de l'Air training and garrison airfield in the Red River Delta.",
+        "modern_equivalent": "Defunct (Son Tay, Hanoi)",
+        "source_confidence": "high",
+        "title": "Tong Airfield (Son Tay)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-haiphong-cat-bi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          106.7247,
+          20.8194
+        ]
+      },
+      "properties": {
+        "id": "vn-haiphong-cat-bi",
+        "name": "Haiphong — Cat Bi Airfield",
+        "alternate_names": [
+          "Cat Bi Airfield",
+          "Haiphong Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Tonkin",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied Sept 1940)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJAAS / Vichy Armee de l'Air",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Built 1930s serving Tonkin's principal seaport",
+        "status_dec_1941": "operational",
+        "notes": "Occupied by Japan in Sept 1940; key staging base for operations against southern China and northern Indochina.",
+        "modern_equivalent": "Cat Bi International Airport (HPH / VVCI)",
+        "source_confidence": "high",
+        "title": "Haiphong — Cat Bi Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "vn-phu-tho",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          105.2333,
+          21.4
+        ]
+      },
+      "properties": {
+        "id": "vn-phu-tho",
+        "name": "Phu Tho Airfield",
+        "alternate_names": [
+          "Phu Tho Landing Ground"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "French Indochina",
+        "subregion": "Tonkin",
+        "territory_1941": "French Indochina",
+        "modern_country": "Vietnam",
+        "control_dec_1941": "Vichy France / Imperial Japan (ceded Sept 1940)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJAAS / Vichy France",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Red River valley military landing field NW of Hanoi",
+        "status_dec_1941": "operational",
+        "notes": "One of the specific Tonkin airfields ceded to Japanese air use under the September 1940 Nishihara-Decoux accord.",
+        "modern_equivalent": "Defunct (Phu Tho Province, Vietnam)",
+        "source_confidence": "high",
+        "title": "Phu Tho Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kh-kompong-trach",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          104.4667,
+          10.55
+        ]
+      },
+      "properties": {
+        "id": "kh-kompong-trach",
+        "name": "Kompong Trach Airfield",
+        "alternate_names": [
+          "Kampong Trach Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Cambodia",
+        "territory_1941": "French Indochina",
+        "modern_country": "Cambodia",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJAAS (3rd Air Division)",
+        "surface_1941": "dirt_graded",
+        "runway_notes_1941": "Forward southern Cambodia bomber/fighter base expanded late 1941",
+        "status_dec_1941": "operational",
+        "notes": "Major IJAAS 3rd Air Division launch airfield in Dec 1941 for strikes on northern Malaya airfields (Alor Star, Sungei Patani, Kota Bharu).",
+        "modern_equivalent": "Defunct (Kampong Trach, Kampot Province, Cambodia)",
+        "source_confidence": "high",
+        "title": "Kompong Trach Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kh-kompong-chhnang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          104.5656,
+          12.2533
+        ]
+      },
+      "properties": {
+        "id": "kh-kompong-chhnang",
+        "name": "Kompong Chhnang Airfield",
+        "alternate_names": [
+          "Kampong Chhnang Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Cambodia",
+        "territory_1941": "French Indochina",
+        "modern_country": "Cambodia",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJAAS / Vichy Armee de l'Air",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Central Cambodia military airfield south of Tonle Sap",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war French military airfield used in the 1940-41 Franco-Thai War and occupied by IJAAS in late 1941.",
+        "modern_equivalent": "Kampong Chhnang Airport (KZC / VDKH)",
+        "source_confidence": "high",
+        "title": "Kompong Chhnang Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kh-siem-reap",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.8128,
+          13.4106
+        ]
+      },
+      "properties": {
+        "id": "kh-siem-reap",
+        "name": "Siem Reap Airfield",
+        "alternate_names": [
+          "Siemreap Airfield",
+          "Angkor Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Cambodia",
+        "territory_1941": "French Indochina",
+        "modern_country": "Cambodia",
+        "control_dec_1941": "Vichy France / Imperial Japan (occupied July 1941)",
+        "alignment_dec_1941": "Axis / Japanese-Occupied",
+        "operator_1941": "IJAAS (3rd Air Division) / Vichy France / Civil Angkor flights",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Opened 1932 near Angkor; expanded for military use 1940-41",
+        "status_dec_1941": "operational",
+        "notes": "Active during Franco-Thai War (Jan 1941) and occupied by Japan July 1941 as a major IJAAS staging base for Thailand and Malaya.",
+        "modern_equivalent": "Old Siem Reap International Airport (VDSR)",
+        "source_confidence": "high",
+        "title": "Siem Reap Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "kh-battambang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.2244,
+          13.0956
+        ]
+      },
+      "properties": {
+        "id": "kh-battambang",
+        "name": "Battambang Airfield",
+        "alternate_names": [
+          "Phra Tabong Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "French Indochina",
+        "subregion": "Cambodia (Phra Tabong, ceded to Thailand May 1941)",
+        "territory_1941": "Kingdom of Thailand (ceded from French Indochina May 1941)",
+        "modern_country": "Cambodia",
+        "control_dec_1941": "Thailand (May 1941 Tokyo Convention) / Japan Dec 1941",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force (formerly French Armee de l'Air)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war French colonial airfield in western Cambodia",
+        "status_dec_1941": "operational",
+        "notes": "Built by France in the 1930s; transferred to Thailand in May 1941 following the Franco-Thai War and used by IJAAS in Dec 1941.",
+        "modern_equivalent": "Battambang Airport (BBM / VDBG)",
+        "source_confidence": "high",
+        "title": "Battambang Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-don-muang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.6067,
+          13.9125
+        ]
+      },
+      "properties": {
+        "id": "th-don-muang",
+        "name": "Don Muang Airfield (Bangkok)",
+        "alternate_names": [
+          "Don Mueang",
+          "Bangkok Airport"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Thailand",
+        "subregion": "Central Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand (Japanese access after 8 Dec 1941 ceasefire)",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force HQ / Imperial Airways, KLM, Air France, Aerial Transport Co.",
+        "surface_1941": "tarmac",
+        "runway_notes_1941": "Opened 1914; major all-weather military & international civil airport north of Bangkok",
+        "status_dec_1941": "operational",
+        "notes": "HQ of the Royal Thai Air Force and Bangkok's international civil hub; Thai fighters engaged Japanese aircraft here on 8 Dec 1941 prior to the ceasefire.",
+        "modern_equivalent": "Don Mueang International Airport / RTAF Base (DMK / VTBD)",
+        "source_confidence": "high",
+        "title": "Don Muang Airfield (Bangkok)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-kok-kathiem-lopburi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.6633,
+          14.8744
+        ]
+      },
+      "properties": {
+        "id": "th-kok-kathiem-lopburi",
+        "name": "Kok Kathiem Airfield (Lopburi)",
+        "alternate_names": [
+          "Khok Kathiam",
+          "Lopburi Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Thailand",
+        "subregion": "Central Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force (Wing 2)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Opened 1938 as major modern RTAF airbase",
+        "status_dec_1941": "operational",
+        "notes": "Major Royal Thai Air Force combat base in central Thailand; home to Wing 2 fighter and bomber squadrons.",
+        "modern_equivalent": "Khok Kathiam Air Force Base (KKM / VTBL)",
+        "source_confidence": "high",
+        "title": "Kok Kathiem Airfield (Lopburi)",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-prachuap-khiri-khan",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.8036,
+          11.7886
+        ]
+      },
+      "properties": {
+        "id": "th-prachuap-khiri-khan",
+        "name": "Prachuap Khiri Khan (Ao Manao) Airfield",
+        "alternate_names": [
+          "Ao Manao Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force (Wing 5)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Coastal military airfield at Ao Manao Bay",
+        "status_dec_1941": "operational",
+        "notes": "Home to RTAF Wing 5; site of the fierce 8-9 Dec 1941 Battle of Prachuap Khiri Khan against Japanese landing troops.",
+        "modern_equivalent": "Prachuap Khiri Khan RTAF Base (Wing 5 / VTBP)",
+        "source_confidence": "high",
+        "title": "Prachuap Khiri Khan (Ao Manao) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-korat",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.0786,
+          14.9344
+        ]
+      },
+      "properties": {
+        "id": "th-korat",
+        "name": "Nakhon Ratchasima (Korat) Airfield",
+        "alternate_names": [
+          "Korat Airfield",
+          "Khorat"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Thailand",
+        "subregion": "Northeastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force (Wing 1 / 32nd Sqn)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Major northeastern RTAF airbase on Khorat Plateau",
+        "status_dec_1941": "operational",
+        "notes": "Key RTAF base during the 1940-41 Franco-Thai War and hub of early Aerial Transport Co. mail routes.",
+        "modern_equivalent": "Korat Royal Thai Air Force Base (VTUN)",
+        "source_confidence": "high",
+        "title": "Nakhon Ratchasima (Korat) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-ubon-ratchathani",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          104.8703,
+          15.2514
+        ]
+      },
+      "properties": {
+        "id": "th-ubon-ratchathani",
+        "name": "Ubon Ratchathani Airfield",
+        "alternate_names": [
+          "Ubon Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Thailand",
+        "subregion": "Northeastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Major eastern RTAF airbase facing French Laos & Cambodia",
+        "status_dec_1941": "operational",
+        "notes": "Primary RTAF forward bomber/fighter base during the 1940-41 Franco-Thai War; also served civil airmail flights.",
+        "modern_equivalent": "Ubon Ratchathani Airport / RTAF Wing 21 (UBP / VTUU)",
+        "source_confidence": "high",
+        "title": "Ubon Ratchathani Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-udon-thani",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.7883,
+          17.3864
+        ]
+      },
+      "properties": {
+        "id": "th-udon-thani",
+        "name": "Udon Thani Airfield",
+        "alternate_names": [
+          "Udorn Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Northeastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force / Aerial Transport Co. of Thailand",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Northeastern RTAF & civil airmail airfield near the Mekong",
+        "status_dec_1941": "operational",
+        "notes": "Active pre-war RTAF airfield and commercial stop on the Korat-Udon-Nakhon Phanom civil mail network.",
+        "modern_equivalent": "Udon Thani International Airport / RTAF Wing 23 (UTH / VTUD)",
+        "source_confidence": "high",
+        "title": "Udon Thani Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-lampang",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.5042,
+          18.2708
+        ]
+      },
+      "properties": {
+        "id": "th-lampang",
+        "name": "Lampang Airfield",
+        "alternate_names": [
+          "Lampang Military Landing Ground"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force (Wing 80 Dec 1941)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Grass military landing ground (4,920 x 8,100 ft field, 2 hangars; US Survey 1941)",
+        "status_dec_1941": "operational",
+        "notes": "Classified as an RTAF military landing ground in the March 1941 US Survey; major base for RTAF Wing 80 and IJAAF 77th Sentai in late Dec 1941.",
+        "modern_equivalent": "Lampang Airport (LPT / VTLP)",
+        "source_confidence": "high",
+        "title": "Lampang Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-chanthaburi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.0739,
+          12.6331
+        ]
+      },
+      "properties": {
+        "id": "th-chanthaburi",
+        "name": "Chanthaburi Airfield",
+        "alternate_names": [
+          "Chantaburi Airfield",
+          "Tha Mai"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Eastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force (22nd & 41st Sqns)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war southeastern Thai military airfield",
+        "status_dec_1941": "operational",
+        "notes": "Base of RTAF 22nd (Corsair) & 41st (Hawk III) Squadrons in 1941 prior to their northern redeployment in late Dec 1941.",
+        "modern_equivalent": "Tha Mai / Chanthaburi Airfield (VTBC)",
+        "source_confidence": "high",
+        "title": "Chanthaburi Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-prachinburi",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.3833,
+          14.05
+        ]
+      },
+      "properties": {
+        "id": "th-prachinburi",
+        "name": "Prachinburi Airfield",
+        "alternate_names": [
+          "Prachin Buri Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Eastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war eastern frontier military landing ground",
+        "status_dec_1941": "operational",
+        "notes": "RTAF forward staging airfield east of Bangkok used during the 1940-41 Franco-Thai border conflict.",
+        "modern_equivalent": "Defunct (Prachinburi, Thailand)",
+        "source_confidence": "high",
+        "title": "Prachinburi Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-aranyaprathet",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          102.315,
+          13.7686
+        ]
+      },
+      "properties": {
+        "id": "th-aranyaprathet",
+        "name": "Aranyaprathet (Wattana Nakhon) Airfield",
+        "alternate_names": [
+          "Watthana Nakhon Airfield",
+          "Aranya Prathet"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Eastern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Frontier military landing ground along Bangkok-Cambodia rail corridor",
+        "status_dec_1941": "operational",
+        "notes": "Key RTAF forward fighter strip during the 1940-41 Franco-Thai War.",
+        "modern_equivalent": "Watthana Nakhon Airfield (VTBW)",
+        "source_confidence": "high",
+        "title": "Aranyaprathet (Wattana Nakhon) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-songkhla-singora",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.6081,
+          7.1867
+        ]
+      },
+      "properties": {
+        "id": "th-songkhla-singora",
+        "name": "Songkhla (Singora) Airfield",
+        "alternate_names": [
+          "Singora Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "major_military_airbase",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand (seized by Japan 8 Dec 1941)",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force / Civil (IJAAS from 8 Dec 1941)",
+        "surface_1941": "hard_surfaced",
+        "runway_notes_1941": "Strategic coastal airfield on Gulf of Thailand just north of Malaya",
+        "status_dec_1941": "operational",
+        "notes": "Primary objective of Japan's 5th Division landing on 8 Dec 1941; immediately became IJAAS's main forward base attacking northern Malaya.",
+        "modern_equivalent": "Songkhla Naval Air Station (SGZ / VTSH)",
+        "source_confidence": "high",
+        "title": "Songkhla (Singora) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "medium"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-pattani",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          101.1536,
+          6.7856
+        ]
+      },
+      "properties": {
+        "id": "th-pattani",
+        "name": "Pattani (Bo Thong) Airfield",
+        "alternate_names": [
+          "Patani Airfield",
+          "Bo Thong"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand (seized by Japan 8 Dec 1941)",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force / Civil (IJAAS from 8 Dec 1941)",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Southern Thai landing ground near Pattani Bay",
+        "status_dec_1941": "operational",
+        "notes": "Seized during Japanese amphibious landing on 8 Dec 1941; operational Japanese fighter strip by 9 Dec 1941.",
+        "modern_equivalent": "Pattani Airport (PAN / VTSK)",
+        "source_confidence": "high",
+        "title": "Pattani (Bo Thong) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-nakhon-si-thammarat",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.9556,
+          8.3728
+        ]
+      },
+      "properties": {
+        "id": "th-nakhon-si-thammarat",
+        "name": "Nakhon Si Thammarat (Cha Eian) Airfield",
+        "alternate_names": [
+          "Cha Eian Airfield",
+          "Nakorn Srithamarat"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Southern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand (Japanese landing 8 Dec 1941)",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Southern Kra Isthmus military landing ground",
+        "status_dec_1941": "operational",
+        "notes": "Pre-war southern Thai airfield and site of one of the Japanese coastal landings on 8 Dec 1941.",
+        "modern_equivalent": "Cha Eian Army Airfield (VTSN)",
+        "source_confidence": "high",
+        "title": "Nakhon Si Thammarat (Cha Eian) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-tak-rahaeng",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          99.1333,
+          16.8833
+        ]
+      },
+      "properties": {
+        "id": "th-tak-rahaeng",
+        "name": "Tak (Rahaeng) Airfield",
+        "alternate_names": [
+          "Rahaeng Airfield"
+        ],
+        "category": "military",
+        "dual_use": false,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_auxiliary_strip",
+        "region": "Thailand",
+        "subregion": "Northern Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war western frontier landing ground near the Ping River",
+        "status_dec_1941": "operational",
+        "notes": "Used as forward staging field on the Burma approach; IJAAF 77th Sentai Ki-27 fighters deployed here in Dec 1941 before moving to Lampang.",
+        "modern_equivalent": "Defunct (Old Rahaeng strip, Tak)",
+        "source_confidence": "high",
+        "title": "Tak (Rahaeng) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "th-nakhon-sawan",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          100.1367,
+          15.6731
+        ]
+      },
+      "properties": {
+        "id": "th-nakhon-sawan",
+        "name": "Nakhon Sawan (Pak Nam Pho) Airfield",
+        "alternate_names": [
+          "Pak Nam Pho Airfield"
+        ],
+        "category": "military",
+        "dual_use": true,
+        "airfield_type": "land_airfield",
+        "facility_class": "military_airfield",
+        "region": "Thailand",
+        "subregion": "Central Thailand",
+        "territory_1941": "Kingdom of Thailand",
+        "modern_country": "Thailand",
+        "control_dec_1941": "Thailand",
+        "alignment_dec_1941": "Neutral (Thailand)",
+        "operator_1941": "Royal Thai Air Force / Civil",
+        "surface_1941": "grass_sod",
+        "runway_notes_1941": "Pre-war central Chao Phraya valley airfield",
+        "status_dec_1941": "operational",
+        "notes": "Strategic central Thailand junction airfield linking Bangkok with northern airfields.",
+        "modern_equivalent": "Nakhon Sawan Airport (VTPN)",
+        "source_confidence": "high",
+        "title": "Nakhon Sawan (Pak Nam Pho) Airfield",
+        "marker-color": "#b91c1c",
+        "marker-symbol": "airport",
+        "marker-size": "small"
+      }
+    }
+  ]
+}

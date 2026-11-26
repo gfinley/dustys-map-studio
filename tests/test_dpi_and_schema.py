@@ -284,6 +284,63 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         ):
             self.assertIn(symbol, content)
 
+    def test_1941_airfields_geojson_layers_and_presets(self) -> None:
+        """1941 SE Asia & Western Pacific land airfield GeoJSON files are valid, disjoint, and wired into presets."""
+        import json
+
+        data_dir = SITE_DIR / "data"
+        combined_path = data_dir / "airfields_1941_se_asia_western_pacific.geojson"
+        military_path = data_dir / "airfields_1941_se_asia_western_pacific_military.geojson"
+        civilian_path = data_dir / "airfields_1941_se_asia_western_pacific_civilian.geojson"
+
+        for path in (combined_path, military_path, civilian_path):
+            self.assertTrue(path.is_file(), f"Missing GeoJSON dataset: {path}")
+
+        combined = json.loads(combined_path.read_text(encoding="utf-8"))
+        military = json.loads(military_path.read_text(encoding="utf-8"))
+        civilian = json.loads(civilian_path.read_text(encoding="utf-8"))
+
+        for fc in (combined, military, civilian):
+            self.assertEqual(fc.get("type"), "FeatureCollection")
+            self.assertIsInstance(fc.get("features"), list)
+            self.assertGreater(len(fc["features"]), 0)
+
+        mil_ids = {f["id"] for f in military["features"]}
+        civ_ids = {f["id"] for f in civilian["features"]}
+        all_ids = {f["id"] for f in combined["features"]}
+
+        self.assertEqual(mil_ids & civ_ids, set(), "Military and civilian layers must be disjoint")
+        self.assertEqual(mil_ids | civ_ids, all_ids, "Military + civilian layers must equal combined dataset")
+        self.assertEqual(len(military["features"]) + len(civilian["features"]), len(combined["features"]))
+
+        expected_regions = {
+            "Philippines",
+            "Malaya & Singapore",
+            "Borneo",
+            "Dutch East Indies",
+            "French Indochina",
+            "Thailand",
+        }
+        seen_regions = set()
+        for feat in combined["features"]:
+            self.assertEqual(feat.get("type"), "Feature")
+            geom = feat["geometry"]
+            self.assertEqual(geom["type"], "Point")
+            lon, lat = geom["coordinates"]
+            self.assertTrue(94.0 <= lon <= 136.0, f"Unexpected lon for {feat['id']}: {lon}")
+            self.assertTrue(-12.0 <= lat <= 23.0, f"Unexpected lat for {feat['id']}: {lat}")
+            props = feat["properties"]
+            self.assertEqual(props["airfield_type"], "land_airfield")
+            self.assertIn(props["category"], {"military", "civilian"})
+            seen_regions.add(props["region"])
+
+        self.assertEqual(seen_regions, expected_regions)
+
+        presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
+        self.assertIn("./data/airfields_1941_se_asia_western_pacific.geojson", presets_js)
+        self.assertIn("./data/airfields_1941_se_asia_western_pacific_military.geojson", presets_js)
+        self.assertIn("./data/airfields_1941_se_asia_western_pacific_civilian.geojson", presets_js)
+
 
 if __name__ == "__main__":
     unittest.main()
