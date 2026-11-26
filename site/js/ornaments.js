@@ -8,12 +8,26 @@ import { geoSatellite } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4/+
 
 const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
-const SCALE_CANDIDATES = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
+const SCALE_CANDIDATES = [0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const locatorGlobeCache = {
   key: '',
   canvas: null,
 };
+
+function formatScaleLabel(value, units) {
+  if (units === 'km' && value < 1) {
+    return `${Math.round(value * 1000)} m`;
+  }
+  return `${value} ${units}`;
+}
+
+function formatScaleMid(value, units) {
+  if (units === 'km' && value < 1) {
+    return String(Math.round((value * 1000) / 2));
+  }
+  return String(value / 2);
+}
 
 function wrapLon(lon) {
   let x = (((lon + 180) % 360) + 360) % 360 - 180;
@@ -40,18 +54,18 @@ function escapeXml(str) {
 function buildExtentRing(spec, asPolygon = false) {
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
-  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
-  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+  const lonDeg = Math.max(0.005, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.005, Math.min(175, Number(spec?.span?.latDeg) || 14));
 
   const halfLon = Math.min(179.5, lonDeg / 2);
   const halfLat = latDeg / 2;
   let minLat = Math.max(-85, centerLat - halfLat);
   let maxLat = Math.min(85, centerLat + halfLat);
-  if (maxLat - minLat < 0.05) {
+  if (maxLat - minLat < 0.005) {
     if (centerLat >= 0) {
-      minLat = Math.max(-85, maxLat - 0.05);
+      minLat = Math.max(-85, maxLat - 0.005);
     } else {
-      maxLat = Math.min(85, minLat + 0.05);
+      maxLat = Math.min(85, minLat + 0.005);
     }
   }
 
@@ -741,11 +755,11 @@ export function drawScaleBar(ctx, spec, projection, width, height, scaleFactor) 
 
   if (showMid) {
     ctx.textAlign = 'center';
-    ctx.fillText(String(value / 2), barX + barPx / 2, labelY);
+    ctx.fillText(formatScaleMid(value, units), barX + barPx / 2, labelY);
   }
 
   ctx.textAlign = 'right';
-  ctx.fillText(`${value} ${units}`, barX + barPx, labelY);
+  ctx.fillText(formatScaleLabel(value, units), barX + barPx, labelY);
   ctx.restore();
 }
 
@@ -1224,11 +1238,11 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
     );
     if (showMid) {
       parts.push(
-        `<text x="${(barX + barPx / 2).toFixed(2)}" y="${labelY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="#111111" text-anchor="middle">${value / 2}</text>`,
+        `<text x="${(barX + barPx / 2).toFixed(2)}" y="${labelY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="#111111" text-anchor="middle">${escapeXml(formatScaleMid(value, units))}</text>`,
       );
     }
     parts.push(
-      `<text x="${(barX + barPx).toFixed(2)}" y="${labelY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="#111111" text-anchor="end">${value} ${escapeXml(units)}</text>`,
+      `<text x="${(barX + barPx).toFixed(2)}" y="${labelY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize.toFixed(1)}" font-weight="600" fill="#111111" text-anchor="end">${escapeXml(formatScaleLabel(value, units))}</text>`,
     );
     parts.push('</g>');
   }

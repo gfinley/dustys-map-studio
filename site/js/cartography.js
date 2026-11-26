@@ -12,10 +12,10 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=11';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=11';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=11';
-import { sanitizeGeoJsonWinding } from './data-loader.js?v=11';
+} from './ornaments.js?v=12';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=12';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=12';
+import { sanitizeGeoJsonWinding } from './data-loader.js?v=12';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -47,18 +47,18 @@ function escapeXml(str) {
 function buildBoundingRing(spec) {
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
-  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
-  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+  const lonDeg = Math.max(0.005, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.005, Math.min(175, Number(spec?.span?.latDeg) || 14));
 
   const halfLon = Math.min(179.5, lonDeg / 2);
   const halfLat = latDeg / 2;
   let minLat = Math.max(-85, centerLat - halfLat);
   let maxLat = Math.min(85, centerLat + halfLat);
-  if (maxLat - minLat < 0.05) {
+  if (maxLat - minLat < 0.005) {
     if (centerLat >= 0) {
-      minLat = Math.max(-85, maxLat - 0.05);
+      minLat = Math.max(-85, maxLat - 0.005);
     } else {
-      maxLat = Math.min(85, minLat + 0.05);
+      maxLat = Math.min(85, minLat + 0.005);
     }
   }
 
@@ -98,8 +98,8 @@ export function buildProjection(spec, width, height, options = {}) {
   const projId = spec?.projection || 'mercator';
   const centerLat = Number(spec?.center?.lat) || 0;
   const centerLon = Number(spec?.center?.lon) || 0;
-  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
-  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+  const lonDeg = Math.max(0.005, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.005, Math.min(175, Number(spec?.span?.latDeg) || 14));
 
   let proj;
   switch (projId) {
@@ -146,7 +146,7 @@ export function buildProjection(spec, width, height, options = {}) {
   if (projId === 'orthographic') {
     const pad = Math.min(width, height) * 0.04;
     proj.fitExtent([[pad, pad], [width - pad, height - pad]], { type: 'Sphere' });
-    const zoom = Math.max(0.8, Math.min(45.0, 120 / Math.max(1.5, lonDeg)));
+    const zoom = Math.max(0.8, Math.min(250.0, 120 / Math.max(0.1, lonDeg)));
     proj.scale(proj.scale() * zoom).translate([width / 2, height / 2]);
   } else {
     const boxRing = buildBoundingRing(spec);

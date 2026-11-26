@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=11';
+} from './schema.js?v=12';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,13 +19,13 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=11';
+} from './data-loader.js?v=12';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=11';
+} from './cartography.js?v=12';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -34,9 +34,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=11';
-import { REGION_PRESETS } from './presets.js?v=11';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=11';
+} from './exporter.js?v=12';
+import { REGION_PRESETS } from './presets.js?v=12';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=12';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -46,13 +46,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=11';
+} from './controls.js?v=12';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=11';
+} from './shadow.js?v=12';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -960,22 +960,22 @@ function setupCanvasInteractions() {
 }
 
 function applyZoomFactor(factor, { commitHistory = true } = {}) {
-  const MIN_SPAN_DEG = 0.15;
+  const MIN_SPAN_DEG = 0.005;
   const MAX_LON_DEG = 360;
   const MAX_LAT_DEG = 175;
-  const curLon = Math.max(0.05, Number(state.spec.span.lonDeg) || 24);
-  const curLat = Math.max(0.05, Number(state.spec.span.latDeg) || 14);
+  const curLon = Math.max(MIN_SPAN_DEG, Number(state.spec.span.lonDeg) || 24);
+  const curLat = Math.max(MIN_SPAN_DEG, Number(state.spec.span.latDeg) || 14);
   const minFactor = Math.max(MIN_SPAN_DEG / curLon, MIN_SPAN_DEG / curLat);
   const maxFactor = Math.min(MAX_LON_DEG / curLon, MAX_LAT_DEG / curLat);
   const clampedFactor =
     minFactor <= maxFactor ? Math.max(minFactor, Math.min(maxFactor, factor)) : factor;
   const nextLon = Math.max(
     MIN_SPAN_DEG,
-    Math.min(MAX_LON_DEG, Number((curLon * clampedFactor).toFixed(3))),
+    Math.min(MAX_LON_DEG, Number((curLon * clampedFactor).toFixed(4))),
   );
   const nextLat = Math.max(
     MIN_SPAN_DEG,
-    Math.min(MAX_LAT_DEG, Number((curLat * clampedFactor).toFixed(3))),
+    Math.min(MAX_LAT_DEG, Number((curLat * clampedFactor).toFixed(4))),
   );
 
   if (commitHistory) {

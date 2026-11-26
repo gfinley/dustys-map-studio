@@ -44,8 +44,8 @@ class CenterSpec(_BaseSpecModel):
 
 
 class SpanSpec(_BaseSpecModel):
-    lonDeg: float = Field(default=24.0, ge=0.05, le=360.0)
-    latDeg: float = Field(default=14.0, ge=0.05, le=175.0)
+    lonDeg: float = Field(default=24.0, ge=0.005, le=360.0)
+    latDeg: float = Field(default=14.0, ge=0.005, le=175.0)
 
 
 class PageSpec(_BaseSpecModel):

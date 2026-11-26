@@ -91,6 +91,10 @@ _GEOJSON_TYPES = {
     "GeometryCollection",
 }
 _NICE_SCALE_STEPS = (
+    0.1,
+    0.2,
+    0.25,
+    0.5,
     1,
     2,
     5,
@@ -181,7 +185,7 @@ def _configure_extent(
             ax.set_global()
         else:
             radius = abs(proj.x_limits[1]) or _EARTH_RADIUS_M
-            half_extent = radius * min(0.98, max(0.015, max_span / 90.0))
+            half_extent = radius * min(0.98, max(0.0001, max_span / 90.0))
             ax.set_xlim(-half_extent, half_extent)
             ax.set_ylim(-half_extent, half_extent)
         xmin, xmax = ax.get_xlim()
@@ -222,8 +226,8 @@ def _configure_extent(
     if spec.span.lonDeg >= 355.0 and spec.projection in ("mercator", "equal_earth", "robinson"):
         xmin, xmax = proj.x_limits
 
-    x_span = max(xmax - xmin, 1000.0)
-    y_span = max(ymax - ymin, 1000.0)
+    x_span = max(xmax - xmin, 100.0)
+    y_span = max(ymax - ymin, 100.0)
     x_mid = 0.5 * (xmin + xmax)
     y_mid = 0.5 * (ymin + ymax)
     fig_aspect = spec.page.widthIn / spec.page.heightIn
@@ -1485,7 +1489,7 @@ def _compute_geodesic_scale(
     spec: MapSpec,
     proj: ccrs.Projection,
     limits: tuple[float, float, float, float],
-) -> tuple[int, str, float]:
+) -> tuple[float, str, float]:
     """Compute (nice_distance, units, axes_width_fraction) using pyproj.Geod."""
     units = spec.ornaments.scaleBar.units
     unit_meters = 1000.0 if units == "km" else 1609.344
@@ -1515,9 +1519,9 @@ def _compute_geodesic_scale(
             spec.center.lon + 0.5,
             spec.center.lat,
         )
-        total_width_m = max(1000.0, deg_m * spec.span.lonDeg)
+        total_width_m = max(100.0, deg_m * spec.span.lonDeg)
 
-    target_units = max(1.0, (0.22 * total_width_m) / unit_meters)
+    target_units = max(0.1, (0.22 * total_width_m) / unit_meters)
     nice_val = min(_NICE_SCALE_STEPS, key=lambda v: abs(v - target_units))
     nice_m = nice_val * unit_meters
 
@@ -1535,7 +1539,7 @@ def _compute_geodesic_scale(
         pass
 
     bar_frac = max(0.06, min(0.36, bar_frac))
-    return int(nice_val), units, bar_frac
+    return float(nice_val), units, bar_frac
 
 
 def _draw_scale_bar(
@@ -1597,7 +1601,8 @@ def _draw_scale_bar(
     bar_w = bar_fig_w / pill_w
     bar_y0 = 0.20
     bar_h = 0.24
-    segments = 4 if (nice_val % 2 == 0 and bar_fig_w >= 0.10) else 2
+    is_int_even = nice_val >= 2.0 and abs(nice_val - round(nice_val)) < 1e-6 and int(round(nice_val)) % 2 == 0
+    segments = 4 if (is_int_even and bar_fig_w >= 0.10) else 2
     seg_w = bar_w / segments
     for idx in range(segments):
         seg_fill = text_color if idx % 2 == 0 else bg_color
@@ -1613,6 +1618,14 @@ def _draw_scale_bar(
             )
         )
 
+    if nice_val < 1.0:
+        if units == "km":
+            end_label = f"{int(round(nice_val * 1000.0))} m"
+        else:
+            end_label = f"{nice_val:g} {units}"
+    else:
+        end_label = f"{int(round(nice_val))} {units}"
+
     label_y = bar_y0 + bar_h + 0.10
     scale_ax.text(
         bar_x0,
@@ -1625,11 +1638,11 @@ def _draw_scale_bar(
         color=text_color,
         zorder=3,
     )
-    if segments == 4 and nice_val >= 2:
+    if segments == 4 and is_int_even:
         scale_ax.text(
             bar_x0 + 0.5 * bar_w,
             label_y,
-            f"{nice_val // 2}",
+            f"{int(round(nice_val)) // 2}",
             ha="center",
             va="bottom",
             fontsize=6.8,
@@ -1639,7 +1652,7 @@ def _draw_scale_bar(
     scale_ax.text(
         bar_x0 + bar_w,
         label_y,
-        f"{nice_val} {units}",
+        end_label,
         ha="right",
         va="bottom",
         fontsize=6.8,

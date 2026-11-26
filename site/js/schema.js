@@ -346,8 +346,8 @@ export function normalizeMapSpec(partial) {
       lon: clamp(centerRaw.lon, -180, 180, def.center.lon),
     },
     span: {
-      lonDeg: clamp(spanRaw.lonDeg, 0.05, 360, def.span.lonDeg),
-      latDeg: clamp(spanRaw.latDeg, 0.05, 175, def.span.latDeg),
+      lonDeg: clamp(spanRaw.lonDeg, 0.005, 360, def.span.lonDeg),
+      latDeg: clamp(spanRaw.latDeg, 0.005, 175, def.span.latDeg),
     },
     page: {
       preset: presetId,

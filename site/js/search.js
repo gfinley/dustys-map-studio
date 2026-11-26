@@ -1,5 +1,5 @@
-import { sanitizeFilename } from './schema.js?v=11';
-import { getCitiesInBounds } from './data-loader.js?v=11';
+import { sanitizeFilename } from './schema.js?v=12';
+import { getCitiesInBounds } from './data-loader.js?v=12';
 
 function clamp(val, min, max, fallback) {
   const n = Number(val);
@@ -65,11 +65,11 @@ function normalizeNominatimItem(item) {
     if ([south, north, west, east].every(Number.isFinite)) {
       const rawLat = Math.abs(north - south);
       const rawLon = east >= west ? (east - west) : (360 - west + east);
-      if (rawLat > 0.01) {
-        spanLatDeg = clamp(rawLat * 1.25, 1.0, 140.0, fallbackSpan.latDeg);
+      if (rawLat > 0.005) {
+        spanLatDeg = clamp(rawLat * 1.25, 0.05, 140.0, fallbackSpan.latDeg);
       }
-      if (rawLon > 0.01) {
-        spanLonDeg = clamp(rawLon * 1.25, 1.0, 140.0, fallbackSpan.lonDeg);
+      if (rawLon > 0.005) {
+        spanLonDeg = clamp(rawLon * 1.25, 0.05, 140.0, fallbackSpan.lonDeg);
       }
     }
   }
@@ -90,8 +90,8 @@ function normalizeNominatimItem(item) {
     displayName: String(item.display_name || shortName).trim(),
     lat: Number(lat.toFixed(4)),
     lon: Number(lon.toFixed(4)),
-    spanLonDeg: Number(spanLonDeg.toFixed(2)),
-    spanLatDeg: Number(spanLatDeg.toFixed(2)),
+    spanLonDeg: Number(spanLonDeg.toFixed(3)),
+    spanLatDeg: Number(spanLatDeg.toFixed(3)),
     type,
   };
 }
@@ -113,11 +113,11 @@ function normalizePhotonFeature(feature) {
     if ([minLon, maxLat, maxLon, minLat].every(Number.isFinite)) {
       const rawLat = Math.abs(maxLat - minLat);
       const rawLon = maxLon >= minLon ? (maxLon - minLon) : (360 - minLon + maxLon);
-      if (rawLat > 0.01) {
-        spanLatDeg = clamp(rawLat * 1.25, 1.0, 140.0, fallbackSpan.latDeg);
+      if (rawLat > 0.005) {
+        spanLatDeg = clamp(rawLat * 1.25, 0.05, 140.0, fallbackSpan.latDeg);
       }
-      if (rawLon > 0.01) {
-        spanLonDeg = clamp(rawLon * 1.25, 1.0, 140.0, fallbackSpan.lonDeg);
+      if (rawLon > 0.005) {
+        spanLonDeg = clamp(rawLon * 1.25, 0.05, 140.0, fallbackSpan.lonDeg);
       }
     }
   }
@@ -133,8 +133,8 @@ function normalizePhotonFeature(feature) {
     displayName: parts.join(', ') || name,
     lat: Number(lat.toFixed(4)),
     lon: Number(lon.toFixed(4)),
-    spanLonDeg: Number(spanLonDeg.toFixed(2)),
-    spanLatDeg: Number(spanLatDeg.toFixed(2)),
+    spanLonDeg: Number(spanLonDeg.toFixed(3)),
+    spanLatDeg: Number(spanLatDeg.toFixed(3)),
     type,
   };
 }
@@ -253,8 +253,8 @@ function extractCityRecord(raw) {
 export function pickTopCitiesInExtent(populatedPlaces, center, span, limit = 8) {
   const cLat = Number(center?.lat ?? 0);
   const cLon = Number(center?.lon ?? 0);
-  const halfLon = Math.max(0.25, Number(span?.lonDeg ?? 20) / 2) * 0.92;
-  const halfLat = Math.max(0.25, Number(span?.latDeg ?? 15) / 2) * 0.92;
+  const halfLon = Math.max(0.02, Number(span?.lonDeg ?? 20) / 2) * 0.92;
+  const halfLat = Math.max(0.02, Number(span?.latDeg ?? 15) / 2) * 0.92;
 
   const minLat = Math.max(-89.5, cLat - halfLat);
   const maxLat = Math.min(89.5, cLat + halfLat);

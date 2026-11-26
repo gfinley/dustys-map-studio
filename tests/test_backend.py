@@ -473,6 +473,27 @@ class TestBackendAPI(unittest.TestCase):
         self.assertIn("ultra-gshhs", payload.get("fidelity", []))
         self.assertIn("region-shadows", payload.get("features", []))
 
+    def test_deep_zoom_and_sub_km_scale_bar(self) -> None:
+        """Ultra-close 0.005 deg zoom validates and renders sub-kilometer scale bar labels."""
+        spec = MapSpec.model_validate(
+            {
+                "projection": "mercator",
+                "center": {"lat": 14.386, "lon": 120.578},
+                "span": {"lonDeg": 0.005, "latDeg": 0.005},
+                "page": {"widthIn": 6.0, "heightIn": 4.0, "dpi": 100},
+                "ornaments": {
+                    "scaleBar": {"enabled": True, "units": "km", "position": "bottom-left"},
+                    "locatorGlobe": {"enabled": False},
+                },
+                "pro": {"coastlineEngine": "natural_earth"},
+            }
+        )
+        svg_bytes = render_map(spec, "svg")
+        svg_text = svg_bytes.decode("utf-8", errors="ignore")
+        self.assertIn(" m", svg_text)
+        png_bytes = render_map(spec, "png")
+        self.assertTrue(png_bytes.startswith(b"\x89PNG"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,10 +6,10 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=11';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=11';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=11';
-import { formatArea } from './shadow.js?v=11';
+} from './schema.js?v=12';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=12';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=12';
+import { formatArea } from './shadow.js?v=12';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -1323,8 +1323,13 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('map-detail-level')) $('map-detail-level').value = spec.detailLevel;
   if ($('center-lat')) $('center-lat').value = Number(spec.center.lat).toFixed(2);
   if ($('center-lon')) $('center-lon').value = Number(spec.center.lon).toFixed(2);
-  if ($('span-lon')) $('span-lon').value = Number(spec.span.lonDeg).toFixed(2);
-  if ($('span-lat')) $('span-lat').value = Number(spec.span.latDeg).toFixed(2);
+  const fmtSpan = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '1.00';
+    return n < 1 ? n.toFixed(3) : n.toFixed(2);
+  };
+  if ($('span-lon')) $('span-lon').value = fmtSpan(spec.span.lonDeg);
+  if ($('span-lat')) $('span-lat').value = fmtSpan(spec.span.latDeg);
 
   // Themes & Colors
   document.querySelectorAll('.theme-swatch-btn').forEach((btn) => {
