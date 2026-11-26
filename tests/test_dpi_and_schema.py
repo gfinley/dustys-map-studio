@@ -398,6 +398,61 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         ):
             self.assertIn(f'id="{elem_id}"', html)
 
+    def test_alaska_baseline_preset(self) -> None:
+        """Standalone Alaska baseline preset exists in presets.js and validates cleanly against MapSpec."""
+        presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
+        self.assertIn("id: 'alaska'", presets_js)
+        self.assertIn("label: 'Alaska'", presets_js)
+        self.assertIn("id: 'alaska_russia_dateline'", presets_js)
+        self.assertLess(
+            presets_js.index("id: 'alaska'"),
+            presets_js.index("id: 'alaska_russia_dateline'"),
+        )
+
+        alaska_spec = MapSpec.model_validate(
+            {
+                "version": 1,
+                "title": "Alaska",
+                "showTitle": False,
+                "projection": "albers",
+                "detailLevel": "auto",
+                "center": {"lat": 61.8, "lon": -157.5},
+                "span": {"lonDeg": 59.0, "latDeg": 24.0},
+                "page": {
+                    "preset": "book_landscape",
+                    "widthIn": 7.0,
+                    "heightIn": 4.6,
+                    "dpi": 300,
+                    "showFrameBorder": True,
+                },
+                "theme": "dusty_prime",
+                "highlightedCountries": [
+                    {
+                        "id": "840",
+                        "name": "United States of America",
+                        "fill": "#7a7d7a",
+                        "stroke": "#ffffff",
+                        "hatch": "none",
+                    }
+                ],
+                "cities": [
+                    {"id": "juneau", "name": "Juneau", "lat": 58.3019, "lon": -134.4197, "style": "capital", "dx": 7, "dy": -4},
+                    {"id": "anchorage", "name": "Anchorage", "lat": 61.2181, "lon": -149.9003, "style": "dot", "dx": 6, "dy": 6},
+                    {"id": "fairbanks", "name": "Fairbanks", "lat": 64.8378, "lon": -147.7164, "style": "dot", "dx": 6, "dy": -5},
+                    {"id": "nome", "name": "Nome", "lat": 64.5011, "lon": -165.4064, "style": "dot", "dx": -8, "dy": 6},
+                ],
+                "ornaments": {
+                    "scaleBar": {"enabled": True, "units": "mi", "position": "bottom-left"},
+                    "locatorGlobe": {"enabled": True, "position": "top-right", "sizePct": 22, "showExtentBox": True},
+                },
+            }
+        )
+        self.assertEqual(alaska_spec.projection, "albers")
+        self.assertEqual(alaska_spec.page.preset, "book_landscape")
+        self.assertEqual(len(alaska_spec.highlightedCountries), 1)
+        self.assertEqual(alaska_spec.highlightedCountries[0].id, "840")
+        self.assertEqual([c.name for c in alaska_spec.cities], ["Juneau", "Anchorage", "Fairbanks", "Nome"])
+
 
 if __name__ == "__main__":
     unittest.main()

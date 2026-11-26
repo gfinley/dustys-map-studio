@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=16';
+} from './schema.js?v=17';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,14 +19,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=16';
+} from './data-loader.js?v=17';
 import {
   buildProjection,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=16';
+} from './cartography.js?v=17';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -35,13 +35,13 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=16';
+} from './exporter.js?v=17';
 import {
   AIRFIELD_1941_LAYERS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
-} from './presets.js?v=16';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=16';
+} from './presets.js?v=17';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=17';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -51,13 +51,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=16';
+} from './controls.js?v=17';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=16';
+} from './shadow.js?v=17';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH

@@ -6,15 +6,15 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=16';
+} from './schema.js?v=17';
 import {
   AIRFIELD_1941_LAYERS,
   GEOJSON_EXAMPLES,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
-} from './presets.js?v=16';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=16';
-import { formatArea } from './shadow.js?v=16';
+} from './presets.js?v=17';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=17';
+import { formatArea } from './shadow.js?v=17';
 
 const HATCH_LABELS = {
   none: 'No Hatch',

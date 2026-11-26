@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=16';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=17';
 
 export const AIRFIELD_1941_LAYERS = [
   {
@@ -321,6 +321,56 @@ export const REGION_PRESETS = [
       ],
       ornaments: {
         scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
+        locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
+      },
+    }),
+  },
+  {
+    id: 'alaska',
+    label: 'Alaska',
+    description: 'Albers Equal-Area framing of Alaska—mainland, Southeast Panhandle, and Aleutian Islands—with Juneau, Anchorage, Fairbanks, and Nome.',
+    spec: makePresetSpec({
+      title: 'Alaska',
+      showTitle: false,
+      projection: 'albers',
+      detailLevel: 'auto',
+      center: { lat: 61.8, lon: -157.5 },
+      span: { lonDeg: 59.0, latDeg: 24.0 },
+      page: {
+        preset: 'book_landscape',
+        widthIn: 7.0,
+        heightIn: 4.6,
+        dpi: 300,
+        showFrameBorder: true,
+      },
+      theme: 'dusty_prime',
+      layers: {
+        showBorders: true,
+        borderWidth: 1.0,
+        borderStyle: 'solid',
+        showCoastlines: false,
+        showLakes: true,
+        showRivers: false,
+        showAdmin1: false,
+        showGraticule: false,
+      },
+      highlightedCountries: [
+        {
+          id: '840',
+          name: 'United States of America',
+          fill: '#7a7d7a',
+          stroke: '#ffffff',
+          hatch: 'none',
+        },
+      ],
+      cities: [
+        { id: 'juneau', name: 'Juneau', lat: 58.3019, lon: -134.4197, style: 'capital', dx: 7, dy: -4 },
+        { id: 'anchorage', name: 'Anchorage', lat: 61.2181, lon: -149.9003, style: 'dot', dx: 6, dy: 6 },
+        { id: 'fairbanks', name: 'Fairbanks', lat: 64.8378, lon: -147.7164, style: 'dot', dx: 6, dy: -5 },
+        { id: 'nome', name: 'Nome', lat: 64.5011, lon: -165.4064, style: 'dot', dx: -8, dy: 6 },
+      ],
+      ornaments: {
+        scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
       },
     }),
