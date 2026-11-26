@@ -12,14 +12,14 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=21';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=21';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=21';
+} from './ornaments.js?v=22';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=22';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=22';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=21';
+} from './data-loader.js?v=22';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -181,7 +181,7 @@ function isFrontHemisphere(spec, lon, lat) {
   return true;
 }
 
-function computeVisibleBounds(spec, projection, width, height) {
+export function computeVisibleBounds(spec, projection, width, height) {
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
   const halfLon = (Number(spec?.span?.lonDeg) || 24) / 2;

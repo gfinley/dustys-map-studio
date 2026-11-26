@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=21" />
+  <link rel="stylesheet" href="./styles/main.css?v=22" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -389,6 +389,36 @@
                   <input id="page-show-frame" type="checkbox" />
                   <span>Crisp Page Frame Border</span>
                 </label>
+              </div>
+            </div>
+
+            <div class="panel-card hd-coastline-card">
+              <div class="card-header">
+                <h2>HD Coastlines (Current View)</h2>
+                <span class="helper-pill">OSM Live</span>
+              </div>
+              <p class="helper-text">Download meter-accurate OpenStreetMap shorelines &amp; islands (e.g., Corregidor, harbors, straits) on demand for the framed area.</p>
+              <div class="field-stack">
+                <div class="hd-coastline-meta-row">
+                  <span id="hd-coastline-view-span" class="hd-coastline-span-badge">View: —</span>
+                  <select id="hd-coastline-detail" class="mini-select" aria-label="HD coastline resolution" style="flex: 0 0 auto; width: 132px;">
+                    <option value="0" selected>Full (1–5m)</option>
+                    <option value="15">Fine (~15m)</option>
+                    <option value="40">Smooth (~40m)</option>
+                  </select>
+                </div>
+                <div class="btn-stack-2">
+                  <button id="btn-fetch-osm-coastline-land" class="btn btn-primary" type="button">
+                    Fetch HD Coastlines (Primary Land)
+                  </button>
+                  <button id="btn-fetch-osm-coastline-overlay" class="btn btn-secondary" type="button">
+                    + Add HD Shapes as Overlay
+                  </button>
+                </div>
+                <div id="hd-coastline-status" class="primary-land-banner" hidden>
+                  <span id="hd-coastline-status-text">HD Coastlines active</span>
+                  <button id="btn-refresh-osm-coastline" class="btn-chip" type="button">Refresh View</button>
+                </div>
               </div>
             </div>
 
@@ -985,6 +1015,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=21"></script>
+  <script type="module" src="./js/app.js?v=22"></script>
 </body>
 </html>

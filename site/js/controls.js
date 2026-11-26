@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=21';
+} from './schema.js?v=22';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,9 +14,16 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=21';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=21';
-import { formatArea } from './shadow.js?v=21';
+} from './presets.js?v=22';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=22';
+import { formatArea } from './shadow.js?v=22';
+import {
+  OSM_COASTLINE_MAX_SPAN_DEG,
+  computePaddedCoastlineBBox,
+  isOsmCoastlineUrl,
+  isViewOutsideCoastlineBBox,
+  parseOsmCoastlineUrl,
+} from './osm-coastline.js?v=22';
 
 const PALETTE_COLOR_FIELDS = [
   { key: 'land', inputId: 'color-land', noneBtnId: 'btn-land-none', fallback: '#4a4a4a' },
@@ -1337,6 +1344,21 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ layers: { graticuleStepDeg: Number(e.target.value) || 10 } });
   });
 
+  $('btn-fetch-osm-coastline-land')?.addEventListener('click', () => {
+    const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
+    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters });
+  });
+
+  $('btn-fetch-osm-coastline-overlay')?.addEventListener('click', () => {
+    const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
+    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: false, simplifyMeters });
+  });
+
+  $('btn-refresh-osm-coastline')?.addEventListener('click', () => {
+    const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
+    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters, forceRefresh: true });
+  });
+
   $('btn-load-geoboundaries-land')?.addEventListener('click', () => {
     const sel = $('geoboundaries-country');
     const opt = sel?.selectedOptions?.[0];
@@ -1829,6 +1851,51 @@ export function syncControlsFromSpec(spec, uiState = {}) {
         landBannerText.textContent = 'Default land layers are unshaded';
       } else if (primaryLandLayers.length > 0) {
         landBannerText.textContent = `Primary Land active (${primaryLandLayers.length})`;
+      }
+    }
+  }
+
+  // On-Demand OSM HD Coastlines live span & active status
+  const hdSpanEl = $('hd-coastline-view-span');
+  const hdStatusEl = $('hd-coastline-status');
+  const hdStatusText = $('hd-coastline-status-text');
+  const hdBBox = computePaddedCoastlineBBox(spec);
+  if (hdSpanEl) {
+    const lonStr = hdBBox.rawSpanLon < 1 ? hdBBox.rawSpanLon.toFixed(2) : hdBBox.rawSpanLon.toFixed(1);
+    const latStr = hdBBox.rawSpanLat < 1 ? hdBBox.rawSpanLat.toFixed(2) : hdBBox.rawSpanLat.toFixed(1);
+    if (hdBBox.tooWide) {
+      hdSpanEl.textContent = `View: ${lonStr}° × ${latStr}° · Zoom in ≤ ${OSM_COASTLINE_MAX_SPAN_DEG}°`;
+      hdSpanEl.classList.remove('is-ready');
+      hdSpanEl.classList.add('is-too-wide');
+    } else {
+      hdSpanEl.textContent = `View: ${lonStr}° × ${latStr}° · Ready for HD`;
+      hdSpanEl.classList.add('is-ready');
+      hdSpanEl.classList.remove('is-too-wide');
+    }
+  }
+  if (hdStatusEl) {
+    const activeHdLayer = (spec.customGeoJsonLayers || []).find(
+      (l) => l && l.visible !== false && (String(l.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(l.url)),
+    );
+    if (!activeHdLayer) {
+      hdStatusEl.hidden = true;
+      hdStatusEl.classList.remove('is-stale');
+    } else {
+      hdStatusEl.hidden = false;
+      const parsedBBox = parseOsmCoastlineUrl(activeHdLayer.url);
+      const currentViewBounds = [
+        hdBBox.centerLon - hdBBox.rawSpanLon / 2,
+        hdBBox.centerLon + hdBBox.rawSpanLon / 2,
+        hdBBox.centerLat - hdBBox.rawSpanLat / 2,
+        hdBBox.centerLat + hdBBox.rawSpanLat / 2,
+      ];
+      const isStale = parsedBBox ? isViewOutsideCoastlineBBox(currentViewBounds, parsedBBox) : false;
+      hdStatusEl.classList.toggle('is-stale', isStale);
+      if (hdStatusText) {
+        const polyCount = Array.isArray(activeHdLayer.data?.features) ? activeHdLayer.data.features.length : 0;
+        hdStatusText.textContent = isStale
+          ? 'View moved outside HD bounds — refresh for current area'
+          : `OSM HD active (${polyCount} shoreline shape${polyCount === 1 ? '' : 's'})`;
       }
     }
   }

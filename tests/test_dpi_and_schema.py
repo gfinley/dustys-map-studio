@@ -616,6 +616,56 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
             "Found non-empty default cities array in site/js/presets.js",
         )
 
+    def test_on_demand_osm_hd_coastlines_contract(self) -> None:
+        """On-demand OSM HD Coastlines module, loader, UI controls, and polygonizer tests pass."""
+        import shutil
+        import subprocess
+
+        osm_js_path = SITE_DIR / "js" / "osm-coastline.js"
+        self.assertTrue(osm_js_path.is_file())
+        osm_js = osm_js_path.read_text(encoding="utf-8")
+        for symbol in (
+            "export function computePaddedCoastlineBBox",
+            "export function buildOverpassCoastlineQuery",
+            "export function polygonizeOverpassCoastlines",
+            "export function encodeOsmCoastlineUrl",
+            "export function parseOsmCoastlineUrl",
+            "export function isViewOutsideCoastlineBBox",
+        ):
+            self.assertIn(symbol, osm_js)
+
+        data_loader_js = (SITE_DIR / "js" / "data-loader.js").read_text(encoding="utf-8")
+        for symbol in ("export async function fetchOsmCoastlineForBounds", "export async function fetchOsmCoastlineByUrl"):
+            self.assertIn(symbol, data_loader_js)
+
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        for elem_id in (
+            "hd-coastline-view-span",
+            "hd-coastline-detail",
+            "btn-fetch-osm-coastline-land",
+            "btn-fetch-osm-coastline-overlay",
+            "hd-coastline-status",
+            "btn-refresh-osm-coastline",
+        ):
+            self.assertIn(f'id="{elem_id}"', html)
+
+        app_js = (SITE_DIR / "js" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("onFetchOsmCoastlines", app_js)
+        self.assertIn("osm_hd_coastline_land", app_js)
+
+        if shutil.which("node"):
+            proc = subprocess.run(
+                ["node", "--test", str(ROOT_DIR / "tests" / "test_osm_coastline.mjs")],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                proc.returncode,
+                0,
+                f"Node OSM coastline tests failed:\n{proc.stdout}\n{proc.stderr}",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

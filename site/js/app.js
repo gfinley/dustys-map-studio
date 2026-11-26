@@ -6,11 +6,12 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=21';
+} from './schema.js?v=22';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
   fetchGeoBoundariesLayer,
+  fetchOsmCoastlineForBounds,
   filterGeoJsonToAlaska,
   getAdmin1Catalog,
   getCitiesInBounds,
@@ -20,14 +21,20 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=21';
+} from './data-loader.js?v=22';
 import {
   buildProjection,
+  computeVisibleBounds,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=21';
+} from './cartography.js?v=22';
+import {
+  OSM_COASTLINE_MAX_SPAN_DEG,
+  computePaddedCoastlineBBox,
+  isOsmCoastlineUrl,
+} from './osm-coastline.js?v=22';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -36,15 +43,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=21';
+} from './exporter.js?v=22';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=21';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=21';
+} from './presets.js?v=22';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=22';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -54,13 +61,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=21';
+} from './controls.js?v=22';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=21';
+} from './shadow.js?v=22';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -71,7 +78,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=21';
+} from './timeline.js?v=22';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -283,19 +290,50 @@ function commitSpec(nextSpecRaw, { commitHistory = true, keepPreset = false, ski
 
 function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynamicLists = false } = {}) {
   const prevColors = state.spec?.colors || {};
+  const prevLayers = state.spec?.layers || {};
   let effectivePatch = patch;
   if (
-    patch?.colors &&
+    (patch?.colors || patch?.layers) &&
     !patch.customGeoJsonLayers &&
     Array.isArray(state.spec?.customGeoJsonLayers) &&
     state.spec.customGeoJsonLayers.some((l) => l?.role === 'land')
   ) {
+    const nextColors = { ...prevColors, ...(patch.colors || {}) };
+    const nextLayers = { ...prevLayers, ...(patch.layers || {}) };
     let changed = false;
     const syncedLayers = state.spec.customGeoJsonLayers.map((layer) => {
       if (layer?.role !== 'land') return layer;
       const next = { ...layer };
+      const isOsmHdLand = String(layer.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(layer.url);
+
+      if (isOsmHdLand) {
+        if (typeof patch.colors?.land === 'string') {
+          if (isNoneColor(patch.colors.land)) {
+            next.fillOpacity = 0;
+          } else {
+            next.color = patch.colors.land;
+            next.fillOpacity = 1.0;
+          }
+          changed = true;
+        }
+        if (
+          typeof patch.colors?.coastline === 'string' ||
+          typeof patch.layers?.showCoastlines === 'boolean' ||
+          typeof patch.layers?.coastlineWidth === 'number'
+        ) {
+          const wantStroke =
+            Boolean(nextLayers.showCoastlines) &&
+            Boolean(nextColors.coastline) &&
+            !isNoneColor(nextColors.coastline);
+          next.strokeColor = wantStroke ? nextColors.coastline : 'none';
+          next.strokeWidth = Number(nextLayers.coastlineWidth) || 0.75;
+          changed = true;
+        }
+        return next;
+      }
+
       if (
-        typeof patch.colors.land === 'string' &&
+        typeof patch.colors?.land === 'string' &&
         !isNoneColor(patch.colors.land) &&
         String(layer.color || '').toLowerCase() === String(prevColors.land || '').toLowerCase()
       ) {
@@ -304,13 +342,13 @@ function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynami
       }
       if (layer.strokeColor && layer.strokeColor !== 'none') {
         const prevStroke = String(layer.strokeColor).toLowerCase();
-        if (typeof patch.colors.admin1 === 'string' && prevStroke === String(prevColors.admin1 || '').toLowerCase()) {
+        if (typeof patch.colors?.admin1 === 'string' && prevStroke === String(prevColors.admin1 || '').toLowerCase()) {
           next.strokeColor = patch.colors.admin1;
           changed = true;
-        } else if (typeof patch.colors.borders === 'string' && prevStroke === String(prevColors.borders || '').toLowerCase()) {
+        } else if (typeof patch.colors?.borders === 'string' && prevStroke === String(prevColors.borders || '').toLowerCase()) {
           next.strokeColor = patch.colors.borders;
           changed = true;
-        } else if (typeof patch.colors.coastline === 'string' && prevStroke === String(prevColors.coastline || '').toLowerCase()) {
+        } else if (typeof patch.colors?.coastline === 'string' && prevStroke === String(prevColors.coastline || '').toLowerCase()) {
           next.strokeColor = patch.colors.coastline;
           changed = true;
         }
@@ -2321,6 +2359,108 @@ function buildCallbacks() {
       syncAllUi();
     },
 
+    onFetchOsmCoastlines: async ({ asPrimaryLand = true, simplifyMeters = 0, forceRefresh = false } = {}) => {
+      const spec = state.spec;
+      const { widthPx, heightPx } = getPixelDimensions(spec.page);
+      const projWidth = Math.max(200, Math.min(1200, widthPx));
+      const projHeight = Math.max(200, Math.round((projWidth * heightPx) / Math.max(1, widthPx)));
+      const projection = buildProjection(spec, projWidth, projHeight);
+      const visibleBounds = computeVisibleBounds(spec, projection, projWidth, projHeight);
+      const bbox = computePaddedCoastlineBBox(visibleBounds);
+
+      if (bbox.tooWide) {
+        showToast(
+          `Zoom in to ≤ ${OSM_COASTLINE_MAX_SPAN_DEG}° first (current view is ${bbox.maxRawSpan.toFixed(1)}°). For full countries, use geoBoundaries below.`,
+          'warn',
+          5200,
+        );
+        return;
+      }
+
+      try {
+        setLoadingProgress(true, 'Downloading OpenStreetMap HD coastlines...');
+        const result = await fetchOsmCoastlineForBounds(bbox, {
+          simplifyMeters,
+          forceRefresh,
+          onStatus: (msg) => setLoadingProgress(true, msg),
+        });
+        setLoadingProgress(false);
+
+        const colors = spec.colors || {};
+        const layersSpec = spec.layers || {};
+        const landIsNone = isNoneColor(colors.land);
+        const primaryFill = !landIsNone && colors.land
+          ? colors.land
+          : resolveRestoredPaletteColor('land');
+        const wantCoastStroke =
+          Boolean(layersSpec.showCoastlines) &&
+          Boolean(colors.coastline) &&
+          !isNoneColor(colors.coastline);
+        const detailTag =
+          simplifyMeters >= 35 ? '~40m' : simplifyMeters >= 10 ? '~15m' : 'Full';
+        const areaTitle = String(spec.title || '')
+          .replace(/\bBriefing Map\b/i, '')
+          .trim();
+        const label = areaTitle
+          ? `${areaTitle} (OSM HD ${detailTag})`
+          : `OSM HD Coastlines (${detailTag})`;
+
+        const layer = asPrimaryLand
+          ? {
+              id: 'osm_hd_coastline_land',
+              label,
+              url: result.url,
+              data: result.data,
+              visible: true,
+              role: 'land',
+              color: primaryFill,
+              strokeColor: wantCoastStroke ? colors.coastline : 'none',
+              fillOpacity: landIsNone ? 0 : 1.0,
+              strokeWidth: Number(layersSpec.coastlineWidth) || 0.75,
+              dashed: false,
+              hatch: 'none',
+            }
+          : {
+              id: `osm_hd_coastline_overlay_${Date.now()}`,
+              label,
+              url: result.url,
+              data: result.data,
+              visible: true,
+              role: 'overlay',
+              color: '#0284c7',
+              strokeColor: '#0369a1',
+              fillOpacity: 0.18,
+              strokeWidth: 1.2,
+              dashed: false,
+              hatch: 'none',
+            };
+
+        const existing = (spec.customGeoJsonLayers || []).filter(
+          (l) => !(asPrimaryLand && l?.id === 'osm_hd_coastline_land'),
+        );
+        const patch = {
+          customGeoJsonLayers: [...existing, layer],
+        };
+        if (asPrimaryLand) {
+          patch.layers = { showLand: false };
+        }
+        patchSpec(patch);
+
+        const st = result.stats || {};
+        const summary = `${st.polygonCount || 0} shape${st.polygonCount === 1 ? '' : 's'} (${st.islandCount || 0} island${st.islandCount === 1 ? '' : 's'}, ${(st.vertexCount || 0).toLocaleString()} pts)`;
+        showToast(
+          asPrimaryLand
+            ? `Loaded OSM HD Coastlines as Primary Land — ${summary}`
+            : `Added OSM HD Coastlines overlay — ${summary}`,
+          'success',
+          4200,
+        );
+      } catch (err) {
+        setLoadingProgress(false);
+        showToast(`OSM HD Coastlines error: ${err.message}`, 'error', 5400);
+      }
+    },
+
     onLoadGeoBoundaries: async (countryId, countryName, level = 'ADM1', { asPrimaryLand = false } = {}) => {
       const iso3 = resolveIso3FromNumericId(countryId);
       if (!iso3) {
@@ -2657,10 +2797,19 @@ function buildCallbacks() {
       const promoting = cur.role !== 'land';
       const colors = state.spec.colors || {};
       if (promoting) {
-        const isAdm0 = /ADM0/i.test(cur.label || '') || /ADM0/i.test(cur.id || '');
+        const isCoastLayer =
+          /ADM0/i.test(cur.label || '') ||
+          /ADM0/i.test(cur.id || '') ||
+          String(cur.id || '').startsWith('osm_hd_coastline') ||
+          isOsmCoastlineUrl(cur.url);
         const primaryFill = !isNoneColor(colors.land) && colors.land
           ? colors.land
           : resolveRestoredPaletteColor('land');
+        const layersSpec = state.spec.layers || {};
+        const coastStroke =
+          layersSpec.showCoastlines && colors.coastline && !isNoneColor(colors.coastline)
+            ? colors.coastline
+            : 'none';
         const admin1Stroke = !isNoneColor(colors.admin1) ? colors.admin1 : null;
         const borderStroke = !isNoneColor(colors.borders) ? colors.borders : null;
         next[idx] = {
@@ -2668,9 +2817,9 @@ function buildCallbacks() {
           visible: true,
           role: 'land',
           color: primaryFill,
-          strokeColor: isAdm0 ? 'none' : (admin1Stroke || borderStroke || 'none'),
+          strokeColor: isCoastLayer ? coastStroke : (admin1Stroke || borderStroke || 'none'),
           fillOpacity: 1.0,
-          strokeWidth: isAdm0 ? 0.6 : 0.7,
+          strokeWidth: isCoastLayer ? (Number(layersSpec.coastlineWidth) || 0.75) : 0.7,
           dashed: false,
         };
         patchSpec({

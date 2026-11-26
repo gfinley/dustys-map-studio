@@ -5,6 +5,15 @@
 
 import * as topojson from 'https://cdn.jsdelivr.net/npm/topojson-client@3/+esm';
 import { geoArea, geoCentroid } from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+import {
+  OVERPASS_ENDPOINTS,
+  buildOverpassCoastlineQuery,
+  computePaddedCoastlineBBox,
+  encodeOsmCoastlineUrl,
+  isOsmCoastlineUrl,
+  parseOsmCoastlineUrl,
+  polygonizeOverpassCoastlines,
+} from './osm-coastline.js?v=22';
 
 const CACHE_NAME = 'dusty-mapmaker-v4';
 try {
@@ -1104,6 +1113,170 @@ export function validateGeoJson(data) {
   return sanitizeGeoJsonWinding(data);
 }
 
+function buildOsmCacheRequestUrl(osmUrl) {
+  return `https://cache.dusty-map-studio.local/osm-coastline/${encodeURIComponent(osmUrl)}`;
+}
+
+async function fetchOverpassJson(query, { timeoutMs = 28000, onStatus = null } = {}) {
+  let lastError = null;
+  const body = `data=${encodeURIComponent(query)}`;
+
+  for (let i = 0; i < OVERPASS_ENDPOINTS.length; i += 1) {
+    const endpoint = OVERPASS_ENDPOINTS[i];
+    const host = endpoint.replace(/^https?:\/\//, '').split('/')[0];
+    if (typeof onStatus === 'function') {
+      onStatus(
+        i === 0
+          ? `Downloading OpenStreetMap HD coastlines (${host})...`
+          : `Primary server busy — trying mirror (${host})...`,
+      );
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          Accept: 'application/json',
+        },
+        body,
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        lastError = new Error(`Overpass (${host}) returned HTTP ${res.status}`);
+        // Retry next mirror on rate limit / timeout / gateway errors
+        if (res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504) {
+          continue;
+        }
+        continue;
+      }
+
+      const payload = await res.json();
+      if (!payload || !Array.isArray(payload.elements)) {
+        lastError = new Error(`Overpass (${host}) returned an unexpected payload.`);
+        continue;
+      }
+      return { payload, endpoint: host };
+    } catch (err) {
+      lastError =
+        err?.name === 'AbortError'
+          ? new Error(`Overpass (${host}) timed out after ${Math.round(timeoutMs / 1000)}s`)
+          : err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw new Error(
+    `OpenStreetMap Overpass request failed across all mirrors (${lastError?.message || 'network error'}). Try zooming in slightly or retrying in a few seconds.`,
+  );
+}
+
+/**
+ * Fetch meter-accurate OpenStreetMap coastlines & islands for a padded bounding box
+ * via the Overpass API, polygonize them into closed land Polygons, and cache the result.
+ */
+export async function fetchOsmCoastlineForBounds(
+  bboxInput,
+  { simplifyMeters = 0, onStatus = null, forceRefresh = false } = {},
+) {
+  const bbox =
+    bboxInput &&
+    Number.isFinite(Number(bboxInput.south)) &&
+    Number.isFinite(Number(bboxInput.west)) &&
+    Number.isFinite(Number(bboxInput.north)) &&
+    Number.isFinite(Number(bboxInput.east))
+      ? {
+          south: Number(bboxInput.south),
+          west: Number(bboxInput.west),
+          north: Number(bboxInput.north),
+          east: Number(bboxInput.east),
+          crossesAntimeridian: Number(bboxInput.west) > Number(bboxInput.east),
+          tooWide: Boolean(bboxInput.tooWide),
+        }
+      : computePaddedCoastlineBBox(bboxInput);
+
+  if (bbox.tooWide) {
+    throw new Error('Framed area is too wide for live OSM coastline download. Zoom in to 3° or less.');
+  }
+
+  const simp = Math.max(0, Math.round(Number(simplifyMeters) || 0));
+  const osmUrl = encodeOsmCoastlineUrl(bbox, { simplifyMeters: simp });
+  const cacheKey = `osm_coastline::${osmUrl}`;
+  const cacheReqUrl = buildOsmCacheRequestUrl(osmUrl);
+
+  if (!forceRefresh) {
+    if (jsonMemoryCache.has(cacheKey)) {
+      return jsonMemoryCache.get(cacheKey);
+    }
+    const cached = await readCacheStorage(cacheReqUrl);
+    if (cached && cached.data && cached.stats) {
+      const hydrated = {
+        ...cached,
+        data: attachFeatureBBoxes(sanitizeGeoJsonWinding(cached.data)),
+      };
+      jsonMemoryCache.set(cacheKey, hydrated);
+      return hydrated;
+    }
+  }
+
+  const query = buildOverpassCoastlineQuery(bbox, { timeoutSec: 28 });
+  const { payload, endpoint } = await fetchOverpassJson(query, { timeoutMs: 30000, onStatus });
+
+  if (typeof onStatus === 'function') {
+    onStatus('Stitching & closing HD shoreline polygons...');
+  }
+
+  const { geojson, stats } = polygonizeOverpassCoastlines(payload, bbox, { simplifyMeters: simp });
+  if (!geojson.features.length) {
+    throw new Error(
+      'No OpenStreetMap coastlines were found in this view. Try zooming out slightly to include a shoreline.',
+    );
+  }
+
+  const sanitized = attachFeatureBBoxes(sanitizeGeoJsonWinding(geojson));
+  const result = {
+    url: osmUrl,
+    data: sanitized,
+    stats: {
+      ...stats,
+      simplifyMeters: simp,
+      endpoint,
+    },
+  };
+
+  jsonMemoryCache.set(cacheKey, result);
+  try {
+    if (typeof Response !== 'undefined') {
+      await writeCacheStorage(
+        cacheReqUrl,
+        new Response(JSON.stringify(result), {
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+    }
+  } catch {
+    // Non-fatal cache write failure
+  }
+
+  return result;
+}
+
+export async function fetchOsmCoastlineByUrl(osmUrl, { onStatus = null, forceRefresh = false } = {}) {
+  const parsed = parseOsmCoastlineUrl(osmUrl);
+  if (!parsed) {
+    throw new Error(`Invalid OSM coastline URL: "${osmUrl}"`);
+  }
+  return fetchOsmCoastlineForBounds(parsed, {
+    simplifyMeters: parsed.simplifyMeters,
+    onStatus,
+    forceRefresh,
+  });
+}
+
 export async function fetchCustomGeoJson(url) {
   if (typeof url !== 'string' || !url.trim()) {
     throw new Error('GeoJSON URL is required.');
@@ -1111,6 +1284,10 @@ export async function fetchCustomGeoJson(url) {
   const trimmed = url.trim();
   if (/^javascript:/i.test(trimmed)) {
     throw new Error('Unsupported URL scheme.');
+  }
+  if (isOsmCoastlineUrl(trimmed)) {
+    const res = await fetchOsmCoastlineByUrl(trimmed);
+    return res.data;
   }
 
   const cacheKey = `custom_geojson::${trimmed}`;
