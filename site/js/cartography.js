@@ -12,10 +12,10 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=14';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=14';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=14';
-import { sanitizeGeoJsonWinding } from './data-loader.js?v=14';
+} from './ornaments.js?v=15';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=15';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=15';
+import { sanitizeGeoJsonWinding } from './data-loader.js?v=15';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -1596,4 +1596,84 @@ export function hitTestCountry(projection, datasets, x, y) {
     }
   }
   return null;
+}
+
+/**
+ * Find the nearest visible custom GeoJSON Point/MultiPoint feature under canvas pixel `(x, y)`.
+ */
+export function hitTestGeoJsonPoint(projection, spec, x, y, width, height) {
+  if (!projection || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+  const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
+  if (overlays.length === 0) return null;
+
+  const scaleFactor = (width || 900) / 900;
+  const isOrtho = spec?.projection === 'orthographic';
+  const centerLon = Number(spec?.center?.lon) || 0;
+  const centerLat = Number(spec?.center?.lat) || 0;
+
+  let best = null;
+  let bestDist = Infinity;
+
+  // Iterate topmost layer first
+  for (let i = overlays.length - 1; i >= 0; i -= 1) {
+    const layer = overlays[i];
+    if (layer?.visible === false || layer?.role === 'land' || !layer?.data) continue;
+
+    const pointRadius = Math.max(3, (Number(layer.strokeWidth) || 1.5) * 2.5) * scaleFactor;
+    const hitRadius = Math.max(12 * scaleFactor, pointRadius + 8 * scaleFactor);
+    const features = collectGeoJsonFeatures(layer.data);
+
+    for (let j = 0; j < features.length; j += 1) {
+      const feature = features[j];
+      const geom = feature?.geometry;
+      if (!geom) continue;
+
+      let coordsList = null;
+      if (geom.type === 'Point' && Array.isArray(geom.coordinates) && geom.coordinates.length >= 2) {
+        coordsList = [geom.coordinates];
+      } else if (geom.type === 'MultiPoint' && Array.isArray(geom.coordinates)) {
+        coordsList = geom.coordinates;
+      }
+      if (!coordsList) continue;
+
+      for (let k = 0; k < coordsList.length; k += 1) {
+        const pt = coordsList[k];
+        if (!Array.isArray(pt) || pt.length < 2) continue;
+        const lon = Number(pt[0]);
+        const lat = Number(pt[1]);
+        if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+
+        if (isOrtho && d3.geoDistance([lon, lat], [centerLon, centerLat]) > Math.PI / 2 - 1e-4) {
+          continue;
+        }
+
+        const projected = projection([lon, lat]);
+        if (!projected || !Number.isFinite(projected[0]) || !Number.isFinite(projected[1])) {
+          continue;
+        }
+        const [px, py] = projected;
+        if (width && height && (px < -hitRadius || px > width + hitRadius || py < -hitRadius || py > height + hitRadius)) {
+          continue;
+        }
+
+        const dist = Math.hypot(px - x, py - y);
+        if (dist <= hitRadius && dist < bestDist) {
+          bestDist = dist;
+          best = {
+            layer,
+            layerIndex: i,
+            feature,
+            properties: feature.properties && typeof feature.properties === 'object' ? feature.properties : {},
+            lon,
+            lat,
+            x: px,
+            y: py,
+            dist,
+          };
+        }
+      }
+    }
+  }
+
+  return best;
 }

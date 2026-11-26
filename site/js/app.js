@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=14';
+} from './schema.js?v=15';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,13 +19,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=14';
+} from './data-loader.js?v=15';
 import {
   buildProjection,
   hitTestCountry,
+  hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=14';
+} from './cartography.js?v=15';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -34,9 +35,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=14';
-import { REGION_PRESETS } from './presets.js?v=14';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=14';
+} from './exporter.js?v=15';
+import { REGION_PRESETS } from './presets.js?v=15';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=15';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -46,13 +47,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=14';
+} from './controls.js?v=15';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=14';
+} from './shadow.js?v=15';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -91,6 +92,8 @@ const state = {
   admin1Catalog: [],
   lastProjection: null,
   renderedShadows: [],
+  hoveredFeature: null,
+  selectedFeature: null,
   mode: 'pan', // 'pan' | 'country' | 'pin' | 'shadow'
   refPeek: false,
   proAvailable: false,
@@ -841,6 +844,7 @@ function setupCanvasInteractions() {
       if (dist > 3) {
         dragging = true;
         canvas.classList.add('dragging');
+        hideFeatureHover();
       }
 
       if (dragging) {
@@ -927,9 +931,26 @@ function setupCanvasInteractions() {
           } else {
             updateCursorCoordinates(NaN, NaN);
           }
+          const hit = hitTestGeoJsonPoint(
+            state.lastProjection,
+            state.spec,
+            pt.x,
+            pt.y,
+            canvas.width,
+            canvas.height,
+          );
+          if (hit) {
+            showFeatureHover(hit, canvas);
+          } else {
+            hideFeatureHover();
+          }
         });
       }
     }
+  });
+
+  canvas.addEventListener('pointerleave', () => {
+    hideFeatureHover();
   });
 
   const finishPointer = (e, wasCancelled = false) => {
@@ -969,6 +990,20 @@ function setupCanvasInteractions() {
         };
         patchSpec({ regionShadows: shadows }, { commitHistory: true });
       }
+    } else if (state.mode === 'pan') {
+      const hit = hitTestGeoJsonPoint(
+        state.lastProjection,
+        state.spec,
+        pt.x,
+        pt.y,
+        canvas.width,
+        canvas.height,
+      );
+      if (hit) {
+        showFeatureInfoCard(hit);
+      } else if (state.selectedFeature) {
+        closeFeatureInfoCard();
+      }
     }
   };
 
@@ -980,6 +1015,7 @@ function setupCanvasInteractions() {
     (e) => {
       e.preventDefault();
       if (!state.spec) return;
+      hideFeatureHover();
       state.isInteracting = true;
       const rawDelta =
         e.deltaMode === 1 ? e.deltaY * 28 : e.deltaMode === 2 ? e.deltaY * 240 : e.deltaY;
@@ -1118,6 +1154,350 @@ function handlePinMapClick(x, y) {
   showToast(`Dropped "${defaultName}" (${lat.toFixed(2)}°, ${lon.toFixed(2)}°). Rename in Countries & Pins.`, 'success', 2800);
 }
 
+const FEATURE_ENUM_LABELS = {
+  major_military_airbase: 'Major Military Airbase',
+  military_airfield: 'Military Airfield',
+  auxiliary_airfield: 'Auxiliary Airfield',
+  civilian_airport: 'Civilian Airport',
+  civilian_airfield: 'Civilian Airfield',
+  grass_sod: 'Grass / Sod',
+  turf_dirt: 'Turf / Dirt',
+  paved_asphalt: 'Paved Asphalt',
+  paved_concrete: 'Paved Concrete',
+  coral_gravel: 'Coral / Gravel',
+  graded_earth: 'Graded Earth',
+  laterite: 'Laterite',
+  sand_clay: 'Sand / Clay',
+  operational: 'Operational',
+  under_construction: 'Under Construction',
+  upgrading: 'Upgrading',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+};
+
+const FEATURE_SKIP_GENERIC_KEYS = new Set([
+  'id',
+  'name',
+  'title',
+  'label',
+  'NAME',
+  'Name',
+  'notes',
+  'description',
+  'marker-color',
+  'marker-symbol',
+  'marker-size',
+  'stroke',
+  'stroke-width',
+  'stroke-opacity',
+  'fill',
+  'fill-opacity',
+]);
+
+function createFeatureEl(tag, className = '', text = '') {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== '' && text !== null && text !== undefined) {
+    node.textContent = String(text);
+  }
+  return node;
+}
+
+function formatFeatureCoords(lat, lon) {
+  const ns = lat >= 0 ? 'N' : 'S';
+  const ew = lon >= 0 ? 'E' : 'W';
+  return `${Math.abs(lat).toFixed(4)}° ${ns}, ${Math.abs(lon).toFixed(4)}° ${ew}`;
+}
+
+function formatEnumLabel(value) {
+  if (value === null || value === undefined || value === '') return '';
+  const str = String(value).trim();
+  if (FEATURE_ENUM_LABELS[str]) return FEATURE_ENUM_LABELS[str];
+  return str
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+function getFeatureTitle(hit) {
+  const p = hit?.properties || {};
+  return String(
+    p.name || p.title || p.label || p.NAME || p.Name || hit?.layer?.label || 'Point Feature',
+  ).trim();
+}
+
+function getFeatureDotColor(hit) {
+  const raw = hit?.properties?.['marker-color'];
+  if (typeof raw === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(raw.trim())) {
+    return raw.trim();
+  }
+  const layerColor = hit?.layer?.color;
+  if (typeof layerColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(layerColor.trim())) {
+    return layerColor.trim();
+  }
+  return '#d97706';
+}
+
+function buildFeatureBadgeRow(hit) {
+  const p = hit?.properties || {};
+  const row = createFeatureEl('div', 'fht-header');
+
+  const dot = createFeatureEl('span', 'fht-dot');
+  dot.style.backgroundColor = getFeatureDotColor(hit);
+  row.appendChild(dot);
+
+  if (p.category === 'military') {
+    row.appendChild(createFeatureEl('span', 'fht-badge fht-badge-military', 'Military'));
+  } else if (p.category === 'civilian') {
+    row.appendChild(createFeatureEl('span', 'fht-badge fht-badge-civilian', 'Civilian'));
+  } else if (hit?.layer?.label) {
+    row.appendChild(createFeatureEl('span', 'fht-badge', hit.layer.label));
+  }
+
+  if (p.dual_use === true) {
+    row.appendChild(createFeatureEl('span', 'fht-badge fht-badge-dual', 'Dual-Use'));
+  }
+
+  return row;
+}
+
+function hideFeatureHover() {
+  const ring = document.getElementById('feature-hover-ring');
+  const tooltip = document.getElementById('feature-hover-tooltip');
+  const canvas = document.getElementById('map-canvas');
+  if (ring) ring.hidden = true;
+  if (tooltip) tooltip.hidden = true;
+  if (canvas) canvas.classList.remove('hover-feature');
+  state.hoveredFeature = null;
+}
+
+function showFeatureHover(hit, canvas) {
+  const ring = document.getElementById('feature-hover-ring');
+  const tooltip = document.getElementById('feature-hover-tooltip');
+  const stageEl = document.querySelector('.stage');
+  if (!ring || !tooltip || !stageEl || !canvas) return;
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const stageRect = stageEl.getBoundingClientRect();
+  if (!canvasRect.width || !canvasRect.height || !stageRect.width || !stageRect.height) return;
+
+  const cssX = canvasRect.left - stageRect.left + (hit.x / canvas.width) * canvasRect.width;
+  const cssY = canvasRect.top - stageRect.top + (hit.y / canvas.height) * canvasRect.height;
+
+  ring.style.left = `${cssX.toFixed(1)}px`;
+  ring.style.top = `${cssY.toFixed(1)}px`;
+  ring.hidden = false;
+
+  canvas.classList.toggle('hover-feature', state.mode === 'pan');
+
+  const prev = state.hoveredFeature;
+  const sameFeature =
+    prev &&
+    prev.feature === hit.feature &&
+    prev.layer === hit.layer &&
+    prev.lon === hit.lon &&
+    prev.lat === hit.lat &&
+    prev.mode === state.mode;
+
+  if (!sameFeature) {
+    const p = hit.properties || {};
+    tooltip.replaceChildren();
+    tooltip.appendChild(buildFeatureBadgeRow(hit));
+    tooltip.appendChild(createFeatureEl('div', 'fht-title', getFeatureTitle(hit)));
+
+    const subtitleParts = [p.subregion, p.territory_1941].filter(Boolean);
+    const subtitleText =
+      subtitleParts.length > 0
+        ? subtitleParts.join(' · ')
+        : p.region || p.modern_country || (p.category ? hit.layer?.label : '');
+    if (subtitleText) {
+      tooltip.appendChild(createFeatureEl('div', 'fht-subtitle', subtitleText));
+    }
+
+    const metaParts = [
+      p.operator_1941,
+      p.surface_1941 ? formatEnumLabel(p.surface_1941) : '',
+    ].filter(Boolean);
+    if (metaParts.length > 0) {
+      tooltip.appendChild(createFeatureEl('div', 'fht-meta', metaParts.join(' • ')));
+    }
+
+    const hintText =
+      state.mode === 'pan'
+        ? 'Click marker for full details'
+        : 'Switch to Pan mode to open info card';
+    tooltip.appendChild(createFeatureEl('div', 'fht-hint', hintText));
+  }
+
+  tooltip.hidden = false;
+  const tipW = tooltip.offsetWidth || 240;
+  const tipH = tooltip.offsetHeight || 96;
+
+  let left = cssX + 16;
+  let top = cssY - 14;
+  if (left + tipW > stageRect.width - 12) {
+    left = cssX - tipW - 16;
+  }
+  if (top + tipH > stageRect.height - 62) {
+    top = cssY - tipH - 14;
+  }
+  left = Math.max(12, Math.min(left, Math.max(12, stageRect.width - tipW - 12)));
+  top = Math.max(60, Math.min(top, Math.max(60, stageRect.height - tipH - 12)));
+
+  tooltip.style.left = `${left.toFixed(1)}px`;
+  tooltip.style.top = `${top.toFixed(1)}px`;
+
+  state.hoveredFeature = {
+    feature: hit.feature,
+    layer: hit.layer,
+    lon: hit.lon,
+    lat: hit.lat,
+    mode: state.mode,
+  };
+}
+
+function closeFeatureInfoCard() {
+  const card = document.getElementById('feature-info-card');
+  if (card) {
+    card.hidden = true;
+    card.replaceChildren();
+  }
+  state.selectedFeature = null;
+}
+
+function pinFeatureLabelOnMap(hit) {
+  const title = getFeatureTitle(hit);
+  const lat = Number(hit.lat.toFixed(4));
+  const lon = Number(hit.lon.toFixed(4));
+  const current = [...(state.spec.cities || [])];
+  const duplicate = current.some(
+    (c) =>
+      String(c.name || '').trim().toLowerCase() === title.toLowerCase() &&
+      Math.abs(Number(c.lat) - lat) < 0.05 &&
+      Math.abs(Number(c.lon) - lon) < 0.05,
+  );
+  if (duplicate) {
+    showToast(`"${title}" is already pinned on the map.`, 'info', 2400);
+    return;
+  }
+
+  const nextIndex = current.length + 1;
+  current.push({
+    id: `pin_${Date.now()}_${nextIndex}`,
+    name: title,
+    lat,
+    lon,
+    style: 'dot',
+    dx: 6,
+    dy: -5,
+    scale: 1.0,
+  });
+  patchSpec({ cities: current });
+  showToast(`Pinned "${title}" label onto the map.`, 'success', 2600);
+}
+
+function showFeatureInfoCard(hit) {
+  const card = document.getElementById('feature-info-card');
+  if (!card) return;
+
+  const p = hit.properties || {};
+  const title = getFeatureTitle(hit);
+  card.replaceChildren();
+
+  card.appendChild(buildFeatureBadgeRow(hit));
+
+  const topRow = createFeatureEl('div', 'fic-top');
+  const titleWrap = createFeatureEl('div');
+  titleWrap.appendChild(createFeatureEl('div', 'fic-title', title));
+
+  if (Array.isArray(p.alternate_names) && p.alternate_names.length > 0) {
+    const cleanAlts = p.alternate_names.map((n) => String(n || '').trim()).filter(Boolean);
+    if (cleanAlts.length > 0) {
+      titleWrap.appendChild(createFeatureEl('div', 'fic-alt', `Also: ${cleanAlts.join(', ')}`));
+    }
+  }
+  topRow.appendChild(titleWrap);
+
+  const closeBtn = createFeatureEl('button', 'fic-close', '×');
+  closeBtn.type = 'button';
+  closeBtn.setAttribute('aria-label', 'Close feature details');
+  closeBtn.addEventListener('click', () => closeFeatureInfoCard());
+  topRow.appendChild(closeBtn);
+  card.appendChild(topRow);
+
+  const notesText = p.notes || p.description;
+  if (typeof notesText === 'string' && notesText.trim()) {
+    card.appendChild(createFeatureEl('div', 'fic-notes', notesText.trim()));
+  }
+
+  const grid = createFeatureEl('div', 'fic-grid');
+  const addRow = (key, val, extraValClass = '') => {
+    if (val === null || val === undefined || val === '') return;
+    grid.appendChild(createFeatureEl('div', 'fic-key', key));
+    grid.appendChild(
+      createFeatureEl('div', extraValClass ? `fic-val ${extraValClass}` : 'fic-val', val),
+    );
+  };
+
+  const isAirfieldSchema = Boolean(
+    p.territory_1941 || p.control_dec_1941 || p.operator_1941 || p.facility_class || p.surface_1941,
+  );
+
+  if (isAirfieldSchema) {
+    addRow('Facility', formatEnumLabel(p.facility_class));
+    addRow('Location', [p.subregion, p.territory_1941].filter(Boolean).join(', '));
+    addRow(
+      'Dec 1941 Control',
+      [p.control_dec_1941, p.alignment_dec_1941 ? `(${p.alignment_dec_1941})` : '']
+        .filter(Boolean)
+        .join(' '),
+    );
+    addRow('Operator', p.operator_1941);
+    addRow('Surface', formatEnumLabel(p.surface_1941));
+    addRow('Runways', p.runway_notes_1941);
+    addRow('Dec 1941 Status', formatEnumLabel(p.status_dec_1941));
+    addRow(
+      'Modern Site',
+      [p.modern_equivalent, p.modern_country].filter(Boolean).join(' — '),
+    );
+    addRow('Confidence', formatEnumLabel(p.source_confidence));
+  } else {
+    let added = 0;
+    for (const [k, rawVal] of Object.entries(p)) {
+      if (added >= 14) break;
+      if (FEATURE_SKIP_GENERIC_KEYS.has(k)) continue;
+      if (rawVal === null || rawVal === undefined || rawVal === '') continue;
+      let formatted = '';
+      if (Array.isArray(rawVal)) {
+        formatted = rawVal.map((v) => String(v)).join(', ');
+      } else if (typeof rawVal === 'object') {
+        continue;
+      } else if (typeof rawVal === 'boolean') {
+        formatted = rawVal ? 'Yes' : 'No';
+      } else {
+        formatted = String(rawVal);
+      }
+      if (!formatted.trim()) continue;
+      addRow(formatEnumLabel(k), formatted);
+      added += 1;
+    }
+  }
+
+  addRow('Layer', hit.layer?.label);
+  addRow('Coordinates', formatFeatureCoords(hit.lat, hit.lon), 'fic-coords');
+  card.appendChild(grid);
+
+  const actions = createFeatureEl('div', 'fic-actions');
+  const pinBtn = createFeatureEl('button', 'fic-btn', '+ Pin Label on Map');
+  pinBtn.type = 'button';
+  pinBtn.addEventListener('click', () => pinFeatureLabelOnMap(hit));
+  actions.appendChild(pinBtn);
+  card.appendChild(actions);
+
+  card.hidden = false;
+  state.selectedFeature = hit;
+}
+
 function validateLocalGeoJson(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('GeoJSON must be a JSON object.');
@@ -1193,6 +1573,8 @@ function buildCallbacks() {
     onSelectPreset: (presetId) => {
       const preset = REGION_PRESETS.find((p) => p.id === presetId);
       if (!preset) return;
+      hideFeatureHover();
+      closeFeatureInfoCard();
       state.activePresetId = preset.id;
       commitSpec(structuredClone(preset.spec), { commitHistory: true, keepPreset: true });
       void hydrateRemoteGeoJsonLayers();
@@ -1751,7 +2133,14 @@ function buildCallbacks() {
     onUpdateGeoJsonLayer: (idx, patch, opts = {}) => {
       const next = [...(state.spec.customGeoJsonLayers || [])];
       if (!next[idx]) return;
-      next[idx] = { ...next[idx], ...patch };
+      const targetLayer = next[idx];
+      next[idx] = { ...targetLayer, ...patch };
+      if (patch?.visible === false) {
+        hideFeatureHover();
+        if (state.selectedFeature?.layer?.id === targetLayer.id) {
+          closeFeatureInfoCard();
+        }
+      }
       patchSpec({ customGeoJsonLayers: next }, opts);
     },
 
@@ -1808,6 +2197,10 @@ function buildCallbacks() {
     onRemoveGeoJsonLayer: (idx) => {
       const next = [...(state.spec.customGeoJsonLayers || [])];
       const [removed] = next.splice(idx, 1);
+      hideFeatureHover();
+      if (removed && state.selectedFeature?.layer?.id === removed.id) {
+        closeFeatureInfoCard();
+      }
       const stillHasLand = next.some((l) => l?.visible !== false && l?.role === 'land');
       patchSpec({
         customGeoJsonLayers: next,
@@ -1913,9 +2306,14 @@ function setupKeyboardShortcuts() {
       }
     }
 
-    if (e.key === 'Escape' && state.mode !== 'pan') {
-      state.mode = 'pan';
-      syncAllUi();
+    if (e.key === 'Escape') {
+      if (state.selectedFeature) {
+        closeFeatureInfoCard();
+      }
+      if (state.mode !== 'pan') {
+        state.mode = 'pan';
+        syncAllUi();
+      }
     }
   });
 }

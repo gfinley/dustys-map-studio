@@ -341,6 +341,19 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         self.assertIn("./data/airfields_1941_se_asia_western_pacific_military.geojson", presets_js)
         self.assertIn("./data/airfields_1941_se_asia_western_pacific_civilian.geojson", presets_js)
 
+    def test_interactive_feature_hover_and_info_card_contract(self) -> None:
+        """Interactive GeoJSON point hover tooltip and info card hooks exist across JS and HTML."""
+        cartography_js = (SITE_DIR / "js" / "cartography.js").read_text(encoding="utf-8")
+        self.assertIn("export function hitTestGeoJsonPoint", cartography_js)
+
+        app_js = (SITE_DIR / "js" / "app.js").read_text(encoding="utf-8")
+        for symbol in ("hitTestGeoJsonPoint", "showFeatureHover", "showFeatureInfoCard"):
+            self.assertIn(symbol, app_js)
+
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        for elem_id in ("feature-hover-ring", "feature-hover-tooltip", "feature-info-card"):
+            self.assertIn(f'id="{elem_id}"', html)
+
 
 if __name__ == "__main__":
     unittest.main()
