@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=13';
+} from './schema.js?v=14';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,13 +19,13 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=13';
+} from './data-loader.js?v=14';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=13';
+} from './cartography.js?v=14';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -34,9 +34,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=13';
-import { REGION_PRESETS } from './presets.js?v=13';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=13';
+} from './exporter.js?v=14';
+import { REGION_PRESETS } from './presets.js?v=14';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=14';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -46,13 +46,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=13';
+} from './controls.js?v=14';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=13';
+} from './shadow.js?v=14';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -183,7 +183,45 @@ function commitSpec(nextSpecRaw, { commitHistory = true, keepPreset = false, ski
 }
 
 function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynamicLists = false } = {}) {
-  const merged = deepMergeSpec(state.spec, patch);
+  const prevColors = state.spec?.colors || {};
+  let effectivePatch = patch;
+  if (
+    patch?.colors &&
+    !patch.customGeoJsonLayers &&
+    Array.isArray(state.spec?.customGeoJsonLayers) &&
+    state.spec.customGeoJsonLayers.some((l) => l?.role === 'land')
+  ) {
+    let changed = false;
+    const syncedLayers = state.spec.customGeoJsonLayers.map((layer) => {
+      if (layer?.role !== 'land') return layer;
+      const next = { ...layer };
+      if (
+        typeof patch.colors.land === 'string' &&
+        String(layer.color || '').toLowerCase() === String(prevColors.land || '').toLowerCase()
+      ) {
+        next.color = patch.colors.land;
+        changed = true;
+      }
+      if (layer.strokeColor && layer.strokeColor !== 'none') {
+        const prevStroke = String(layer.strokeColor).toLowerCase();
+        if (typeof patch.colors.admin1 === 'string' && prevStroke === String(prevColors.admin1 || '').toLowerCase()) {
+          next.strokeColor = patch.colors.admin1;
+          changed = true;
+        } else if (typeof patch.colors.borders === 'string' && prevStroke === String(prevColors.borders || '').toLowerCase()) {
+          next.strokeColor = patch.colors.borders;
+          changed = true;
+        } else if (typeof patch.colors.coastline === 'string' && prevStroke === String(prevColors.coastline || '').toLowerCase()) {
+          next.strokeColor = patch.colors.coastline;
+          changed = true;
+        }
+      }
+      return next;
+    });
+    if (changed) {
+      effectivePatch = { ...patch, customGeoJsonLayers: syncedLayers };
+    }
+  }
+  const merged = deepMergeSpec(state.spec, effectivePatch);
   commitSpec(merged, { commitHistory, keepPreset, skipDynamicLists });
 }
 
@@ -1400,7 +1438,7 @@ function buildCallbacks() {
       syncAllUi();
     },
 
-    onLoadGeoBoundaries: async (countryId, countryName, level = 'ADM1') => {
+    onLoadGeoBoundaries: async (countryId, countryName, level = 'ADM1', { asPrimaryLand = false } = {}) => {
       const iso3 = resolveIso3FromNumericId(countryId);
       if (!iso3) {
         showToast(`No ISO-3 code mapping found for "${countryName}". Try loading a GeoJSON URL directly.`, 'warn', 4200);
@@ -1411,25 +1449,66 @@ function buildCallbacks() {
         const result = await fetchGeoBoundariesLayer(iso3, level);
         setLoadingProgress(false);
         const label = `${countryName} (${level} OSM)`;
-        const layer = {
-          id: `gb_${iso3}_${level}_${Date.now()}`,
-          label,
-          url: result.url,
-          data: result.data,
-          visible: true,
-          color: level === 'ADM0' ? '#0284c7' : level === 'ADM2' ? '#64748b' : '#475569',
-          fillOpacity: level === 'ADM0' ? 0.14 : 0.0,
-          strokeWidth: level === 'ADM0' ? 1.6 : level === 'ADM2' ? 0.7 : 1.0,
-          dashed: level === 'ADM2',
-          hatch: 'none',
+        const colors = state.spec.colors || {};
+        const layersSpec = state.spec.layers || {};
+        const landStroke =
+          level === 'ADM0'
+            ? (layersSpec.showCoastlines && colors.coastline && colors.coastline !== 'none' ? colors.coastline : 'none')
+            : (colors.admin1 || colors.borders || '#737373');
+        const layer = asPrimaryLand
+          ? {
+              id: `gb_${iso3}_${level}`,
+              label,
+              url: result.url,
+              data: result.data,
+              visible: true,
+              role: 'land',
+              color: colors.land || '#4a4a4a',
+              strokeColor: landStroke,
+              fillOpacity: 1.0,
+              strokeWidth: level === 'ADM0' ? (layersSpec.showCoastlines ? (layersSpec.coastlineWidth || 0.75) : 0.6) : level === 'ADM2' ? 0.5 : 0.7,
+              dashed: false,
+              hatch: 'none',
+            }
+          : {
+              id: `gb_${iso3}_${level}_${Date.now()}`,
+              label,
+              url: result.url,
+              data: result.data,
+              visible: true,
+              role: 'overlay',
+              color: level === 'ADM0' ? '#0284c7' : level === 'ADM2' ? '#64748b' : '#475569',
+              strokeColor: null,
+              fillOpacity: level === 'ADM0' ? 0.14 : 0.0,
+              strokeWidth: level === 'ADM0' ? 1.6 : level === 'ADM2' ? 0.7 : 1.0,
+              dashed: level === 'ADM2',
+              hatch: 'none',
+            };
+
+        const existing = (state.spec.customGeoJsonLayers || []).filter(
+          (l) => !(asPrimaryLand && l?.id === layer.id),
+        );
+        const patch = {
+          customGeoJsonLayers: [...existing, layer],
         };
-        patchSpec({
-          customGeoJsonLayers: [...(state.spec.customGeoJsonLayers || []), layer],
-        });
+        if (asPrimaryLand) {
+          patch.layers = { showLand: false };
+          const normId = String(countryId || '');
+          const normName = String(countryName || '').trim().toLowerCase();
+          const filteredHighlights = (state.spec.highlightedCountries || []).filter(
+            (hc) => String(hc.id || '') !== normId && String(hc.name || '').trim().toLowerCase() !== normName,
+          );
+          if (filteredHighlights.length !== (state.spec.highlightedCountries || []).length) {
+            patch.highlightedCountries = filteredHighlights;
+          }
+        }
+        patchSpec(patch);
         showToast(
-          `Loaded ${label}${result.admUnitCount ? ` (${result.admUnitCount} units)` : ''}`,
+          asPrimaryLand
+            ? `Loaded ${label} as Primary Land Map — default land unshaded${result.admUnitCount ? ` (${result.admUnitCount} units)` : ''}`
+            : `Loaded ${label}${result.admUnitCount ? ` (${result.admUnitCount} units)` : ''}`,
           'success',
-          3400,
+          3800,
         );
       } catch (err) {
         setLoadingProgress(false);
@@ -1676,10 +1755,66 @@ function buildCallbacks() {
       patchSpec({ customGeoJsonLayers: next }, opts);
     },
 
+    onToggleGeoJsonPrimaryLand: (idx) => {
+      const next = [...(state.spec.customGeoJsonLayers || [])];
+      const cur = next[idx];
+      if (!cur) return;
+      const promoting = cur.role !== 'land';
+      const colors = state.spec.colors || {};
+      if (promoting) {
+        const isAdm0 = /ADM0/i.test(cur.label || '') || /ADM0/i.test(cur.id || '');
+        next[idx] = {
+          ...cur,
+          visible: true,
+          role: 'land',
+          color: colors.land || '#4a4a4a',
+          strokeColor: isAdm0 ? 'none' : (colors.admin1 || colors.borders || '#737373'),
+          fillOpacity: 1.0,
+          strokeWidth: isAdm0 ? 0.6 : 0.7,
+          dashed: false,
+        };
+        patchSpec({
+          customGeoJsonLayers: next,
+          layers: { showLand: false },
+        });
+        showToast(`"${cur.label}" set as Primary Land Map — default land unshaded`, 'success', 3000);
+      } else {
+        next[idx] = {
+          ...cur,
+          role: 'overlay',
+          fillOpacity: 0.14,
+          strokeColor: null,
+        };
+        const stillHasLand = next.some((l) => l?.visible !== false && l?.role === 'land');
+        patchSpec({
+          customGeoJsonLayers: next,
+          ...(stillHasLand ? {} : { layers: { showLand: true } }),
+        });
+        showToast(
+          stillHasLand
+            ? `"${cur.label}" switched back to overlay`
+            : `"${cur.label}" switched to overlay — default land restored`,
+          'info',
+          2600,
+        );
+      }
+    },
+
+    onRestoreDefaultLand: () => {
+      patchSpec({ layers: { showLand: true } });
+      showToast('Default land shading restored', 'info', 2200);
+    },
+
     onRemoveGeoJsonLayer: (idx) => {
       const next = [...(state.spec.customGeoJsonLayers || [])];
-      next.splice(idx, 1);
-      patchSpec({ customGeoJsonLayers: next });
+      const [removed] = next.splice(idx, 1);
+      const stillHasLand = next.some((l) => l?.visible !== false && l?.role === 'land');
+      patchSpec({
+        customGeoJsonLayers: next,
+        ...(removed?.role === 'land' && !stillHasLand && state.spec.layers?.showLand === false
+          ? { layers: { showLand: true } }
+          : {}),
+      });
     },
 
     onToggleRefPeek: async () => {

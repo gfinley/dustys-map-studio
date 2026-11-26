@@ -1264,7 +1264,11 @@ def _partition_geometries(geoms: Any) -> tuple[list[Any], list[Any], list[Point]
     return polys, lines, points
 
 
-def _draw_single_geojson_layer(ax: Any, layer: CustomGeoJsonLayer) -> None:
+def _draw_single_geojson_layer(
+    ax: Any,
+    layer: CustomGeoJsonLayer,
+    zorder_base: float = 4.4,
+) -> None:
     """Load and render one visible CustomGeoJsonLayer onto ax."""
     gdf = _load_geojson_gdf(url=layer.url, data=layer.data)
     if gdf.empty:
@@ -1272,8 +1276,11 @@ def _draw_single_geojson_layer(ax: Any, layer: CustomGeoJsonLayer) -> None:
 
     geodetic = ccrs.PlateCarree()
     color = _valid_color(layer.color, "#222222")
-    fill_rgba = to_rgba(color, layer.fillOpacity)
-    stroke_rgba = to_rgba(color, 1.0)
+    raw_stroke = layer.strokeColor if layer.strokeColor else color
+    has_stroke = str(raw_stroke).lower() != "none" and float(layer.strokeWidth) > 0.0
+    fill_rgba = to_rgba(color, layer.fillOpacity) if layer.fillOpacity > 0.0 else "none"
+    stroke_rgba = to_rgba(_valid_color(raw_stroke, color), 1.0) if has_stroke else "none"
+    stroke_lw = float(layer.strokeWidth) if has_stroke else 0.0
     linestyle = "--" if layer.dashed else "-"
     hatch = _HATCH_MAP.get(layer.hatch)
 
@@ -1284,23 +1291,23 @@ def _draw_single_geojson_layer(ax: Any, layer: CustomGeoJsonLayer) -> None:
             "crs": geodetic,
             "facecolor": fill_rgba,
             "edgecolor": stroke_rgba,
-            "linewidth": layer.strokeWidth,
+            "linewidth": stroke_lw,
             "linestyle": linestyle,
-            "zorder": 4.4,
+            "zorder": zorder_base,
         }
         if hatch:
             poly_kwargs["hatch"] = hatch
         ax.add_geometries(polys, **poly_kwargs)
 
-    if lines:
+    if lines and has_stroke:
         ax.add_geometries(
             lines,
             crs=geodetic,
             facecolor="none",
             edgecolor=stroke_rgba,
-            linewidth=layer.strokeWidth,
+            linewidth=stroke_lw,
             linestyle=linestyle,
-            zorder=4.6,
+            zorder=zorder_base + 0.15,
         )
 
     if points:
@@ -1310,23 +1317,31 @@ def _draw_single_geojson_layer(ax: Any, layer: CustomGeoJsonLayer) -> None:
             xs,
             ys,
             transform=geodetic,
-            s=max(16.0, (layer.strokeWidth * 4.5) ** 2),
-            facecolor=fill_rgba,
-            edgecolor=stroke_rgba,
-            linewidth=max(0.8, layer.strokeWidth * 0.6),
-            zorder=4.8,
+            s=max(16.0, (max(0.5, float(layer.strokeWidth)) * 4.5) ** 2),
+            facecolor=fill_rgba if fill_rgba != "none" else to_rgba(color, 1.0),
+            edgecolor=stroke_rgba if has_stroke else "#ffffff",
+            linewidth=max(0.8, max(0.5, float(layer.strokeWidth)) * 0.6),
+            zorder=zorder_base + 0.3,
         )
 
 
-def _draw_custom_geojson_layers(ax: Any, spec: MapSpec) -> None:
-    """Render all visible custom GeoJSON overlay layers safely."""
+def _draw_custom_geojson_layers(
+    ax: Any,
+    spec: MapSpec,
+    role_filter: str | None = None,
+) -> None:
+    """Render visible custom GeoJSON layers matching role_filter ('land' or 'overlay')."""
+    zorder_base = 2.15 if role_filter == "land" else 4.4
     for layer in spec.customGeoJsonLayers:
         if not layer.visible:
+            continue
+        layer_role = "land" if layer.role == "land" else "overlay"
+        if role_filter is not None and layer_role != role_filter:
             continue
         if layer.data is None and not layer.url:
             continue
         try:
-            _draw_single_geojson_layer(ax, layer)
+            _draw_single_geojson_layer(ax, layer, zorder_base=zorder_base)
         except Exception as exc:
             logger.warning(
                 "Skipping custom GeoJSON layer '%s' (%s): %s",
@@ -2163,13 +2178,18 @@ def _draw_legend(fig: Figure, ax: Any, spec: MapSpec, has_title: bool) -> None:
         )
 
     for layer in spec.customGeoJsonLayers:
-        if not layer.visible:
+        if not layer.visible or layer.role == "land":
             continue
         color = _valid_color(layer.color, "#222222")
+        edge_color = (
+            _valid_color(layer.strokeColor, color)
+            if (layer.strokeColor and str(layer.strokeColor).lower() != "none")
+            else color
+        )
         handles.append(
             Patch(
                 facecolor=to_rgba(color, layer.fillOpacity),
-                edgecolor=color,
+                edgecolor=edge_color,
                 linestyle="--" if layer.dashed else "-",
                 hatch=_HATCH_MAP.get(layer.hatch),
                 linewidth=1.0,
@@ -2364,53 +2384,58 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
                 zorder=1.5,
             )
 
-        gshhs_scale = _resolve_gshhs_scale(spec, scale)
-        if gshhs_scale is not None:
-            used_gshhs, gshhs_land_geoms, gshhs_lake_geoms = _draw_gshhs_land_and_lakes(
-                ax, spec, gshhs_scale, land_color, water_color, coast_color
-            )
+        if spec.layers.showLand:
+            gshhs_scale = _resolve_gshhs_scale(spec, scale)
+            if gshhs_scale is not None:
+                used_gshhs, gshhs_land_geoms, gshhs_lake_geoms = _draw_gshhs_land_and_lakes(
+                    ax, spec, gshhs_scale, land_color, water_color, coast_color
+                )
 
-        if not used_gshhs:
+            if not used_gshhs:
+                _add_ne_layer_bbox(
+                    ax,
+                    spec,
+                    "physical",
+                    "land",
+                    ne_scale,
+                    facecolor=land_color,
+                    edgecolor="none",
+                    zorder=2,
+                )
+                if (
+                    ne_scale == "10m"
+                    and spec.layers.showMinorIslands
+                    and spec.projection != "orthographic"
+                    and max(spec.span.lonDeg, spec.span.latDeg) <= 95.0
+                ):
+                    _add_ne_layer_bbox(
+                        ax,
+                        spec,
+                        "physical",
+                        "minor_islands",
+                        "10m",
+                        facecolor=land_color,
+                        edgecolor=coast_color if spec.layers.showCoastlines else "none",
+                        linewidth=spec.layers.coastlineWidth * 0.8 if spec.layers.showCoastlines else 0.0,
+                        zorder=2.1,
+                    )
+
+        if not used_gshhs and spec.layers.showLakes:
+            lakes_scale = "50m" if ne_scale == "110m" else ne_scale
             _add_ne_layer_bbox(
                 ax,
                 spec,
                 "physical",
-                "land",
-                ne_scale,
-                facecolor=land_color,
-                edgecolor="none",
-                zorder=2,
+                "lakes",
+                lakes_scale,
+                facecolor=water_color,
+                edgecolor=coast_color if (spec.layers.showLand and spec.layers.showCoastlines) else "none",
+                linewidth=spec.layers.coastlineWidth * 0.7 if (spec.layers.showLand and spec.layers.showCoastlines) else 0.0,
+                zorder=4.2,
             )
-            if (
-                ne_scale == "10m"
-                and spec.layers.showMinorIslands
-                and spec.projection != "orthographic"
-                and max(spec.span.lonDeg, spec.span.latDeg) <= 95.0
-            ):
-                _add_ne_layer_bbox(
-                    ax,
-                    spec,
-                    "physical",
-                    "minor_islands",
-                    "10m",
-                    facecolor=land_color,
-                    edgecolor=coast_color if spec.layers.showCoastlines else "none",
-                    linewidth=spec.layers.coastlineWidth * 0.8 if spec.layers.showCoastlines else 0.0,
-                    zorder=2.1,
-                )
-            if spec.layers.showLakes:
-                lakes_scale = "50m" if ne_scale == "110m" else ne_scale
-                _add_ne_layer_bbox(
-                    ax,
-                    spec,
-                    "physical",
-                    "lakes",
-                    lakes_scale,
-                    facecolor=water_color,
-                    edgecolor=coast_color if spec.layers.showCoastlines else "none",
-                    linewidth=spec.layers.coastlineWidth * 0.7,
-                    zorder=4.2,
-                )
+
+    # 2b. Primary Land GeoJSON layers (e.g. OSM Ultra-Detail replacing default land)
+    _draw_custom_geojson_layers(ax, spec, role_filter="land")
 
     if spec.layers.showUrbanAreas:
         urban_scale = "10m" if ne_scale == "10m" else "50m"
@@ -2439,7 +2464,7 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
             zorder=3,
         )
 
-    if spec.layers.showCoastlines and not used_gshhs:
+    if spec.layers.showLand and spec.layers.showCoastlines and not used_gshhs:
         _add_ne_layer_bbox(
             ax,
             spec,
@@ -2477,8 +2502,8 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
         gshhs_lake_geoms=gshhs_lake_geoms if used_gshhs else None,
     )
 
-    # 4. Custom GeoJSON layers
-    _draw_custom_geojson_layers(ax, spec)
+    # 4. Custom GeoJSON overlays
+    _draw_custom_geojson_layers(ax, spec, role_filter="overlay")
 
     # 5. International borders
     if spec.layers.showBorders:

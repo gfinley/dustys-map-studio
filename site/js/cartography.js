@@ -12,10 +12,10 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=13';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=13';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=13';
-import { sanitizeGeoJsonWinding } from './data-loader.js?v=13';
+} from './ornaments.js?v=14';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=14';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=14';
+import { sanitizeGeoJsonWinding } from './data-loader.js?v=14';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -388,7 +388,7 @@ function classifyGeometry(geom, out) {
   }
 }
 
-function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor) {
+function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, roleFilter = null) {
   const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
   if (overlays.length === 0) return;
 
@@ -397,14 +397,20 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor) {
   for (let i = 0; i < overlays.length; i += 1) {
     const layer = overlays[i];
     if (layer?.visible === false || !layer?.data) continue;
+    const layerRole = layer.role === 'land' ? 'land' : 'overlay';
+    if (roleFilter && layerRole !== roleFilter) continue;
 
     const features = collectGeoJsonFeatures(layer.data);
     const color = layer.color || '#222222';
+    const rawStroke = typeof layer.strokeColor === 'string' && layer.strokeColor ? layer.strokeColor : color;
+    const strokeWidthNum = Number.isFinite(Number(layer.strokeWidth)) ? Number(layer.strokeWidth) : 1.5;
+    const hasStroke = rawStroke !== 'none' && strokeWidthNum > 0;
     const fillOpacity = Number.isFinite(Number(layer.fillOpacity)) ? Number(layer.fillOpacity) : 0.45;
-    const strokeWidth = Math.max(0.3, (Number(layer.strokeWidth) || 1.5) * scaleFactor);
+    const strokeWidth = hasStroke ? Math.max(0.25, strokeWidthNum * scaleFactor) : 0;
     const dashed = Boolean(layer.dashed);
     const hatch = layer.hatch || 'none';
-    const pointRadius = Math.max(3, (Number(layer.strokeWidth) || 1.5) * 2.5) * scaleFactor;
+    const hatchColor = hasStroke ? rawStroke : color;
+    const pointRadius = Math.max(3, Math.max(0.5, strokeWidthNum) * 2.5) * scaleFactor;
     const pointPath = d3.geoPath(projection, ctx).pointRadius(pointRadius);
 
     const groups = { polygons: [], lines: [], points: [] };
@@ -424,26 +430,28 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor) {
         ctx.save();
         ctx.globalAlpha *= fillOpacity;
         ctx.fillStyle = color;
-        ctx.fill();
+        ctx.fill('evenodd');
         ctx.restore();
       }
       if (hatch !== 'none') {
-        const pattern = createCanvasHatchPattern(ctx, hatch, color, scaleFactor);
+        const pattern = createCanvasHatchPattern(ctx, hatch, hatchColor, scaleFactor);
         if (pattern) {
           ctx.fillStyle = pattern;
-          ctx.fill();
+          ctx.fill('evenodd');
         }
       }
-      ctx.strokeStyle = color;
-      ctx.lineWidth = strokeWidth;
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      if (dashed) ctx.setLineDash([6 * scaleFactor, 4 * scaleFactor]);
-      ctx.stroke();
+      if (hasStroke) {
+        ctx.strokeStyle = rawStroke;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        if (dashed) ctx.setLineDash([6 * scaleFactor, 4 * scaleFactor]);
+        ctx.stroke();
+      }
       ctx.restore();
     }
 
-    if (groups.lines.length > 0) {
+    if (groups.lines.length > 0 && hasStroke) {
       const fc = {
         type: 'FeatureCollection',
         features: groups.lines.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
@@ -451,7 +459,7 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor) {
       ctx.save();
       ctx.beginPath();
       path(fc);
-      ctx.strokeStyle = color;
+      ctx.strokeStyle = rawStroke;
       ctx.lineWidth = strokeWidth;
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
@@ -474,6 +482,79 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor) {
       ctx.lineWidth = Math.max(0.8, 1.2 * scaleFactor);
       ctx.stroke();
       ctx.restore();
+    }
+  }
+}
+
+function appendCustomLayersSvg(mapParts, svgPath, projection, spec, scaleFactor, getHatchPatternId, roleFilter = null) {
+  const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
+  for (let i = 0; i < overlays.length; i += 1) {
+    const layer = overlays[i];
+    if (layer?.visible === false || !layer?.data) continue;
+    const layerRole = layer.role === 'land' ? 'land' : 'overlay';
+    if (roleFilter && layerRole !== roleFilter) continue;
+
+    const features = collectGeoJsonFeatures(layer.data);
+    const color = layer.color || '#222222';
+    const rawStroke = typeof layer.strokeColor === 'string' && layer.strokeColor ? layer.strokeColor : color;
+    const strokeWidthNum = Number.isFinite(Number(layer.strokeWidth)) ? Number(layer.strokeWidth) : 1.5;
+    const hasStroke = rawStroke !== 'none' && strokeWidthNum > 0;
+    const fillOpacity = Number.isFinite(Number(layer.fillOpacity)) ? Number(layer.fillOpacity) : 0.45;
+    const strokeWidth = hasStroke ? Math.max(0.25, strokeWidthNum * scaleFactor) : 0;
+    const dashAttr = hasStroke && layer.dashed
+      ? ` stroke-dasharray="${(6 * scaleFactor).toFixed(1)},${(4 * scaleFactor).toFixed(1)}"`
+      : '';
+    const strokeAttrs = hasStroke
+      ? ` stroke="${escapeXml(rawStroke)}" stroke-width="${strokeWidth.toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"${dashAttr}`
+      : ' stroke="none"';
+    const hatchId = getHatchPatternId(layer.hatch || 'none', hasStroke ? rawStroke : color);
+    const pointRadius = Math.max(3, Math.max(0.5, strokeWidthNum) * 2.5) * scaleFactor;
+    const pointSvgPath = d3.geoPath(projection).pointRadius(pointRadius);
+
+    const groups = { polygons: [], lines: [], points: [] };
+    for (let j = 0; j < features.length; j += 1) {
+      classifyGeometry(features[j].geometry, groups);
+    }
+
+    if (groups.polygons.length > 0) {
+      const d =
+        svgPath({
+          type: 'FeatureCollection',
+          features: groups.polygons.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
+        }) || '';
+      if (d) {
+        const fillAttrs = fillOpacity > 0
+          ? `fill="${escapeXml(color)}" fill-opacity="${fillOpacity}" fill-rule="evenodd"`
+          : 'fill="none"';
+        mapParts.push(`<path d="${d}" ${fillAttrs}${strokeAttrs} />`);
+        if (hatchId) {
+          mapParts.push(`<path d="${d}" fill="url(#${escapeXml(hatchId)})" fill-rule="evenodd" />`);
+        }
+      }
+    }
+
+    if (groups.lines.length > 0 && hasStroke) {
+      const d =
+        svgPath({
+          type: 'FeatureCollection',
+          features: groups.lines.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
+        }) || '';
+      if (d) {
+        mapParts.push(`<path d="${d}" fill="none"${strokeAttrs} />`);
+      }
+    }
+
+    if (groups.points.length > 0) {
+      const d =
+        pointSvgPath({
+          type: 'FeatureCollection',
+          features: groups.points.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
+        }) || '';
+      if (d) {
+        mapParts.push(
+          `<path d="${d}" fill="${escapeXml(color)}" stroke="#ffffff" stroke-width="${Math.max(0.8, 1.2 * scaleFactor).toFixed(2)}" />`,
+        );
+      }
     }
   }
 }
@@ -710,10 +791,10 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // Use zero-resample streaming for dense natural datasets while clipExtent keeps bounds tight
   projection.precision(0);
 
-  // 3. Land (+ optional minor islands & coastline)
+  // 3. Default Land (+ optional minor islands & coastline)
   const landParts =
     Array.isArray(datasets?.landParts) && datasets.landParts.length > 0 ? datasets.landParts : null;
-  if (landParts || datasets?.land) {
+  if (layers.showLand !== false && (landParts || datasets?.land)) {
     ctx.save();
     ctx.beginPath();
     drawCulledCollection(path, landParts, datasets?.land, viewBounds, skipCull);
@@ -749,6 +830,13 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
       }
       ctx.restore();
     }
+  }
+
+  // 3a. Primary Land GeoJSON layers (e.g. OSM Ultra-Detail replacing default land)
+  if (Array.isArray(spec?.customGeoJsonLayers) && spec.customGeoJsonLayers.some((l) => l?.role === 'land')) {
+    projection.precision(basePrecision);
+    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, 'land');
+    projection.precision(0);
   }
 
   // 3b. Urban Areas / Metropolitan Footprints
@@ -869,7 +957,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // 8. Custom GeoJSON overlays
   if (Array.isArray(spec?.customGeoJsonLayers) && spec.customGeoJsonLayers.length > 0) {
     projection.precision(basePrecision);
-    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor);
+    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, 'overlay');
     projection.precision(0);
   }
 
@@ -1152,8 +1240,8 @@ export function renderMapToSvgString(spec, datasets) {
     }
   }
 
-  // 3. Land (+ minor islands)
-  if (datasets?.land) {
+  // 3. Default Land (+ minor islands)
+  if (layers.showLand !== false && datasets?.land) {
     const landD = svgPath(datasets.land) || '';
     const coastStroke =
       layers.showCoastlines && colors.coastline && colors.coastline !== 'none'
@@ -1169,6 +1257,9 @@ export function renderMapToSvgString(spec, datasets) {
       }
     }
   }
+
+  // 3a. Primary Land GeoJSON layers (e.g. OSM Ultra-Detail replacing default land)
+  appendCustomLayersSvg(mapParts, svgPath, projection, spec, scaleFactor, getHatchPatternId, 'land');
 
   // 3b. Urban Areas
   if (layers.showUrbanAreas && datasets?.urbanAreas) {
@@ -1240,69 +1331,7 @@ export function renderMapToSvgString(spec, datasets) {
   }
 
   // 8. Custom GeoJSON overlays
-  const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
-  for (let i = 0; i < overlays.length; i += 1) {
-    const layer = overlays[i];
-    if (layer?.visible === false || !layer?.data) continue;
-
-    const features = collectGeoJsonFeatures(layer.data);
-    const color = layer.color || '#222222';
-    const fillOpacity = Number.isFinite(Number(layer.fillOpacity)) ? Number(layer.fillOpacity) : 0.45;
-    const strokeWidth = Math.max(0.3, (Number(layer.strokeWidth) || 1.5) * scaleFactor);
-    const dashAttr = layer.dashed
-      ? ` stroke-dasharray="${(6 * scaleFactor).toFixed(1)},${(4 * scaleFactor).toFixed(1)}"`
-      : '';
-    const hatchId = getHatchPatternId(layer.hatch || 'none', color);
-    const pointRadius = Math.max(3, (Number(layer.strokeWidth) || 1.5) * 2.5) * scaleFactor;
-    const pointSvgPath = d3.geoPath(projection).pointRadius(pointRadius);
-
-    const groups = { polygons: [], lines: [], points: [] };
-    for (let j = 0; j < features.length; j += 1) {
-      classifyGeometry(features[j].geometry, groups);
-    }
-
-    if (groups.polygons.length > 0) {
-      const d =
-        svgPath({
-          type: 'FeatureCollection',
-          features: groups.polygons.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
-        }) || '';
-      if (d) {
-        mapParts.push(
-          `<path d="${d}" fill="${escapeXml(color)}" fill-opacity="${fillOpacity}" stroke="${escapeXml(color)}" stroke-width="${strokeWidth.toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"${dashAttr} />`,
-        );
-        if (hatchId) {
-          mapParts.push(`<path d="${d}" fill="url(#${escapeXml(hatchId)})" />`);
-        }
-      }
-    }
-
-    if (groups.lines.length > 0) {
-      const d =
-        svgPath({
-          type: 'FeatureCollection',
-          features: groups.lines.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
-        }) || '';
-      if (d) {
-        mapParts.push(
-          `<path d="${d}" fill="none" stroke="${escapeXml(color)}" stroke-width="${strokeWidth.toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"${dashAttr} />`,
-        );
-      }
-    }
-
-    if (groups.points.length > 0) {
-      const d =
-        pointSvgPath({
-          type: 'FeatureCollection',
-          features: groups.points.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
-        }) || '';
-      if (d) {
-        mapParts.push(
-          `<path d="${d}" fill="${escapeXml(color)}" stroke="#ffffff" stroke-width="${Math.max(0.8, 1.2 * scaleFactor).toFixed(2)}" />`,
-        );
-      }
-    }
-  }
+  appendCustomLayersSvg(mapParts, svgPath, projection, spec, scaleFactor, getHatchPatternId, 'overlay');
 
   // 9. Internal borders
   if (layers.showBorders && datasets?.internalBorders && colors.borders && colors.borders !== 'none') {

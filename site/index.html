@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=13" />
+  <link rel="stylesheet" href="./styles/main.css?v=14" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -271,6 +271,11 @@
               </div>
 
               <div class="toggle-list">
+                <label class="switch-label" for="layer-show-land">
+                  <input id="layer-show-land" type="checkbox" checked />
+                  <span>Shade Default Land Layers</span>
+                </label>
+
                 <label class="switch-label" for="layer-show-minor-islands">
                   <input id="layer-show-minor-islands" type="checkbox" />
                   <span>Minor Islands &amp; Atolls (10m / Ultra)</span>
@@ -360,7 +365,7 @@
                 <h2>OSM Ultra-Detail Boundaries</h2>
                 <span class="helper-pill">geoBoundaries</span>
               </div>
-              <p class="helper-text">Fetch OpenStreetMap-derived national borders, provinces/oblasts (ADM1), or county/district lines (ADM2) for any country.</p>
+              <p class="helper-text">Fetch OpenStreetMap-derived coastlines (ADM0), provinces/states (ADM1), or districts (ADM2). Load as Primary Land to replace and unshade default land layers.</p>
               <div class="field-stack">
                 <div class="input-row">
                   <select id="geoboundaries-country" aria-label="Country for OSM ultra-detail boundaries"></select>
@@ -370,9 +375,18 @@
                     <option value="ADM2">ADM2 Districts</option>
                   </select>
                 </div>
-                <button id="btn-load-geoboundaries" class="btn btn-secondary btn-full" type="button">
-                  + Add OSM-Grade Boundary Layer
-                </button>
+                <div class="btn-stack-2">
+                  <button id="btn-load-geoboundaries-land" class="btn btn-primary" type="button">
+                    Use as Primary Land Map
+                  </button>
+                  <button id="btn-load-geoboundaries" class="btn btn-secondary" type="button">
+                    + Add as Overlay
+                  </button>
+                </div>
+                <div id="primary-land-status" class="primary-land-banner" hidden>
+                  <span id="primary-land-status-text">Default land layers unshaded</span>
+                  <button id="btn-restore-default-land" class="btn-chip" type="button">Restore Default Land</button>
+                </div>
               </div>
             </div>
           </section>
@@ -687,6 +701,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=13"></script>
+  <script type="module" src="./js/app.js?v=14"></script>
 </body>
 </html>

@@ -72,6 +72,7 @@ class ColorsSpec(_BaseSpecModel):
 
 
 class LayersSpec(_BaseSpecModel):
+    showLand: bool = True
     showBorders: bool = True
     borderWidth: float = Field(default=1.0, ge=0.1, le=8.0)
     borderStyle: BorderStyleLiteral = "solid"
@@ -136,9 +137,11 @@ class CustomGeoJsonLayer(_BaseSpecModel):
     url: Optional[str] = None
     data: Optional[dict[str, Any]] = None
     visible: bool = True
+    role: Literal["overlay", "land"] = "overlay"
     color: str = "#222222"
+    strokeColor: Optional[str] = None
     fillOpacity: float = Field(default=0.45, ge=0.0, le=1.0)
-    strokeWidth: float = Field(default=1.5, ge=0.2, le=8.0)
+    strokeWidth: float = Field(default=1.5, ge=0.0, le=8.0)
     dashed: bool = False
     hatch: HatchLiteral = "none"
 

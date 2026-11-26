@@ -458,13 +458,16 @@ function getLegendItems(spec) {
   const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
   for (let i = 0; i < overlays.length; i += 1) {
     const layer = overlays[i];
-    if (layer?.visible === false || !layer?.data) continue;
+    if (layer?.visible === false || !layer?.data || layer?.role === 'land') continue;
+    const strokeCol = layer.strokeColor && layer.strokeColor !== 'none'
+      ? layer.strokeColor
+      : (layer.color || '#222222');
     items.push({
       kind: 'overlay',
       label: String(layer.label || `Overlay ${i + 1}`),
       fill: layer.color || '#222222',
       fillOpacity: Number.isFinite(Number(layer.fillOpacity)) ? Number(layer.fillOpacity) : 0.45,
-      stroke: layer.color || '#222222',
+      stroke: strokeCol,
       hatch: layer.hatch || 'none',
       dashed: Boolean(layer.dashed),
     });

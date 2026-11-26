@@ -494,6 +494,77 @@ class TestBackendAPI(unittest.TestCase):
         png_bytes = render_map(spec, "png")
         self.assertTrue(png_bytes.startswith(b"\x89PNG"))
 
+    def test_primary_land_geojson_and_unshaded_default_land(self) -> None:
+        """showLand=False unshades default land; role='land' custom GeoJSON shades as primary land."""
+        # 1. Center over central Luzon with showLand=False and no highlights -> pure water pixels
+        spec_unshaded = MapSpec.model_validate(
+            {
+                "projection": "mercator",
+                "center": {"lat": 15.5, "lon": 121.0},
+                "span": {"lonDeg": 1.0, "latDeg": 1.0},
+                "page": {"widthIn": 4.0, "heightIn": 4.0, "dpi": 80, "showFrameBorder": False},
+                "colors": {"land": "#202020", "water": "#d0e8ff"},
+                "layers": {"showLand": False, "showBorders": False, "showLakes": False},
+                "highlightedCountries": [],
+                "ornaments": {
+                    "scaleBar": {"enabled": False},
+                    "locatorGlobe": {"enabled": False},
+                },
+                "pro": {"coastlineEngine": "natural_earth"},
+            }
+        )
+        png_water = render_map(spec_unshaded, "png")
+        with Image.open(BytesIO(png_water)).convert("RGB") as img:
+            center_px = img.getpixel((img.width // 2, img.height // 2))
+            self.assertGreater(center_px[2], 235)  # Water blue, NOT dark default land
+
+        # 2. Add a role='land' GeoJSON polygon covering center -> shaded with primary land fill
+        spec_primary = MapSpec.model_validate(
+            {
+                **spec_unshaded.model_dump(),
+                "customGeoJsonLayers": [
+                    {
+                        "id": "osm_primary_test",
+                        "label": "Test OSM Primary Land",
+                        "role": "land",
+                        "visible": True,
+                        "color": "#336633",
+                        "strokeColor": "#ffffff",
+                        "fillOpacity": 1.0,
+                        "strokeWidth": 1.0,
+                        "data": {
+                            "type": "FeatureCollection",
+                            "features": [
+                                {
+                                    "type": "Feature",
+                                    "properties": {},
+                                    "geometry": {
+                                        "type": "Polygon",
+                                        "coordinates": [
+                                            [
+                                                [120.7, 15.2],
+                                                [121.3, 15.2],
+                                                [121.3, 15.8],
+                                                [120.7, 15.8],
+                                                [120.7, 15.2],
+                                            ]
+                                        ],
+                                    },
+                                }
+                            ],
+                        },
+                    }
+                ]
+            }
+        )
+        png_land = render_map(spec_primary, "png")
+        with Image.open(BytesIO(png_land)).convert("RGB") as img:
+            center_px = img.getpixel((img.width // 2, img.height // 2))
+            # Should match #336633 (51, 102, 51)
+            self.assertLess(abs(center_px[0] - 51), 8)
+            self.assertLess(abs(center_px[1] - 102), 8)
+            self.assertLess(abs(center_px[2] - 51), 8)
+
 
 if __name__ == "__main__":
     unittest.main()

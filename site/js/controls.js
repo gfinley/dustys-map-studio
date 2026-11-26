@@ -6,10 +6,10 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=13';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=13';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=13';
-import { formatArea } from './shadow.js?v=13';
+} from './schema.js?v=14';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=14';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=14';
+import { formatArea } from './shadow.js?v=14';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -677,6 +677,11 @@ export function renderGeoJsonLayersList(spec, callbacks = boundCallbacks) {
     const card = document.createElement('div');
     card.className = 'list-card';
 
+    const isPrimaryLand = layer.role === 'land';
+    if (isPrimaryLand) {
+      card.classList.add('list-card-primary-land');
+    }
+
     const top = document.createElement('div');
     top.className = 'list-card-top';
 
@@ -698,20 +703,33 @@ export function renderGeoJsonLayersList(spec, callbacks = boundCallbacks) {
 
     visLabel.append(visCheck, title);
 
+    const actions = document.createElement('div');
+    actions.className = 'list-card-actions';
+
+    const landBtn = document.createElement('button');
+    landBtn.type = 'button';
+    landBtn.className = isPrimaryLand ? 'btn-chip active' : 'btn-chip';
+    landBtn.textContent = isPrimaryLand ? 'Primary Land' : 'Use as Land';
+    landBtn.title = isPrimaryLand
+      ? 'Active as primary land base (click to switch back to overlay)'
+      : 'Promote this layer to primary land map and unshade default land layers';
+    landBtn.addEventListener('click', () => callbacks.onToggleGeoJsonPrimaryLand?.(idx));
+
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn-danger-ghost';
     removeBtn.textContent = 'Remove';
     removeBtn.addEventListener('click', () => callbacks.onRemoveGeoJsonLayer?.(idx));
 
-    top.append(visLabel, removeBtn);
+    actions.append(landBtn, removeBtn);
+    top.append(visLabel, actions);
 
     const ctrls = document.createElement('div');
     ctrls.className = 'list-card-controls';
 
     const colorInput = document.createElement('input');
     colorInput.type = 'color';
-    colorInput.title = 'Overlay color';
+    colorInput.title = isPrimaryLand ? 'Primary land fill color' : 'Overlay fill color';
     colorInput.value = safeHexColor(layer.color, '#222222');
     colorInput.addEventListener('input', (e) => {
       callbacks.onUpdateGeoJsonLayer?.(idx, { color: e.target.value }, { commitHistory: false, skipDynamicLists: true });
@@ -720,12 +738,47 @@ export function renderGeoJsonLayersList(spec, callbacks = boundCallbacks) {
       callbacks.onUpdateGeoJsonLayer?.(idx, { color: e.target.value }, { commitHistory: true });
     });
 
+    const strokeCombo = document.createElement('div');
+    strokeCombo.className = 'color-combo';
+
+    const strokeInput = document.createElement('input');
+    strokeInput.type = 'color';
+    strokeInput.title = isPrimaryLand ? 'Boundary / division stroke color' : 'Overlay stroke color';
+    const strokeNone = layer.strokeColor === 'none';
+    strokeInput.value = safeHexColor(strokeNone ? layer.color : (layer.strokeColor || layer.color), '#737373');
+    strokeInput.addEventListener('input', (e) => {
+      callbacks.onUpdateGeoJsonLayer?.(
+        idx,
+        { strokeColor: e.target.value, strokeWidth: Math.max(0.5, Number(layer.strokeWidth) || 0.7) },
+        { commitHistory: false, skipDynamicLists: true },
+      );
+    });
+    strokeInput.addEventListener('change', (e) => {
+      callbacks.onUpdateGeoJsonLayer?.(
+        idx,
+        { strokeColor: e.target.value, strokeWidth: Math.max(0.5, Number(layer.strokeWidth) || 0.7) },
+        { commitHistory: true },
+      );
+    });
+
+    const strokeNoneBtn = document.createElement('button');
+    strokeNoneBtn.type = 'button';
+    strokeNoneBtn.className = strokeNone ? 'btn-chip active' : 'btn-chip';
+    strokeNoneBtn.textContent = 'No Line';
+    strokeNoneBtn.title = 'Toggle border / outline stroke on this layer';
+    strokeNoneBtn.addEventListener('click', () => {
+      callbacks.onUpdateGeoJsonLayer?.(idx, {
+        strokeColor: strokeNone ? (spec.colors?.admin1 || spec.colors?.borders || '#737373') : 'none',
+      });
+    });
+    strokeCombo.append(strokeInput, strokeNoneBtn);
+
     const opacityRange = document.createElement('input');
     opacityRange.type = 'range';
     opacityRange.min = '0';
     opacityRange.max = '1';
     opacityRange.step = '0.05';
-    opacityRange.style.width = '78px';
+    opacityRange.style.width = '68px';
     opacityRange.title = 'Fill opacity';
     opacityRange.value = String(layer.fillOpacity ?? 0.45);
     const opacityVal = document.createElement('span');
@@ -768,7 +821,7 @@ export function renderGeoJsonLayersList(spec, callbacks = boundCallbacks) {
       callbacks.onUpdateGeoJsonLayer?.(idx, { hatch: e.target.value });
     });
 
-    ctrls.append(colorInput, opacityRange, opacityVal, dashedLabel, hatchSelect);
+    ctrls.append(colorInput, strokeCombo, opacityRange, opacityVal, dashedLabel, hatchSelect);
     card.append(top, ctrls);
     listEl.appendChild(card);
   });
@@ -1021,6 +1074,7 @@ export function renderControls(callbacks) {
   const bindCheck = (id, fn) => {
     $(id)?.addEventListener('change', (e) => fn(e.target.checked));
   };
+  bindCheck('layer-show-land', (v) => boundCallbacks.onPatchSpec?.({ layers: { showLand: v } }));
   bindCheck('layer-show-borders', (v) => boundCallbacks.onPatchSpec?.({ layers: { showBorders: v } }));
   bindCheck('layer-show-minor-islands', (v) => boundCallbacks.onPatchSpec?.({ layers: { showMinorIslands: v } }));
   bindCheck('layer-show-lakes', (v) => boundCallbacks.onPatchSpec?.({ layers: { showLakes: v } }));
@@ -1075,12 +1129,24 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ layers: { graticuleStepDeg: Number(e.target.value) || 10 } });
   });
 
+  $('btn-load-geoboundaries-land')?.addEventListener('click', () => {
+    const sel = $('geoboundaries-country');
+    const opt = sel?.selectedOptions?.[0];
+    const level = $('geoboundaries-level')?.value || 'ADM1';
+    if (!opt || !opt.value) return;
+    boundCallbacks.onLoadGeoBoundaries?.(opt.value, opt.dataset.name || opt.textContent, level, { asPrimaryLand: true });
+  });
+
   $('btn-load-geoboundaries')?.addEventListener('click', () => {
     const sel = $('geoboundaries-country');
     const opt = sel?.selectedOptions?.[0];
     const level = $('geoboundaries-level')?.value || 'ADM1';
     if (!opt || !opt.value) return;
-    boundCallbacks.onLoadGeoBoundaries?.(opt.value, opt.dataset.name || opt.textContent, level);
+    boundCallbacks.onLoadGeoBoundaries?.(opt.value, opt.dataset.name || opt.textContent, level, { asPrimaryLand: false });
+  });
+
+  $('btn-restore-default-land')?.addEventListener('click', () => {
+    boundCallbacks.onRestoreDefaultLand?.();
   });
 
   // Tab 3: Region Shadows, Countries, Pins & GeoJSON
@@ -1353,7 +1419,26 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('color-urban')) $('color-urban').value = safeHexColor(spec.colors.urban, '#636363');
 
   // Layers
+  if ($('layer-show-land')) $('layer-show-land').checked = spec.layers.showLand !== false;
   if ($('layer-show-borders')) $('layer-show-borders').checked = Boolean(spec.layers.showBorders);
+  const landBanner = $('primary-land-status');
+  const landBannerText = $('primary-land-status-text');
+  if (landBanner) {
+    const primaryLandLayers = (spec.customGeoJsonLayers || []).filter(
+      (l) => l && l.visible !== false && l.role === 'land',
+    );
+    const defaultUnshaded = spec.layers.showLand === false;
+    landBanner.hidden = !defaultUnshaded && primaryLandLayers.length === 0;
+    if (landBannerText) {
+      if (primaryLandLayers.length > 0 && defaultUnshaded) {
+        landBannerText.textContent = `Primary Land: ${primaryLandLayers.map((l) => l.label).join(', ')} (default land unshaded)`;
+      } else if (defaultUnshaded) {
+        landBannerText.textContent = 'Default land layers are unshaded';
+      } else if (primaryLandLayers.length > 0) {
+        landBannerText.textContent = `Primary Land active (${primaryLandLayers.length})`;
+      }
+    }
+  }
   if ($('layer-border-width')) $('layer-border-width').value = String(spec.layers.borderWidth);
   if ($('layer-border-width-val')) $('layer-border-width-val').textContent = Number(spec.layers.borderWidth).toFixed(1);
   if ($('layer-border-style')) $('layer-border-style').value = spec.layers.borderStyle;

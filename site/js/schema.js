@@ -229,6 +229,7 @@ export function createDefaultMapSpec() {
       textHalo: COLOR_THEMES.dusty_prime.textHalo,
     },
     layers: {
+      showLand: true,
       showBorders: true,
       borderWidth: 1.0,
       borderStyle: 'solid',
@@ -374,6 +375,7 @@ export function normalizeMapSpec(partial) {
       textHalo: typeof colorsRaw.textHalo === 'string' ? colorsRaw.textHalo : themeColors.textHalo,
     },
     layers: {
+      showLand: typeof layersRaw.showLand === 'boolean' ? layersRaw.showLand : def.layers.showLand,
       showBorders: typeof layersRaw.showBorders === 'boolean' ? layersRaw.showBorders : def.layers.showBorders,
       borderWidth: clamp(layersRaw.borderWidth, 0.1, 8.0, def.layers.borderWidth),
       borderStyle: BORDER_STYLES.includes(layersRaw.borderStyle) ? layersRaw.borderStyle : def.layers.borderStyle,
@@ -449,9 +451,11 @@ export function normalizeMapSpec(partial) {
             url: typeof l.url === 'string' ? l.url : null,
             data: isPlainObject(l.data) ? l.data : null,
             visible: typeof l.visible === 'boolean' ? l.visible : true,
+            role: l.role === 'land' ? 'land' : 'overlay',
             color: typeof l.color === 'string' ? l.color : '#222222',
+            strokeColor: typeof l.strokeColor === 'string' && l.strokeColor ? l.strokeColor : null,
             fillOpacity: clamp(l.fillOpacity, 0, 1, 0.45),
-            strokeWidth: clamp(l.strokeWidth, 0.2, 8, 1.5),
+            strokeWidth: clamp(l.strokeWidth, 0, 8, 1.5),
             dashed: typeof l.dashed === 'boolean' ? l.dashed : false,
             hatch: HATCH_STYLES.includes(l.hatch) ? l.hatch : 'none',
           }))

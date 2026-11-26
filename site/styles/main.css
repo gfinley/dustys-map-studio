@@ -1366,3 +1366,29 @@ input[type='range'] {
   background: rgba(245, 158, 11, 0.28);
   border-color: rgba(251, 191, 36, 0.75);
 }
+
+.primary-land-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.list-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.list-card-primary-land {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
