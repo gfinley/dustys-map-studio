@@ -425,7 +425,7 @@ def _draw_gshhs_land_and_lakes(
                     facecolor=water_color,
                     edgecolor=edge,
                     linewidth=lw * 0.7,
-                    zorder=2.5,
+                    zorder=4.2,
                 )
             island_in_lake_geoms = _filter_and_clip_items(
                 _load_gshhs_level(gshhs_scale, 3),
@@ -442,7 +442,7 @@ def _draw_gshhs_land_and_lakes(
                     facecolor=land_color,
                     edgecolor=edge,
                     linewidth=lw * 0.6,
-                    zorder=2.6,
+                    zorder=4.3,
                 )
 
         all_land_mask = land_geoms + island_in_lake_geoms
@@ -2362,16 +2362,17 @@ def render_map(spec: MapSpec, fmt: str = "png") -> bytes:
                     zorder=2.1,
                 )
             if spec.layers.showLakes:
+                lakes_scale = "50m" if ne_scale == "110m" else ne_scale
                 _add_ne_layer_bbox(
                     ax,
                     spec,
                     "physical",
                     "lakes",
-                    ne_scale,
+                    lakes_scale,
                     facecolor=water_color,
                     edgecolor=coast_color if spec.layers.showCoastlines else "none",
                     linewidth=spec.layers.coastlineWidth * 0.7,
-                    zorder=2.5,
+                    zorder=4.2,
                 )
 
     if spec.layers.showUrbanAreas:

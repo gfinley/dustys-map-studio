@@ -6,10 +6,10 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=10';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=10';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=10';
-import { formatArea } from './shadow.js?v=10';
+} from './schema.js?v=11';
+import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=11';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=11';
+import { formatArea } from './shadow.js?v=11';
 
 const HATCH_LABELS = {
   none: 'No Hatch',

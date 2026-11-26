@@ -4,13 +4,14 @@
  */
 
 import * as topojson from 'https://cdn.jsdelivr.net/npm/topojson-client@3/+esm';
-import { geoArea } from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+import { geoArea, geoCentroid } from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 
-const CACHE_NAME = 'dusty-mapmaker-v3';
+const CACHE_NAME = 'dusty-mapmaker-v4';
 try {
   if (typeof caches !== 'undefined') {
     void caches.delete('dusty-mapmaker-v1');
     void caches.delete('dusty-mapmaker-v2');
+    void caches.delete('dusty-mapmaker-v3');
   }
 } catch {
   // Ignore CacheStorage errors on restricted origins
@@ -114,37 +115,63 @@ function attachFeatureBBoxes(fc) {
   return fc;
 }
 
-function fixInvertedOuterRing(polyCoords) {
+function sanitizePolygonRings(polyCoords) {
   if (!Array.isArray(polyCoords) || polyCoords.length === 0) return;
-  const ring = polyCoords[0];
-  if (!Array.isArray(ring) || ring.length < 4) return;
-  if (geoArea({ type: 'Polygon', coordinates: [ring] }) > 2 * Math.PI) {
-    ring.reverse();
+  const outer = polyCoords[0];
+  if (Array.isArray(outer) && outer.length >= 4) {
+    if (geoArea({ type: 'Polygon', coordinates: [outer] }) > 2 * Math.PI) {
+      outer.reverse();
+    }
   }
-}
-
-function sanitizePolygonFeatureCollection(fc) {
-  const features = fc?.features;
-  if (!Array.isArray(features)) return;
-  for (let i = 0; i < features.length; i += 1) {
-    const f = features[i];
-    const geom = f?.geometry;
-    if (!geom) continue;
-    if (geom.type === 'Polygon') {
-      fixInvertedOuterRing(geom.coordinates);
-    } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
-      for (let j = 0; j < geom.coordinates.length; j += 1) {
-        fixInvertedOuterRing(geom.coordinates[j]);
+  // Inner hole rings in D3 spherical winding must be CCW (single-ring complement area > 2*pi)
+  for (let r = 1; r < polyCoords.length; r += 1) {
+    const hole = polyCoords[r];
+    if (Array.isArray(hole) && hole.length >= 4) {
+      if (geoArea({ type: 'Polygon', coordinates: [hole] }) < 2 * Math.PI) {
+        hole.reverse();
       }
     }
   }
+}
+
+function sanitizeGeometryWinding(geom) {
+  if (!geom || typeof geom !== 'object') return;
+  if (geom.type === 'Polygon') {
+    sanitizePolygonRings(geom.coordinates);
+  } else if (geom.type === 'MultiPolygon' && Array.isArray(geom.coordinates)) {
+    for (let j = 0; j < geom.coordinates.length; j += 1) {
+      sanitizePolygonRings(geom.coordinates[j]);
+    }
+  } else if (geom.type === 'GeometryCollection' && Array.isArray(geom.geometries)) {
+    for (let j = 0; j < geom.geometries.length; j += 1) {
+      sanitizeGeometryWinding(geom.geometries[j]);
+    }
+  }
+}
+
+export function sanitizeGeoJsonWinding(geojson) {
+  if (!geojson || typeof geojson !== 'object') return geojson;
+  if (geojson.type === 'FeatureCollection' && Array.isArray(geojson.features)) {
+    for (let i = 0; i < geojson.features.length; i += 1) {
+      sanitizeGeometryWinding(geojson.features[i]?.geometry);
+    }
+  } else if (geojson.type === 'Feature') {
+    sanitizeGeometryWinding(geojson.geometry);
+  } else {
+    sanitizeGeometryWinding(geojson);
+  }
+  return geojson;
+}
+
+function sanitizePolygonFeatureCollection(fc) {
+  return sanitizeGeoJsonWinding(fc);
 }
 
 function decomposeGeometryParts(geojson, singleType, multiType) {
   const parts = [];
   function pushPart(partCoords) {
     if (singleType === 'Polygon') {
-      fixInvertedOuterRing(partCoords);
+      sanitizePolygonRings(partCoords);
     }
     const bbox = computeCoordsBBox(partCoords);
     parts.push({
@@ -187,9 +214,10 @@ function decomposeGeometryParts(geojson, singleType, multiType) {
 
 function buildUrls(res, fineHydrology = false, admin1Scale = '50m', finePlaces = false) {
   const worldRes = res === 'ultra' ? '10m' : res;
-  const use10mHydro = res === 'ultra' || (fineHydrology && worldRes === '10m');
-  const hydroRes = use10mHydro ? '10m' : worldRes === '10m' ? '50m' : worldRes;
-  const riverRes = hydroRes === '110m' ? '50m' : hydroRes;
+  const use10mLakes = res === 'ultra' || res === '10m' || (fineHydrology && worldRes === '10m');
+  const use10mRivers = res === 'ultra' || (fineHydrology && worldRes === '10m');
+  const hydroRes = use10mLakes ? '10m' : '50m';
+  const riverRes = use10mRivers ? '10m' : '50m';
   const effAdmin1 = admin1Scale === '10m' ? '10m' : '50m';
   const placesRes = res === 'ultra' || finePlaces ? '10m' : '50m';
 
@@ -200,17 +228,19 @@ function buildUrls(res, fineHydrology = false, admin1Scale = '50m', finePlaces =
     lakes:
       hydroRes === '10m'
         ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_lakes.geojson'
-        : `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${hydroRes}_lakes.geojson`,
+        : 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_lakes.geojson',
     rivers:
       riverRes === '10m'
         ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_rivers_lake_centerlines.geojson'
-        : `https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_${riverRes}_rivers_lake_centerlines.geojson`,
+        : 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_rivers_lake_centerlines.geojson',
     bathymetry200:
       'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_10m_bathymetry_K_200.geojson',
     bathymetry1000:
       'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_bathymetry_J_1000.geojson',
     urbanAreas:
       'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_urban_areas.geojson',
+    marinePolys:
+      'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_10m_geography_marine_polys.geojson',
     admin1:
       effAdmin1 === '10m'
         ? 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_10m_admin_1_states_provinces_lines.geojson'
@@ -452,8 +482,18 @@ export async function ensureDatasets(
   if (needLakes) {
     tasks.push({
       key: 'lakes',
-      label: `Loading ${urls.hydroRes} lakes`,
-      run: () => loadPolygonCollection(urls.lakes),
+      label: `Loading ${urls.hydroRes} lakes & inland seas`,
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.lakes);
+        } catch (err) {
+          if (urls.hydroRes === '10m') {
+            console.warn('Failed to load 10m lakes; falling back to 50m:', err);
+            return await loadPolygonCollection(buildUrls('50m').lakes);
+          }
+          throw err;
+        }
+      },
     });
   }
   if (needRivers) {
@@ -553,6 +593,18 @@ export async function ensureDatasets(
         }
       },
     });
+    tasks.push({
+      key: 'marinePolys',
+      label: 'Loading seas, bays & gulfs labels',
+      run: async () => {
+        try {
+          return await loadPolygonCollection(urls.marinePolys);
+        } catch (err) {
+          console.warn('Marine polygons unavailable:', err);
+          return null;
+        }
+      },
+    });
   }
 
   let completed = 0;
@@ -612,6 +664,7 @@ export async function ensureDatasets(
     bathymetry200: results.bathymetry200 || null,
     bathymetry1000: results.bathymetry1000 || null,
     urbanAreas: results.urbanAreas || null,
+    marinePolys: results.marinePolys || null,
     admin1: results.admin1 || null,
     admin1Polygons: results.admin1Polygons || null,
     populatedPlaces: results.places || null,
@@ -804,6 +857,58 @@ export function getCitiesInBounds(dataset, bounds) {
   return results;
 }
 
+export function getMarineLabelsInBounds(dataset, bounds) {
+  const features = dataset?.marinePolys?.features;
+  if (!Array.isArray(features) || !bounds) return [];
+
+  let minLon;
+  let maxLon;
+  let minLat;
+  let maxLat;
+  if (Array.isArray(bounds) && bounds.length >= 4) {
+    [minLon, maxLon, minLat, maxLat] = bounds.map(Number);
+  } else if (typeof bounds === 'object') {
+    minLon = Number(bounds.minLon);
+    maxLon = Number(bounds.maxLon);
+    minLat = Number(bounds.minLat);
+    maxLat = Number(bounds.maxLat);
+  }
+  if (![minLon, maxLon, minLat, maxLat].every(Number.isFinite)) {
+    return [];
+  }
+
+  const results = [];
+  for (let i = 0; i < features.length; i += 1) {
+    const f = features[i];
+    const props = f?.properties || {};
+    const name = String(props.name || props.name_en || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!name) continue;
+
+    if (!f._centroid) {
+      const c = geoCentroid(f);
+      f._centroid = Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1]) ? c : null;
+    }
+    if (!f._centroid) continue;
+    const [lon, lat] = f._centroid;
+    if (lat < minLat || lat > maxLat) continue;
+    if (!lonInBounds(lon, minLon, maxLon)) continue;
+
+    const scalerank = Number.isFinite(Number(props.scalerank)) ? Number(props.scalerank) : 6;
+    results.push({
+      name,
+      lat,
+      lon,
+      scalerank,
+      featurecla: String(props.featurecla || ''),
+    });
+  }
+
+  results.sort((a, b) => a.scalerank - b.scalerank || a.name.localeCompare(b.name));
+  return results;
+}
+
 function isValidGeoJsonGeometry(geom) {
   if (!geom || typeof geom !== 'object' || !VALID_GEOJSON_TYPES.has(geom.type)) {
     return false;
@@ -831,18 +936,18 @@ export function validateGeoJson(data) {
         throw new Error(`Invalid Feature at index ${i} in GeoJSON FeatureCollection.`);
       }
     }
-    return data;
+    return sanitizeGeoJsonWinding(data);
   }
   if (data.type === 'Feature') {
     if (data.geometry !== null && !isValidGeoJsonGeometry(data.geometry)) {
       throw new Error('Invalid geometry in GeoJSON Feature.');
     }
-    return data;
+    return sanitizeGeoJsonWinding(data);
   }
   if (!isValidGeoJsonGeometry(data)) {
     throw new Error(`Invalid GeoJSON ${data.type} geometry.`);
   }
-  return data;
+  return sanitizeGeoJsonWinding(data);
 }
 
 export async function fetchCustomGeoJson(url) {

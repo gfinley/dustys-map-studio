@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=10';
+} from './schema.js?v=11';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -14,17 +14,18 @@ import {
   getAdmin1Catalog,
   getCitiesInBounds,
   getCountryCatalog,
+  getMarineLabelsInBounds,
   loadAdmin1Polygons,
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=10';
+} from './data-loader.js?v=11';
 import {
   buildProjection,
   hitTestCountry,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=10';
+} from './cartography.js?v=11';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -33,9 +34,9 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=10';
-import { REGION_PRESETS } from './presets.js?v=10';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=10';
+} from './exporter.js?v=11';
+import { REGION_PRESETS } from './presets.js?v=11';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=11';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -45,13 +46,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=10';
+} from './controls.js?v=11';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=10';
+} from './shadow.js?v=11';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -354,7 +355,7 @@ function updateFastDatasetsCache(loaded) {
 }
 
 function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets) {
-  if (!state.refPeek || !datasets?.populatedPlaces || !projection) return;
+  if (!state.refPeek || (!datasets?.populatedPlaces && !datasets?.marinePolys) || !projection) return;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -363,13 +364,9 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
   const labelScale = clampScale(state.spec.layers?.cityLabelScale);
   const iconScale = clampScale(state.spec.layers?.cityIconScale);
 
-  const candidates = pickTopCitiesInExtent(
-    datasets,
-    state.spec.center,
-    state.spec.span,
-    24,
-  );
-  if (!candidates.length) return;
+  const candidates = datasets?.populatedPlaces
+    ? pickTopCitiesInExtent(datasets, state.spec.center, state.spec.span, 24)
+    : [];
 
   const existingNames = new Set(
     (state.spec.cities || []).map((c) => String(c.name || '').trim().toLowerCase()),
@@ -377,13 +374,57 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
 
   ctx.save();
   const fontSize = Math.max(6, Math.round(11.5 * scaleFactor * labelScale));
-  ctx.font = `italic 600 ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textBaseline = 'middle';
 
+  const placedBoxes = [];
+
+  // 1. Inland seas, bays, gulfs, straits & oceans (italic ocean-blue reference labels)
+  if (datasets?.marinePolys) {
+    const cLon = Number(state.spec.center?.lon) || 0;
+    const cLat = Number(state.spec.center?.lat) || 0;
+    const hLon = Math.max(2, (Number(state.spec.span?.lonDeg) || 24) * 0.75);
+    const hLat = Math.max(2, (Number(state.spec.span?.latDeg) || 14) * 0.75);
+    const marines = getMarineLabelsInBounds(datasets, [
+      cLon - hLon,
+      cLon + hLon,
+      Math.max(-85, cLat - hLat),
+      Math.min(85, cLat + hLat),
+    ]);
+    const seaFontSize = Math.max(7, Math.round(11.0 * scaleFactor * labelScale));
+    ctx.font = `italic 700 ${seaFontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    ctx.textAlign = 'center';
+
+    for (const sea of marines.slice(0, 18)) {
+      const pt = projection([sea.lon, sea.lat]);
+      if (!pt || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) continue;
+      const [x, y] = pt;
+      if (x < 24 || x > canvas.width - 24 || y < 18 || y > canvas.height - 18) continue;
+
+      const textW = ctx.measureText(sea.name).width;
+      const box = {
+        x1: x - textW * 0.5 - 4 * scaleFactor,
+        y1: y - seaFontSize * 0.7,
+        x2: x + textW * 0.5 + 4 * scaleFactor,
+        y2: y + seaFontSize * 0.7,
+      };
+      if (placedBoxes.some((b) => !(box.x2 < b.x1 || box.x1 > b.x2 || box.y2 < b.y1 || box.y1 > b.y2))) {
+        continue;
+      }
+      placedBoxes.push(box);
+      ctx.lineWidth = Math.max(1.8, 3.0 * scaleFactor);
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.82)';
+      ctx.strokeText(sea.name, x, y);
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillText(sea.name, x, y);
+    }
+  }
+
+  // 2. Populated places reference labels
+  ctx.font = `italic 600 ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  ctx.textAlign = 'left';
   const dotRadius = Math.max(1.1, 2.8 * scaleFactor * iconScale);
   const lxOffset = Math.max(3, (2.8 * iconScale + 3.2 * labelScale) * scaleFactor);
 
-  const placedBoxes = [];
   for (const city of candidates) {
     if (existingNames.has(city.name.toLowerCase())) continue;
     const pt = projection([city.lon, city.lat]);
@@ -436,6 +477,7 @@ function getActiveRenderDatasets() {
         bathymetry200: state.fastDatasets.bathymetry200 || state.datasets?.bathymetry200 || null,
         bathymetry1000: state.fastDatasets.bathymetry1000 || state.datasets?.bathymetry1000 || null,
         urbanAreas: state.fastDatasets.urbanAreas || state.datasets?.urbanAreas || null,
+        marinePolys: state.fastDatasets.marinePolys || state.datasets?.marinePolys || null,
         admin1: state.fastDatasets.admin1 || state.datasets?.admin1 || null,
         admin1Resolution: state.fastDatasets.admin1
           ? state.fastDatasets.admin1Resolution
