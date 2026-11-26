@@ -259,12 +259,7 @@ export function createDefaultMapSpec() {
       },
     ],
     regionShadows: [],
-    cities: [
-      { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -6, scale: 1.0 },
-      { id: 'lviv', name: 'Lviv', lat: 49.8397, lon: 24.0297, style: 'dot', dx: 6, dy: -5, scale: 1.0 },
-      { id: 'odesa', name: 'Odesa', lat: 46.4825, lon: 30.7233, style: 'dot', dx: 6, dy: 8, scale: 1.0 },
-      { id: 'kharkiv', name: 'Kharkiv', lat: 49.9935, lon: 36.2304, style: 'dot', dx: 6, dy: -5, scale: 1.0 },
-    ],
+    cities: [],
     customGeoJsonLayers: [],
     ornaments: {
       scaleBar: {

@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=20';
+} from './schema.js?v=21';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -20,14 +20,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=20';
+} from './data-loader.js?v=21';
 import {
   buildProjection,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=20';
+} from './cartography.js?v=21';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -36,15 +36,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=20';
+} from './exporter.js?v=21';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=20';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=20';
+} from './presets.js?v=21';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=21';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -54,13 +54,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=20';
+} from './controls.js?v=21';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=20';
+} from './shadow.js?v=21';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -71,7 +71,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=20';
+} from './timeline.js?v=21';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH

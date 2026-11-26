@@ -12,14 +12,14 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=20';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=20';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=20';
+} from './ornaments.js?v=21';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=21';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=21';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=20';
+} from './data-loader.js?v=21';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;

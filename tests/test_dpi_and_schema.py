@@ -600,6 +600,22 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         ):
             self.assertIn(cb, app_js)
 
+    def test_no_default_auto_city_pins_in_schema_or_region_presets(self) -> None:
+        """Default MapSpec, schema.js, and every region preset in presets.js start with no city pins."""
+        self.assertEqual(MapSpec().cities, [])
+
+        schema_js = SCHEMA_JS_PATH.read_text(encoding="utf-8")
+        self.assertRegex(schema_js, r"\bcities:\s*\[\s*\],")
+        self.assertIsNone(re.search(r"\bcities:\s*\[\s*\{", schema_js))
+
+        presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
+        empty_cities_matches = re.findall(r"\bcities:\s*\[\s*\],", presets_js)
+        self.assertGreaterEqual(len(empty_cities_matches), 12)
+        self.assertIsNone(
+            re.search(r"\bcities:\s*\[\s*\{", presets_js),
+            "Found non-empty default cities array in site/js/presets.js",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

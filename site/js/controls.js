@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=20';
+} from './schema.js?v=21';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,9 +14,9 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=20';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=20';
-import { formatArea } from './shadow.js?v=20';
+} from './presets.js?v=21';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=21';
+import { formatArea } from './shadow.js?v=21';
 
 const PALETTE_COLOR_FIELDS = [
   { key: 'land', inputId: 'color-land', noneBtnId: 'btn-land-none', fallback: '#4a4a4a' },

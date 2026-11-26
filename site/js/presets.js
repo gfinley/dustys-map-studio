@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=20';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=21';
 
 export const AIRFIELD_1941_LAYERS = [
   {
@@ -288,7 +288,7 @@ export const REGION_PRESETS = [
   {
     id: 'ukraine_briefing',
     label: 'Ukraine Briefing (Book 4.6×7")',
-    description: 'Dusty notebook baseline: Ukraine highlighted with Kyiv, Lviv, Odesa, and Kharkiv on a 4.6×7" book page.',
+    description: 'Dusty notebook baseline: Ukraine highlighted on a 4.6×7" book page.',
     spec: makePresetSpec({
       title: 'Ukraine Briefing Map',
       showTitle: false,
@@ -323,12 +323,7 @@ export const REGION_PRESETS = [
           hatch: 'none',
         },
       ],
-      cities: [
-        { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -6 },
-        { id: 'lviv', name: 'Lviv', lat: 49.8397, lon: 24.0297, style: 'dot', dx: 6, dy: -5 },
-        { id: 'odesa', name: 'Odesa', lat: 46.4825, lon: 30.7233, style: 'dot', dx: 6, dy: 8 },
-        { id: 'kharkiv', name: 'Kharkiv', lat: 49.9935, lon: 36.2304, style: 'dot', dx: 6, dy: -5 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
@@ -340,7 +335,7 @@ export const REGION_PRESETS = [
   {
     id: 'nordic_baltic',
     label: 'Finland, Sweden & Russia',
-    description: 'Northern Europe & Baltic briefing highlighting Finland and Sweden with Helsinki, Stockholm, and St. Petersburg.',
+    description: 'Northern Europe & Baltic briefing highlighting Finland and Sweden.',
     spec: makePresetSpec({
       title: 'Finland, Sweden & Western Russia',
       showTitle: false,
@@ -382,11 +377,7 @@ export const REGION_PRESETS = [
           hatch: 'none',
         },
       ],
-      cities: [
-        { id: 'helsinki', name: 'Helsinki', lat: 60.1699, lon: 24.9384, style: 'capital', dx: 6, dy: -6 },
-        { id: 'stockholm', name: 'Stockholm', lat: 59.3293, lon: 18.0686, style: 'capital', dx: -8, dy: -7 },
-        { id: 'st_petersburg', name: 'St. Petersburg', lat: 59.9311, lon: 30.3609, style: 'dot', dx: 6, dy: 6 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
@@ -396,7 +387,7 @@ export const REGION_PRESETS = [
   {
     id: 'alaska',
     label: 'Alaska',
-    description: 'Albers Equal-Area framing of Alaska—mainland, Southeast Panhandle, and Aleutian Islands—with Juneau, Anchorage, Fairbanks, and Nome.',
+    description: 'Albers Equal-Area framing of Alaska—mainland, Southeast Panhandle, and Aleutian Islands.',
     spec: makePresetSpec({
       title: 'Alaska',
       showTitle: false,
@@ -431,12 +422,7 @@ export const REGION_PRESETS = [
           hatch: 'none',
         },
       ],
-      cities: [
-        { id: 'juneau', name: 'Juneau', lat: 58.3019, lon: -134.4197, style: 'capital', dx: 7, dy: -4 },
-        { id: 'anchorage', name: 'Anchorage', lat: 61.2181, lon: -149.9003, style: 'dot', dx: 6, dy: 6 },
-        { id: 'fairbanks', name: 'Fairbanks', lat: 64.8378, lon: -147.7164, style: 'dot', dx: 6, dy: -5 },
-        { id: 'nome', name: 'Nome', lat: 64.5011, lon: -165.4064, style: 'dot', dx: -8, dy: 6 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
@@ -446,7 +432,7 @@ export const REGION_PRESETS = [
   {
     id: 'alaska_russia_dateline',
     label: 'Alaska & Russia (Date Line)',
-    description: 'Trans-Bering Strait framing across the 180° International Date Line with Anchorage, Nome, and Anadyr.',
+    description: 'Trans-Bering Strait framing across the 180° International Date Line.',
     spec: makePresetSpec({
       title: 'Alaska & Russian Far East',
       showTitle: false,
@@ -489,11 +475,7 @@ export const REGION_PRESETS = [
           hatch: 'diagonal',
         },
       ],
-      cities: [
-        { id: 'anchorage', name: 'Anchorage', lat: 61.2181, lon: -149.9003, style: 'dot', dx: 6, dy: -5 },
-        { id: 'nome', name: 'Nome', lat: 64.5011, lon: -165.4064, style: 'dot', dx: 6, dy: 6 },
-        { id: 'anadyr', name: 'Anadyr', lat: 64.7337, lon: 177.5103, style: 'dot', dx: -8, dy: -6 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
@@ -503,7 +485,7 @@ export const REGION_PRESETS = [
   {
     id: 'korean_peninsula',
     label: 'Korean Peninsula',
-    description: 'High-detail regional framing of North and South Korea with Seoul, Pyongyang, and Busan.',
+    description: 'High-detail regional framing of North and South Korea.',
     spec: makePresetSpec({
       title: 'Korean Peninsula',
       showTitle: false,
@@ -545,11 +527,7 @@ export const REGION_PRESETS = [
           hatch: 'diagonal',
         },
       ],
-      cities: [
-        { id: 'seoul', name: 'Seoul', lat: 37.5665, lon: 126.978, style: 'capital', dx: -8, dy: -6 },
-        { id: 'pyongyang', name: 'Pyongyang', lat: 39.0392, lon: 125.7625, style: 'capital', dx: -8, dy: -6 },
-        { id: 'busan', name: 'Busan', lat: 35.1796, lon: 129.0756, style: 'dot', dx: 6, dy: 6 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
@@ -594,12 +572,7 @@ export const REGION_PRESETS = [
           hatch: 'none',
         },
       ],
-      cities: [
-        { id: 'manila', name: 'Manila', lat: 14.5995, lon: 120.9842, style: 'capital', dx: -8, dy: -4 },
-        { id: 'cebu', name: 'Cebu City', lat: 10.3157, lon: 123.8854, style: 'dot', dx: 7, dy: 2 },
-        { id: 'davao', name: 'Davao', lat: 7.1907, lon: 125.4553, style: 'dot', dx: 7, dy: 4 },
-        { id: 'zamboanga', name: 'Zamboanga', lat: 6.9214, lon: 122.079, style: 'dot', dx: -8, dy: 5 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'km', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 22, showExtentBox: true },
@@ -638,12 +611,7 @@ export const REGION_PRESETS = [
         graticuleStepDeg: 15,
       },
       highlightedCountries: [],
-      cities: [
-        { id: 'london', name: 'London', lat: 51.5072, lon: -0.1276, style: 'capital', dx: -6, dy: -6 },
-        { id: 'paris', name: 'Paris', lat: 48.8566, lon: 2.3522, style: 'capital', dx: 6, dy: 6 },
-        { id: 'berlin', name: 'Berlin', lat: 52.52, lon: 13.405, style: 'capital', dx: 6, dy: -5 },
-        { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -5 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: false, units: 'km', position: 'bottom-left' },
         locatorGlobe: { enabled: false, position: 'top-right', sizePct: 20, showExtentBox: true },
@@ -653,7 +621,7 @@ export const REGION_PRESETS = [
   {
     id: 'united_states',
     label: 'United States Overview',
-    description: 'Albers Equal-Area projection with state boundaries and major U.S. cities.',
+    description: 'Albers Equal-Area projection with state boundaries.',
     spec: makePresetSpec({
       title: 'United States Overview',
       showTitle: false,
@@ -688,12 +656,7 @@ export const REGION_PRESETS = [
           hatch: 'none',
         },
       ],
-      cities: [
-        { id: 'dc', name: 'Washington, D.C.', lat: 38.9072, lon: -77.0369, style: 'capital', dx: 6, dy: 6 },
-        { id: 'nyc', name: 'New York', lat: 40.7128, lon: -74.006, style: 'dot', dx: 6, dy: -6 },
-        { id: 'chicago', name: 'Chicago', lat: 41.8781, lon: -87.6298, style: 'dot', dx: 6, dy: -5 },
-        { id: 'la', name: 'Los Angeles', lat: 34.0522, lon: -118.2437, style: 'dot', dx: -8, dy: 8 },
-      ],
+      cities: [],
       ornaments: {
         scaleBar: { enabled: true, units: 'mi', position: 'bottom-left' },
         locatorGlobe: { enabled: true, position: 'top-right', sizePct: 20, showExtentBox: true },
@@ -732,13 +695,7 @@ export const REGION_PRESETS = [
         graticuleStepDeg: 10,
       },
       highlightedCountries: [],
-      cities: [
-        { id: 'manila_1941', name: 'Manila', lat: 14.5995, lon: 120.9842, style: 'capital', dx: -8, dy: -4 },
-        { id: 'singapore_1941', name: 'Singapore', lat: 1.3521, lon: 103.8198, style: 'capital', dx: -8, dy: 6 },
-        { id: 'batavia_1941', name: 'Batavia', lat: -6.2088, lon: 106.8456, style: 'capital', dx: -8, dy: 6 },
-        { id: 'saigon_1941', name: 'Saigon', lat: 10.8231, lon: 106.6297, style: 'dot', dx: 7, dy: 4 },
-        { id: 'bangkok_1941', name: 'Bangkok', lat: 13.7563, lon: 100.5018, style: 'capital', dx: -8, dy: -5 },
-      ],
+      cities: [],
       customGeoJsonLayers: [
         {
           id: 'airfields_1941_military',
@@ -804,13 +761,7 @@ export const REGION_PRESETS = [
         showGraticule: false,
       },
       highlightedCountries: [],
-      cities: [
-        { id: 'manila', name: 'Manila', lat: 14.5995, lon: 120.9842, style: 'capital', dx: -8, dy: 4 },
-        { id: 'san_fernando_lu', name: 'San Fernando', lat: 16.6159, lon: 120.3166, style: 'dot', dx: -8, dy: -4 },
-        { id: 'legazpi', name: 'Legazpi', lat: 13.1391, lon: 123.7438, style: 'dot', dx: 6, dy: -4 },
-        { id: 'iloilo', name: 'Iloilo', lat: 10.7202, lon: 122.5621, style: 'dot', dx: -8, dy: 5 },
-        { id: 'cebu', name: 'Cebu City', lat: 10.3157, lon: 123.8854, style: 'dot', dx: 7, dy: 2 },
-      ],
+      cities: [],
       customGeoJsonLayers: PHILIPPINES_RAIL_1942_LAYERS.map((l) =>
         buildHistoricalLayerSpec(l, Boolean(l.commonCarrier)),
       ),
@@ -853,11 +804,7 @@ export const REGION_PRESETS = [
         showGraticule: false,
       },
       highlightedCountries: [],
-      cities: [
-        { id: 'manila', name: 'Manila', lat: 14.5995, lon: 120.9842, style: 'capital', dx: -8, dy: 4 },
-        { id: 'iloilo', name: 'Iloilo', lat: 10.7202, lon: 122.5621, style: 'dot', dx: -8, dy: 5 },
-        { id: 'cebu', name: 'Cebu City', lat: 10.3157, lon: 123.8854, style: 'dot', dx: 7, dy: 2 },
-      ],
+      cities: [],
       customGeoJsonLayers: [
         ...PHILIPPINES_RAIL_1942_LAYERS.map((l) =>
           buildHistoricalLayerSpec(l, Boolean(l.commonCarrier)),
@@ -908,14 +855,7 @@ export const REGION_PRESETS = [
         graticuleStepDeg: 10,
       },
       highlightedCountries: [],
-      cities: [
-        { id: 'anchorage', name: 'Anchorage', lat: 61.2181, lon: -149.9003, style: 'dot', dx: 6, dy: -5 },
-        { id: 'fairbanks', name: 'Fairbanks', lat: 64.8378, lon: -147.7164, style: 'dot', dx: 6, dy: -5 },
-        { id: 'juneau', name: 'Juneau', lat: 58.3019, lon: -134.4197, style: 'dot', dx: 6, dy: 4 },
-        { id: 'nome', name: 'Nome', lat: 64.5011, lon: -165.4064, style: 'dot', dx: -8, dy: -6 },
-        { id: 'adak', name: 'Adak', lat: 51.8780, lon: -176.6460, style: 'dot', dx: 6, dy: 8 },
-        { id: 'attu', name: 'Attu', lat: 52.8142, lon: 173.2975, style: 'dot', dx: -8, dy: -6 },
-      ],
+      cities: [],
       customGeoJsonLayers: buildAlaskaYearLayerDefs(1943)
         .filter((d) => d.defaultOn)
         .map((d) => buildHistoricalLayerSpec(d, true)),
