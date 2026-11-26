@@ -3,10 +3,10 @@
  * and optional Python Cartopy Pro backend client.
  */
 
-import { getPixelDimensions, sanitizeFilename } from './schema.js?v=9';
-import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=9';
-import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=9';
-import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=9';
+import { getPixelDimensions, sanitizeFilename } from './schema.js?v=12';
+import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=12';
+import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=12';
+import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=12';
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -40,9 +40,14 @@ function canvasToBlob(canvas, mime, quality) {
 async function resolveExportDatasets(spec, datasets) {
   const neededRes = resolveResolution(spec);
   const admin1Scale = resolveAdmin1Scale(spec);
+  const needMinorIslands = spec?.layers?.showMinorIslands !== false && (neededRes === '10m' || neededRes === 'ultra');
   const needLakes = spec?.layers?.showLakes !== false;
   const needRivers = Boolean(spec?.layers?.showRivers);
+  const needBathymetry = Boolean(spec?.layers?.showBathymetry);
+  const needUrbanAreas = Boolean(spec?.layers?.showUrbanAreas);
   const needAdmin1 = Boolean(spec?.layers?.showAdmin1);
+  const needAdmin1Polygons = Array.isArray(spec?.regionShadows)
+    && spec.regionShadows.some((s) => s && s.visible !== false && s.sourceType === 'admin1');
 
   const hasAllRequired =
     datasets &&
@@ -51,19 +56,28 @@ async function resolveExportDatasets(spec, datasets) {
     datasets.countries &&
     datasets.internalBorders &&
     datasets.locatorLand &&
+    (!needMinorIslands || datasets.minorIslands) &&
     (!needLakes || datasets.lakes) &&
     (!needRivers || datasets.rivers) &&
-    (!needAdmin1 || (datasets.admin1 && datasets.admin1Resolution === admin1Scale));
+    (!needBathymetry || datasets.bathymetry200) &&
+    (!needUrbanAreas || datasets.urbanAreas) &&
+    (!needAdmin1 || (datasets.admin1 && datasets.admin1Resolution === admin1Scale)) &&
+    (!needAdmin1Polygons || datasets.admin1Polygons);
 
   if (hasAllRequired) {
     return datasets;
   }
 
   return ensureDatasets(neededRes, {
+    needMinorIslands,
     needLakes,
     needRivers,
+    needBathymetry,
+    needUrbanAreas,
     needAdmin1,
+    needAdmin1Polygons,
     needPlaces: false,
+    fineHydrology: neededRes === 'ultra',
     admin1Scale,
   });
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=9" />
+  <link rel="stylesheet" href="./styles/main.css?v=12" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -94,7 +94,7 @@
         <nav class="sidebar-tabs" role="tablist" aria-label="Control sections">
           <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-tab="area">Area &amp; Page</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="colors">Colors &amp; Layers</button>
-          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="features">Countries &amp; Pins</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="features">Regions &amp; Pins</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="pro">Scale, Globe &amp; Pro</button>
         </nav>
 
@@ -159,6 +159,7 @@
                   <label for="map-detail-level">Coast Detail</label>
                   <select id="map-detail-level">
                     <option value="auto">Auto (Smart)</option>
+                    <option value="ultra">Ultra (10m+ / GSHHG)</option>
                     <option value="10m">10m (High Detail)</option>
                     <option value="50m">50m (Balanced)</option>
                     <option value="110m">110m (Fast Overview)</option>
@@ -177,11 +178,11 @@
                 </div>
                 <div class="field">
                   <label for="span-lon">Width Span (&deg;)</label>
-                  <input id="span-lon" type="number" step="0.5" min="0.05" max="360" />
+                  <input id="span-lon" type="number" step="any" min="0.005" max="360" />
                 </div>
                 <div class="field">
                   <label for="span-lat">Height Span (&deg;)</label>
-                  <input id="span-lat" type="number" step="0.5" min="0.05" max="175" />
+                  <input id="span-lat" type="number" step="any" min="0.005" max="175" />
                 </div>
               </div>
               <p class="helper-text subtle">Tip: Drag directly on the map to pan, or scroll to zoom in and out.</p>
@@ -230,6 +231,14 @@
                   <span>States</span>
                   <input id="color-admin1" type="color" />
                 </label>
+                <label class="color-field" for="color-bathymetry">
+                  <span>Ocean Shelf</span>
+                  <input id="color-bathymetry" type="color" />
+                </label>
+                <label class="color-field" for="color-urban">
+                  <span>Urban</span>
+                  <input id="color-urban" type="color" />
+                </label>
               </div>
             </div>
 
@@ -262,9 +271,24 @@
               </div>
 
               <div class="toggle-list">
+                <label class="switch-label" for="layer-show-minor-islands">
+                  <input id="layer-show-minor-islands" type="checkbox" />
+                  <span>Minor Islands &amp; Atolls (10m / Ultra)</span>
+                </label>
+
                 <label class="switch-label" for="layer-show-lakes">
                   <input id="layer-show-lakes" type="checkbox" />
                   <span>Lakes &amp; Inland Seas</span>
+                </label>
+
+                <label class="switch-label" for="layer-show-bathymetry">
+                  <input id="layer-show-bathymetry" type="checkbox" />
+                  <span>Ocean Shelf Contours (200m / 1000m)</span>
+                </label>
+
+                <label class="switch-label" for="layer-show-urban">
+                  <input id="layer-show-urban" type="checkbox" />
+                  <span>Urban Metro Footprints</span>
                 </label>
 
                 <div class="layer-inline-group">
@@ -330,10 +354,59 @@
                 </label>
               </div>
             </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>OSM Ultra-Detail Boundaries</h2>
+                <span class="helper-pill">geoBoundaries</span>
+              </div>
+              <p class="helper-text">Fetch OpenStreetMap-derived national borders, provinces/oblasts (ADM1), or county/district lines (ADM2) for any country.</p>
+              <div class="field-stack">
+                <div class="input-row">
+                  <select id="geoboundaries-country" aria-label="Country for OSM ultra-detail boundaries"></select>
+                  <select id="geoboundaries-level" class="mini-select" aria-label="Administrative boundary level" style="flex: 0 0 auto; width: 118px;">
+                    <option value="ADM0">ADM0 Coast</option>
+                    <option value="ADM1" selected>ADM1 States</option>
+                    <option value="ADM2">ADM2 Districts</option>
+                  </select>
+                </div>
+                <button id="btn-load-geoboundaries" class="btn btn-secondary btn-full" type="button">
+                  + Add OSM-Grade Boundary Layer
+                </button>
+              </div>
+            </div>
           </section>
 
-          <!-- TAB 3: Countries & Pins -->
+          <!-- TAB 3: Regions, Shadows & Pins -->
           <section class="tab-panel" id="tab-features" role="tabpanel" hidden>
+            <div class="panel-card shadow-card">
+              <div class="card-header">
+                <h2>Region Size Shadow</h2>
+                <span class="helper-pill">True-Size</span>
+              </div>
+              <p class="helper-text">Shadow any country or state/province over another region with exact geodesic scale (zero Mercator distortion) to compare sizes.</p>
+
+              <div class="segmented-control" role="group" aria-label="Shadow region source type">
+                <button id="btn-shadow-src-country" class="seg-btn active" type="button" data-source="country">Countries</button>
+                <button id="btn-shadow-src-admin1" class="seg-btn" type="button" data-source="admin1">States / Provinces</button>
+              </div>
+
+              <div class="field-stack">
+                <input id="shadow-filter-input" type="search" placeholder="Filter region to shadow (e.g. Ukraine, Texas, Greenland)..." />
+                <div class="input-row">
+                  <select id="shadow-region-select" aria-label="Select region to shadow"></select>
+                  <button id="btn-add-shadow" class="btn btn-primary btn-sm" type="button">+ Shadow</button>
+                </div>
+              </div>
+
+              <button id="btn-mode-shadow" class="btn btn-mode btn-full" type="button" aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+                <span>Drag Shadows on Map</span>
+              </button>
+
+              <div id="region-shadows-list" class="item-list"></div>
+            </div>
+
             <div class="panel-card">
               <div class="card-header">
                 <h2>Country Highlighter</h2>
@@ -531,12 +604,25 @@
               </p>
               <fieldset id="pro-controls" class="pro-fieldset" disabled>
                 <div class="field">
+                  <label for="pro-coastline-engine">Coastline Vector Engine</label>
+                  <select id="pro-coastline-engine">
+                    <option value="auto">Auto (GSHHG on Ultra Detail)</option>
+                    <option value="natural_earth">Natural Earth Vector (10m–110m)</option>
+                    <option value="gshhs_high">NOAA GSHHG High (~200m Shorelines)</option>
+                    <option value="gshhs_full">NOAA GSHHG Full (~40m Ultra Shorelines)</option>
+                  </select>
+                </div>
+                <div class="field">
                   <label for="pro-basemap">Contextily Basemap Underlay</label>
                   <select id="pro-basemap">
                     <option value="none">None (Clean Vector Colors)</option>
                     <option value="CartoDB.VoyagerNoLabels">CartoDB Voyager (No Labels)</option>
                     <option value="CartoDB.PositronNoLabels">CartoDB Positron (No Labels)</option>
+                    <option value="CartoDB.DarkMatterNoLabels">CartoDB Dark Matter (No Labels)</option>
                     <option value="Esri.WorldShadedRelief">Esri World Shaded Relief</option>
+                    <option value="Esri.WorldTerrain">Esri World Terrain</option>
+                    <option value="Esri.OceanBasemap">Esri Ocean Basemap</option>
+                    <option value="OpenTopoMap">OpenTopoMap (Topographic Contours)</option>
                     <option value="Esri.WorldImagery">Esri Satellite Imagery</option>
                   </select>
                 </div>
@@ -601,6 +687,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=9"></script>
+  <script type="module" src="./js/app.js?v=12"></script>
 </body>
 </html>

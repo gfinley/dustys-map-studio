@@ -14,17 +14,23 @@ ProjectionLiteral = Literal[
     "azimuthal_equidistant",
     "robinson",
 ]
-DetailLevelLiteral = Literal["auto", "10m", "50m", "110m"]
+DetailLevelLiteral = Literal["auto", "ultra", "10m", "50m", "110m"]
 HatchLiteral = Literal["none", "diagonal", "backdiagonal", "cross", "dots"]
 BorderStyleLiteral = Literal["solid", "dashed", "dotted"]
 PinStyleLiteral = Literal["dot", "capital", "bullseye", "square", "label_only"]
 CornerLiteral = Literal["bottom-left", "bottom-right", "top-left", "top-right"]
+ShadowSourceLiteral = Literal["country", "admin1"]
+CoastlineEngineLiteral = Literal["auto", "natural_earth", "gshhs_high", "gshhs_full"]
 BasemapLiteral = Literal[
     "none",
     "CartoDB.VoyagerNoLabels",
     "CartoDB.PositronNoLabels",
+    "CartoDB.DarkMatterNoLabels",
     "Esri.WorldShadedRelief",
+    "Esri.WorldTerrain",
+    "Esri.OceanBasemap",
     "Esri.WorldImagery",
+    "OpenTopoMap",
 ]
 
 
@@ -38,8 +44,8 @@ class CenterSpec(_BaseSpecModel):
 
 
 class SpanSpec(_BaseSpecModel):
-    lonDeg: float = Field(default=24.0, ge=0.05, le=360.0)
-    latDeg: float = Field(default=14.0, ge=0.05, le=175.0)
+    lonDeg: float = Field(default=24.0, ge=0.005, le=360.0)
+    latDeg: float = Field(default=14.0, ge=0.005, le=175.0)
 
 
 class PageSpec(_BaseSpecModel):
@@ -57,6 +63,8 @@ class ColorsSpec(_BaseSpecModel):
     coastline: str = "none"
     rivers: str = "#d1cfcf"
     admin1: str = "#737373"
+    bathymetry: str = "#bfbdbd"
+    urban: str = "#636363"
     highlightFill: str = "#7a7d7a"
     highlightStroke: str = "#ffffff"
     text: str = "#111111"
@@ -69,9 +77,12 @@ class LayersSpec(_BaseSpecModel):
     borderStyle: BorderStyleLiteral = "solid"
     showCoastlines: bool = False
     coastlineWidth: float = Field(default=0.75, ge=0.1, le=8.0)
+    showMinorIslands: bool = True
     showLakes: bool = True
     showRivers: bool = False
     riverWidth: float = Field(default=0.75, ge=0.1, le=8.0)
+    showBathymetry: bool = False
+    showUrbanAreas: bool = False
     showAdmin1: bool = False
     admin1Width: float = Field(default=0.7, ge=0.1, le=8.0)
     admin1Scale: Literal["auto", "50m", "10m"] = "auto"
@@ -87,6 +98,25 @@ class HighlightedCountry(_BaseSpecModel):
     fill: str = "#7a7d7a"
     stroke: str = "#ffffff"
     hatch: HatchLiteral = "none"
+
+
+class RegionShadow(_BaseSpecModel):
+    id: str = ""
+    sourceType: ShadowSourceLiteral = "country"
+    sourceId: str = ""
+    sourceName: str = ""
+    targetLat: float = Field(default=0.0, ge=-85.0, le=85.0)
+    targetLon: float = Field(default=0.0, ge=-180.0, le=180.0)
+    rotationDeg: float = Field(default=0.0, ge=-180.0, le=180.0)
+    fill: str = "#dc2626"
+    stroke: str = "#7f1d1d"
+    opacity: float = Field(default=0.35, ge=0.05, le=0.95)
+    strokeWidth: float = Field(default=1.6, ge=0.3, le=8.0)
+    dashed: bool = True
+    hatch: HatchLiteral = "none"
+    showLabel: bool = True
+    showArea: bool = True
+    visible: bool = True
 
 
 class CityPin(_BaseSpecModel):
@@ -148,6 +178,7 @@ class OrnamentsSpec(_BaseSpecModel):
 class ProOptionsSpec(_BaseSpecModel):
     basemapProvider: BasemapLiteral = "none"
     basemapOpacity: float = Field(default=0.85, ge=0.1, le=1.0)
+    coastlineEngine: CoastlineEngineLiteral = "auto"
 
 
 class MapSpec(_BaseSpecModel):
@@ -163,6 +194,7 @@ class MapSpec(_BaseSpecModel):
     colors: ColorsSpec = Field(default_factory=ColorsSpec)
     layers: LayersSpec = Field(default_factory=LayersSpec)
     highlightedCountries: list[HighlightedCountry] = Field(default_factory=list)
+    regionShadows: list[RegionShadow] = Field(default_factory=list)
     cities: list[CityPin] = Field(default_factory=list)
     customGeoJsonLayers: list[CustomGeoJsonLayer] = Field(default_factory=list)
     ornaments: OrnamentsSpec = Field(default_factory=OrnamentsSpec)

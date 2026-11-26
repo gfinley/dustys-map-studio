@@ -60,6 +60,8 @@ export const COLOR_THEMES = {
     coastline: 'none',
     rivers: '#d1cfcf',
     admin1: '#737373',
+    bathymetry: '#bfbdbd',
+    urban: '#636363',
     highlightFill: '#7a7d7a',
     highlightStroke: '#ffffff',
     text: '#111111',
@@ -75,6 +77,8 @@ export const COLOR_THEMES = {
     coastline: '#111111',
     rivers: '#ffffff',
     admin1: '#555555',
+    bathymetry: '#e9ebed',
+    urban: '#767876',
     highlightFill: '#c4c6c4',
     highlightStroke: '#111111',
     text: '#111111',
@@ -90,6 +94,8 @@ export const COLOR_THEMES = {
     coastline: '#111111',
     rivers: '#adb5bd',
     admin1: '#6c757d',
+    bathymetry: '#d4dce3',
+    urban: '#ced4da',
     highlightFill: '#d8dde2',
     highlightStroke: '#000000',
     text: '#000000',
@@ -105,6 +111,8 @@ export const COLOR_THEMES = {
     coastline: '#6c8ea4',
     rivers: '#73a9ca',
     admin1: '#8c8577',
+    bathymetry: '#9cc6de',
+    urban: '#d4cab6',
     highlightFill: '#f3d58d',
     highlightStroke: '#4a4a4a',
     text: '#1f2937',
@@ -120,6 +128,8 @@ export const COLOR_THEMES = {
     coastline: '#38bdf8',
     rivers: '#0d223a',
     admin1: '#3b6a99',
+    bathymetry: '#143354',
+    urban: '#2c5480',
     highlightFill: '#2b5886',
     highlightStroke: '#bae6fd',
     text: '#f0f9ff',
@@ -146,7 +156,7 @@ export const PROJECTION_LABELS = {
   robinson: 'Robinson',
 };
 
-export const DETAIL_LEVELS = ['auto', '10m', '50m', '110m'];
+export const DETAIL_LEVELS = ['auto', 'ultra', '10m', '50m', '110m'];
 
 export const ADMIN1_SCALES = ['auto', '50m', '10m'];
 
@@ -155,6 +165,10 @@ export const HATCH_STYLES = ['none', 'diagonal', 'backdiagonal', 'cross', 'dots'
 export const BORDER_STYLES = ['solid', 'dashed', 'dotted'];
 
 export const PIN_STYLES = ['dot', 'capital', 'bullseye', 'square', 'label_only'];
+
+export const SHADOW_SOURCE_TYPES = ['country', 'admin1'];
+
+export const COASTLINE_ENGINES = ['auto', 'natural_earth', 'gshhs_high', 'gshhs_full'];
 
 export const CORNER_POSITIONS = [
   'bottom-left',
@@ -169,8 +183,12 @@ export const BASEMAP_PROVIDERS = [
   'none',
   'CartoDB.VoyagerNoLabels',
   'CartoDB.PositronNoLabels',
+  'CartoDB.DarkMatterNoLabels',
   'Esri.WorldShadedRelief',
+  'Esri.WorldTerrain',
+  'Esri.OceanBasemap',
   'Esri.WorldImagery',
+  'OpenTopoMap',
 ];
 
 export function createDefaultMapSpec() {
@@ -203,6 +221,8 @@ export function createDefaultMapSpec() {
       coastline: COLOR_THEMES.dusty_prime.coastline,
       rivers: COLOR_THEMES.dusty_prime.rivers,
       admin1: COLOR_THEMES.dusty_prime.admin1,
+      bathymetry: COLOR_THEMES.dusty_prime.bathymetry,
+      urban: COLOR_THEMES.dusty_prime.urban,
       highlightFill: COLOR_THEMES.dusty_prime.highlightFill,
       highlightStroke: COLOR_THEMES.dusty_prime.highlightStroke,
       text: COLOR_THEMES.dusty_prime.text,
@@ -214,9 +234,12 @@ export function createDefaultMapSpec() {
       borderStyle: 'solid',
       showCoastlines: false,
       coastlineWidth: 0.75,
+      showMinorIslands: true,
       showLakes: true,
       showRivers: false,
       riverWidth: 0.75,
+      showBathymetry: false,
+      showUrbanAreas: false,
       showAdmin1: false,
       admin1Width: 0.7,
       admin1Scale: 'auto',
@@ -234,6 +257,7 @@ export function createDefaultMapSpec() {
         hatch: 'none',
       },
     ],
+    regionShadows: [],
     cities: [
       { id: 'kyiv', name: 'Kyiv', lat: 50.4501, lon: 30.5234, style: 'capital', dx: 6, dy: -6, scale: 1.0 },
       { id: 'lviv', name: 'Lviv', lat: 49.8397, lon: 24.0297, style: 'dot', dx: 6, dy: -5, scale: 1.0 },
@@ -267,6 +291,7 @@ export function createDefaultMapSpec() {
     pro: {
       basemapProvider: 'none',
       basemapOpacity: 0.85,
+      coastlineEngine: 'auto',
     },
   };
 }
@@ -321,8 +346,8 @@ export function normalizeMapSpec(partial) {
       lon: clamp(centerRaw.lon, -180, 180, def.center.lon),
     },
     span: {
-      lonDeg: clamp(spanRaw.lonDeg, 0.05, 360, def.span.lonDeg),
-      latDeg: clamp(spanRaw.latDeg, 0.05, 175, def.span.latDeg),
+      lonDeg: clamp(spanRaw.lonDeg, 0.005, 360, def.span.lonDeg),
+      latDeg: clamp(spanRaw.latDeg, 0.005, 175, def.span.latDeg),
     },
     page: {
       preset: presetId,
@@ -341,6 +366,8 @@ export function normalizeMapSpec(partial) {
       coastline: typeof colorsRaw.coastline === 'string' ? colorsRaw.coastline : themeColors.coastline,
       rivers: typeof colorsRaw.rivers === 'string' ? colorsRaw.rivers : themeColors.rivers,
       admin1: typeof colorsRaw.admin1 === 'string' ? colorsRaw.admin1 : themeColors.admin1,
+      bathymetry: typeof colorsRaw.bathymetry === 'string' ? colorsRaw.bathymetry : themeColors.bathymetry,
+      urban: typeof colorsRaw.urban === 'string' ? colorsRaw.urban : themeColors.urban,
       highlightFill: typeof colorsRaw.highlightFill === 'string' ? colorsRaw.highlightFill : themeColors.highlightFill,
       highlightStroke: typeof colorsRaw.highlightStroke === 'string' ? colorsRaw.highlightStroke : themeColors.highlightStroke,
       text: typeof colorsRaw.text === 'string' ? colorsRaw.text : themeColors.text,
@@ -352,9 +379,12 @@ export function normalizeMapSpec(partial) {
       borderStyle: BORDER_STYLES.includes(layersRaw.borderStyle) ? layersRaw.borderStyle : def.layers.borderStyle,
       showCoastlines: typeof layersRaw.showCoastlines === 'boolean' ? layersRaw.showCoastlines : def.layers.showCoastlines,
       coastlineWidth: clamp(layersRaw.coastlineWidth, 0.1, 8.0, def.layers.coastlineWidth),
+      showMinorIslands: typeof layersRaw.showMinorIslands === 'boolean' ? layersRaw.showMinorIslands : def.layers.showMinorIslands,
       showLakes: typeof layersRaw.showLakes === 'boolean' ? layersRaw.showLakes : def.layers.showLakes,
       showRivers: typeof layersRaw.showRivers === 'boolean' ? layersRaw.showRivers : def.layers.showRivers,
       riverWidth: clamp(layersRaw.riverWidth, 0.1, 8.0, def.layers.riverWidth),
+      showBathymetry: typeof layersRaw.showBathymetry === 'boolean' ? layersRaw.showBathymetry : def.layers.showBathymetry,
+      showUrbanAreas: typeof layersRaw.showUrbanAreas === 'boolean' ? layersRaw.showUrbanAreas : def.layers.showUrbanAreas,
       showAdmin1: typeof layersRaw.showAdmin1 === 'boolean' ? layersRaw.showAdmin1 : def.layers.showAdmin1,
       admin1Width: clamp(layersRaw.admin1Width, 0.1, 8.0, def.layers.admin1Width),
       admin1Scale: ADMIN1_SCALES.includes(layersRaw.admin1Scale) ? layersRaw.admin1Scale : def.layers.admin1Scale,
@@ -374,6 +404,28 @@ export function normalizeMapSpec(partial) {
             hatch: HATCH_STYLES.includes(c.hatch) ? c.hatch : 'none',
           }))
       : def.highlightedCountries.map((c) => ({ ...c })),
+    regionShadows: Array.isArray(partial.regionShadows)
+      ? partial.regionShadows
+          .filter((s) => isPlainObject(s) && (s.sourceId || s.sourceName))
+          .map((s, idx) => ({
+            id: typeof s.id === 'string' && s.id ? s.id : `shadow_${idx}_${Date.now()}`,
+            sourceType: SHADOW_SOURCE_TYPES.includes(s.sourceType) ? s.sourceType : 'country',
+            sourceId: s.sourceId != null ? String(s.sourceId) : '',
+            sourceName: typeof s.sourceName === 'string' ? s.sourceName : '',
+            targetLat: clamp(s.targetLat, -85, 85, def.center.lat),
+            targetLon: clamp(s.targetLon, -180, 180, def.center.lon),
+            rotationDeg: clamp(s.rotationDeg, -180, 180, 0),
+            fill: typeof s.fill === 'string' ? s.fill : '#dc2626',
+            stroke: typeof s.stroke === 'string' ? s.stroke : '#7f1d1d',
+            opacity: clamp(s.opacity, 0.05, 0.95, 0.35),
+            strokeWidth: clamp(s.strokeWidth, 0.3, 8.0, 1.6),
+            dashed: typeof s.dashed === 'boolean' ? s.dashed : true,
+            hatch: HATCH_STYLES.includes(s.hatch) ? s.hatch : 'none',
+            showLabel: typeof s.showLabel === 'boolean' ? s.showLabel : true,
+            showArea: typeof s.showArea === 'boolean' ? s.showArea : true,
+            visible: typeof s.visible === 'boolean' ? s.visible : true,
+          }))
+      : [],
     cities: Array.isArray(partial.cities)
       ? partial.cities
           .filter((c) => isPlainObject(c) && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lon)))
@@ -430,6 +482,7 @@ export function normalizeMapSpec(partial) {
     pro: {
       basemapProvider: BASEMAP_PROVIDERS.includes(proRaw.basemapProvider) ? proRaw.basemapProvider : def.pro.basemapProvider,
       basemapOpacity: clamp(proRaw.basemapOpacity, 0.1, 1.0, def.pro.basemapOpacity),
+      coastlineEngine: COASTLINE_ENGINES.includes(proRaw.coastlineEngine) ? proRaw.coastlineEngine : def.pro.coastlineEngine,
     },
   };
 }

@@ -12,12 +12,15 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=9';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=9';
+} from './ornaments.js?v=12';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=12';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=12';
+import { sanitizeGeoJsonWinding } from './data-loader.js?v=12';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
 const hatchPatternCache = new Map();
+const sanitizedCustomGeoJsonCache = new WeakSet();
 
 function wrapLon(lon) {
   let x = (((lon + 180) % 360) + 360) % 360 - 180;
@@ -44,18 +47,18 @@ function escapeXml(str) {
 function buildBoundingRing(spec) {
   const centerLon = Number(spec?.center?.lon) || 0;
   const centerLat = Number(spec?.center?.lat) || 0;
-  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
-  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+  const lonDeg = Math.max(0.005, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.005, Math.min(175, Number(spec?.span?.latDeg) || 14));
 
   const halfLon = Math.min(179.5, lonDeg / 2);
   const halfLat = latDeg / 2;
   let minLat = Math.max(-85, centerLat - halfLat);
   let maxLat = Math.min(85, centerLat + halfLat);
-  if (maxLat - minLat < 0.05) {
+  if (maxLat - minLat < 0.005) {
     if (centerLat >= 0) {
-      minLat = Math.max(-85, maxLat - 0.05);
+      minLat = Math.max(-85, maxLat - 0.005);
     } else {
-      maxLat = Math.min(85, minLat + 0.05);
+      maxLat = Math.min(85, minLat + 0.005);
     }
   }
 
@@ -95,8 +98,8 @@ export function buildProjection(spec, width, height, options = {}) {
   const projId = spec?.projection || 'mercator';
   const centerLat = Number(spec?.center?.lat) || 0;
   const centerLon = Number(spec?.center?.lon) || 0;
-  const lonDeg = Math.max(0.05, Math.min(360, Number(spec?.span?.lonDeg) || 24));
-  const latDeg = Math.max(0.05, Math.min(175, Number(spec?.span?.latDeg) || 14));
+  const lonDeg = Math.max(0.005, Math.min(360, Number(spec?.span?.lonDeg) || 24));
+  const latDeg = Math.max(0.005, Math.min(175, Number(spec?.span?.latDeg) || 14));
 
   let proj;
   switch (projId) {
@@ -143,7 +146,7 @@ export function buildProjection(spec, width, height, options = {}) {
   if (projId === 'orthographic') {
     const pad = Math.min(width, height) * 0.04;
     proj.fitExtent([[pad, pad], [width - pad, height - pad]], { type: 'Sphere' });
-    const zoom = Math.max(0.8, Math.min(45.0, 120 / Math.max(1.5, lonDeg)));
+    const zoom = Math.max(0.8, Math.min(250.0, 120 / Math.max(0.1, lonDeg)));
     proj.scale(proj.scale() * zoom).translate([width / 2, height / 2]);
   } else {
     const boxRing = buildBoundingRing(spec);
@@ -355,6 +358,10 @@ function createCanvasHatchPattern(ctx, hatch, color, scaleFactor) {
 
 function collectGeoJsonFeatures(data) {
   if (!data || typeof data !== 'object') return [];
+  if (!sanitizedCustomGeoJsonCache.has(data)) {
+    sanitizeGeoJsonWinding(data);
+    sanitizedCustomGeoJsonCache.add(data);
+  }
   if (data.type === 'FeatureCollection' && Array.isArray(data.features)) {
     return data.features.filter((f) => f && f.geometry);
   }
@@ -649,6 +656,42 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     ctx.fillRect(0, 0, width, height);
   }
 
+  // 1b. Ocean Bathymetry / Continental Shelf Contours
+  if (layers.showBathymetry && (datasets?.bathymetry1000 || datasets?.bathymetry200)) {
+    const bathyColor = colors.bathymetry || themeDef?.bathymetry || '#bfbdbd';
+    projection.precision(0);
+    if (datasets.bathymetry1000) {
+      ctx.save();
+      ctx.beginPath();
+      drawCulledCollection(
+        path,
+        Array.isArray(datasets.bathymetry1000.features) ? datasets.bathymetry1000.features : null,
+        datasets.bathymetry1000,
+        viewBounds,
+        skipCull,
+      );
+      ctx.globalAlpha *= 0.45;
+      ctx.fillStyle = bathyColor;
+      ctx.fill();
+      ctx.restore();
+    }
+    if (datasets.bathymetry200) {
+      ctx.save();
+      ctx.beginPath();
+      drawCulledCollection(
+        path,
+        Array.isArray(datasets.bathymetry200.features) ? datasets.bathymetry200.features : null,
+        datasets.bathymetry200,
+        viewBounds,
+        skipCull,
+      );
+      ctx.globalAlpha *= 0.45;
+      ctx.fillStyle = bathyColor;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   // 2. Graticule
   if (layers.showGraticule) {
     const step = Math.max(1, Math.min(60, Number(layers.graticuleStepDeg) || 10));
@@ -667,7 +710,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // Use zero-resample streaming for dense natural datasets while clipExtent keeps bounds tight
   projection.precision(0);
 
-  // 3. Land (+ optional coastline)
+  // 3. Land (+ optional minor islands & coastline)
   const landParts =
     Array.isArray(datasets?.landParts) && datasets.landParts.length > 0 ? datasets.landParts : null;
   if (landParts || datasets?.land) {
@@ -675,7 +718,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     ctx.beginPath();
     drawCulledCollection(path, landParts, datasets?.land, viewBounds, skipCull);
     ctx.fillStyle = colors.land || '#4a4a4a';
-    ctx.fill();
+    ctx.fill('evenodd');
     if (layers.showCoastlines && colors.coastline && colors.coastline !== 'none') {
       ctx.strokeStyle = colors.coastline;
       ctx.lineWidth = Math.max(0.3, (Number(layers.coastlineWidth) || 0.75) * scaleFactor);
@@ -683,6 +726,46 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
       ctx.lineCap = 'round';
       ctx.stroke();
     }
+    ctx.restore();
+
+    if (layers.showMinorIslands !== false && datasets?.minorIslands) {
+      ctx.save();
+      ctx.beginPath();
+      drawCulledCollection(
+        path,
+        Array.isArray(datasets.minorIslands.features) ? datasets.minorIslands.features : null,
+        datasets.minorIslands,
+        viewBounds,
+        skipCull,
+      );
+      ctx.fillStyle = colors.land || '#4a4a4a';
+      ctx.fill();
+      if (layers.showCoastlines && colors.coastline && colors.coastline !== 'none') {
+        ctx.strokeStyle = colors.coastline;
+        ctx.lineWidth = Math.max(0.3, (Number(layers.coastlineWidth) || 0.75) * 0.85 * scaleFactor);
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // 3b. Urban Areas / Metropolitan Footprints
+  if (layers.showUrbanAreas && datasets?.urbanAreas) {
+    const urbanColor = colors.urban || themeDef?.urban || '#636363';
+    ctx.save();
+    ctx.beginPath();
+    drawCulledCollection(
+      path,
+      Array.isArray(datasets.urbanAreas.features) ? datasets.urbanAreas.features : null,
+      datasets.urbanAreas,
+      viewBounds,
+      skipCull,
+    );
+    ctx.globalAlpha *= 0.72;
+    ctx.fillStyle = urbanColor;
+    ctx.fill();
     ctx.restore();
   }
 
@@ -706,10 +789,10 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
         ctx.beginPath();
         path(feat);
         ctx.fillStyle = fill;
-        ctx.fill();
+        ctx.fill('evenodd');
         if (pattern) {
           ctx.fillStyle = pattern;
-          ctx.fill();
+          ctx.fill('evenodd');
         }
         if (stroke && stroke !== 'none') {
           ctx.strokeStyle = stroke;
@@ -722,7 +805,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     }
   }
 
-  // 5. Lakes
+  // 5. Lakes & Inland Seas
   if (layers.showLakes && datasets?.lakes) {
     ctx.save();
     ctx.beginPath();
@@ -734,7 +817,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
       skipCull,
     );
     ctx.fillStyle = colors.water || '#d1cfcf';
-    ctx.fill();
+    ctx.fill('evenodd');
     if (layers.showCoastlines && colors.coastline && colors.coastline !== 'none') {
       ctx.strokeStyle = colors.coastline;
       ctx.lineWidth = Math.max(0.25, (Number(layers.coastlineWidth) || 0.75) * 0.85 * scaleFactor);
@@ -820,6 +903,9 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
 
   projection.precision(basePrecision);
 
+  // 9b. True-Size Region Shadows (geodesic SO(3) size-comparison overlays)
+  const renderedShadows = drawRegionShadowsCanvas(ctx, projection, spec, datasets, width, height, scaleFactor);
+
   // 10. Cities & haloed labels
   drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor);
 
@@ -862,7 +948,111 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   return {
     projection,
     bounds: viewBounds,
+    renderedShadows,
   };
+}
+
+function drawRegionShadowsCanvas(ctx, projection, spec, datasets, width, height, scaleFactor) {
+  const shadows = Array.isArray(spec?.regionShadows) ? spec.regionShadows : [];
+  if (shadows.length === 0) return [];
+
+  const path = d3.geoPath(projection, ctx);
+  const units = spec?.ornaments?.scaleBar?.units === 'mi' ? 'mi' : 'km';
+  const rendered = [];
+
+  for (let i = 0; i < shadows.length; i += 1) {
+    const shadow = shadows[i];
+    if (!shadow || shadow.visible === false) continue;
+
+    const built = buildTransformedShadow(shadow, datasets);
+    if (!built) continue;
+    rendered.push(built);
+
+    const fill = shadow.fill || '#dc2626';
+    const stroke = shadow.stroke || '#7f1d1d';
+    const opacity = Number.isFinite(Number(shadow.opacity)) ? Number(shadow.opacity) : 0.35;
+    const strokeWidth = Math.max(0.6, (Number(shadow.strokeWidth) || 1.6) * scaleFactor);
+    const hatch = shadow.hatch || 'none';
+    const pattern = hatch !== 'none' ? createCanvasHatchPattern(ctx, hatch, stroke, scaleFactor) : null;
+
+    ctx.save();
+    ctx.beginPath();
+    path(built.feature);
+
+    // Subtle soft shadow underneath the region silhouette
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.32)';
+    ctx.shadowBlur = Math.max(4, 9 * scaleFactor);
+    ctx.shadowOffsetX = 2 * scaleFactor;
+    ctx.shadowOffsetY = 2.5 * scaleFactor;
+    ctx.globalAlpha = Math.max(0.05, Math.min(0.95, opacity));
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.restore();
+
+    if (pattern) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.85, opacity + 0.25);
+      ctx.fillStyle = pattern;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (stroke && stroke !== 'none') {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      if (shadow.dashed !== false) {
+        ctx.setLineDash([6.5 * scaleFactor, 3.8 * scaleFactor]);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Centered haloed label with optional geodesic area readout
+    if (shadow.showLabel !== false && isFrontHemisphere(spec, built.anchorLonLat[0], built.anchorLonLat[1])) {
+      const pt = projection(built.anchorLonLat);
+      if (pt && Number.isFinite(pt[0]) && Number.isFinite(pt[1])) {
+        const [cx, cy] = pt;
+        if (cx >= -40 && cx <= width + 40 && cy >= -40 && cy <= height + 40) {
+          const textScale = Math.max(scaleFactor, Math.max(width, height * 0.78) / 900);
+          const titleSize = Math.max(8, 12.5 * textScale);
+          const subSize = Math.max(6.5, 9.8 * textScale);
+          const haloW = Math.max(2, 3.8 * textScale);
+          const labelName = String(shadow.sourceName || shadow.sourceId || 'Region').trim();
+          const areaText = shadow.showArea !== false ? formatArea(built.areaKm2, units) : '';
+
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.lineJoin = 'round';
+          ctx.miterLimit = 2;
+
+          const titleY = areaText ? cy - subSize * 0.62 : cy;
+          ctx.font = `700 ${titleSize.toFixed(1)}px ${FONT_FAMILY}`;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+          ctx.lineWidth = haloW;
+          ctx.strokeText(labelName, cx, titleY);
+          ctx.fillStyle = stroke && stroke !== 'none' ? stroke : '#111111';
+          ctx.fillText(labelName, cx, titleY);
+
+          if (areaText) {
+            const subY = cy + titleSize * 0.62;
+            ctx.font = `600 ${subSize.toFixed(1)}px ${FONT_FAMILY}`;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+            ctx.lineWidth = Math.max(1.6, haloW * 0.85);
+            ctx.strokeText(areaText, cx, subY);
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(areaText, cx, subY);
+          }
+          ctx.restore();
+        }
+      }
+    }
+  }
+
+  return rendered;
 }
 
 function buildSvgHatchPattern(hatch, color, id, scaleFactor) {
@@ -934,6 +1124,23 @@ export function renderMapToSvgString(spec, datasets) {
     );
   }
 
+  // 1b. Ocean Bathymetry / Continental Shelf
+  if (layers.showBathymetry && (datasets?.bathymetry1000 || datasets?.bathymetry200)) {
+    const bathyColor = colors.bathymetry || themeDef?.bathymetry || '#bfbdbd';
+    if (datasets.bathymetry1000) {
+      const b1000D = svgPath(datasets.bathymetry1000) || '';
+      if (b1000D) {
+        mapParts.push(`<path d="${b1000D}" fill="${escapeXml(bathyColor)}" fill-opacity="0.45" />`);
+      }
+    }
+    if (datasets.bathymetry200) {
+      const b200D = svgPath(datasets.bathymetry200) || '';
+      if (b200D) {
+        mapParts.push(`<path d="${b200D}" fill="${escapeXml(bathyColor)}" fill-opacity="0.45" />`);
+      }
+    }
+  }
+
   // 2. Graticule
   if (layers.showGraticule) {
     const step = Math.max(1, Math.min(60, Number(layers.graticuleStepDeg) || 10));
@@ -945,15 +1152,30 @@ export function renderMapToSvgString(spec, datasets) {
     }
   }
 
-  // 3. Land
+  // 3. Land (+ minor islands)
   if (datasets?.land) {
     const landD = svgPath(datasets.land) || '';
+    const coastStroke =
+      layers.showCoastlines && colors.coastline && colors.coastline !== 'none'
+        ? ` stroke="${escapeXml(colors.coastline)}" stroke-width="${Math.max(0.3, (Number(layers.coastlineWidth) || 0.75) * scaleFactor).toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"`
+        : '';
     if (landD) {
-      const coastStroke =
-        layers.showCoastlines && colors.coastline && colors.coastline !== 'none'
-          ? ` stroke="${escapeXml(colors.coastline)}" stroke-width="${Math.max(0.3, (Number(layers.coastlineWidth) || 0.75) * scaleFactor).toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"`
-          : '';
-      mapParts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}"${coastStroke} />`);
+      mapParts.push(`<path d="${landD}" fill="${escapeXml(colors.land || '#4a4a4a')}" fill-rule="evenodd"${coastStroke} />`);
+    }
+    if (layers.showMinorIslands !== false && datasets?.minorIslands) {
+      const minorD = svgPath(datasets.minorIslands) || '';
+      if (minorD) {
+        mapParts.push(`<path d="${minorD}" fill="${escapeXml(colors.land || '#4a4a4a')}"${coastStroke} />`);
+      }
+    }
+  }
+
+  // 3b. Urban Areas
+  if (layers.showUrbanAreas && datasets?.urbanAreas) {
+    const urbanD = svgPath(datasets.urbanAreas) || '';
+    if (urbanD) {
+      const urbanColor = colors.urban || themeDef?.urban || '#636363';
+      mapParts.push(`<path d="${urbanD}" fill="${escapeXml(urbanColor)}" fill-opacity="0.72" />`);
     }
   }
 
@@ -976,15 +1198,15 @@ export function renderMapToSvgString(spec, datasets) {
       for (let j = 0; j < features.length; j += 1) {
         const d = svgPath(features[j]) || '';
         if (!d) continue;
-        mapParts.push(`<path d="${d}" fill="${escapeXml(fill)}"${strokeAttrs} />`);
+        mapParts.push(`<path d="${d}" fill="${escapeXml(fill)}" fill-rule="evenodd"${strokeAttrs} />`);
         if (hatchId) {
-          mapParts.push(`<path d="${d}" fill="url(#${escapeXml(hatchId)})" />`);
+          mapParts.push(`<path d="${d}" fill="url(#${escapeXml(hatchId)})" fill-rule="evenodd" />`);
         }
       }
     }
   }
 
-  // 5. Lakes
+  // 5. Lakes & Inland Seas
   if (layers.showLakes && datasets?.lakes) {
     const lakesD = svgPath(datasets.lakes) || '';
     if (lakesD) {
@@ -992,7 +1214,7 @@ export function renderMapToSvgString(spec, datasets) {
         layers.showCoastlines && colors.coastline && colors.coastline !== 'none'
           ? ` stroke="${escapeXml(colors.coastline)}" stroke-width="${Math.max(0.25, (Number(layers.coastlineWidth) || 0.75) * 0.85 * scaleFactor).toFixed(2)}" stroke-linejoin="round"`
           : '';
-      mapParts.push(`<path d="${lakesD}" fill="${escapeXml(colors.water || '#d1cfcf')}"${lakeStroke} />`);
+      mapParts.push(`<path d="${lakesD}" fill="${escapeXml(colors.water || '#d1cfcf')}" fill-rule="evenodd"${lakeStroke} />`);
     }
   }
 
@@ -1096,6 +1318,60 @@ export function renderMapToSvgString(spec, datasets) {
       mapParts.push(
         `<path d="${borderD}" fill="none" stroke="${escapeXml(colors.borders)}" stroke-width="${bw.toFixed(2)}" stroke-linejoin="round"${extra} />`,
       );
+    }
+  }
+
+  // 9b. True-Size Region Shadows
+  const shadows = Array.isArray(spec?.regionShadows) ? spec.regionShadows : [];
+  const units = spec?.ornaments?.scaleBar?.units === 'mi' ? 'mi' : 'km';
+  for (let i = 0; i < shadows.length; i += 1) {
+    const shadow = shadows[i];
+    if (!shadow || shadow.visible === false) continue;
+    const built = buildTransformedShadow(shadow, datasets);
+    if (!built) continue;
+    const d = svgPath(built.feature) || '';
+    if (!d) continue;
+
+    const fill = shadow.fill || '#dc2626';
+    const stroke = shadow.stroke || '#7f1d1d';
+    const opacity = Number.isFinite(Number(shadow.opacity)) ? Number(shadow.opacity) : 0.35;
+    const strokeWidth = Math.max(0.6, (Number(shadow.strokeWidth) || 1.6) * scaleFactor);
+    const dashAttr = shadow.dashed !== false
+      ? ` stroke-dasharray="${(6.5 * scaleFactor).toFixed(1)},${(3.8 * scaleFactor).toFixed(1)}"`
+      : '';
+    const hatchId = getHatchPatternId(shadow.hatch || 'none', stroke);
+    const strokeAttr = stroke && stroke !== 'none'
+      ? ` stroke="${escapeXml(stroke)}" stroke-width="${strokeWidth.toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"${dashAttr}`
+      : '';
+
+    mapParts.push(
+      `<path d="${d}" fill="${escapeXml(fill)}" fill-opacity="${opacity.toFixed(2)}"${strokeAttr} />`,
+    );
+    if (hatchId) {
+      mapParts.push(`<path d="${d}" fill="url(#${escapeXml(hatchId)})" fill-opacity="${Math.min(0.85, opacity + 0.25).toFixed(2)}" />`);
+    }
+
+    if (shadow.showLabel !== false && isFrontHemisphere(spec, built.anchorLonLat[0], built.anchorLonLat[1])) {
+      const pt = projection(built.anchorLonLat);
+      if (pt && Number.isFinite(pt[0]) && Number.isFinite(pt[1])) {
+        const [cx, cy] = pt;
+        const textScale = Math.max(scaleFactor, Math.max(widthPx, heightPx * 0.78) / 900);
+        const titleSize = Math.max(8, 12.5 * textScale);
+        const subSize = Math.max(6.5, 9.8 * textScale);
+        const haloW = Math.max(2, 3.8 * textScale);
+        const labelName = String(shadow.sourceName || shadow.sourceId || 'Region').trim();
+        const areaText = shadow.showArea !== false ? formatArea(built.areaKm2, units) : '';
+        const titleY = areaText ? cy - subSize * 0.62 : cy;
+        mapParts.push(
+          `<text x="${cx.toFixed(2)}" y="${titleY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${titleSize.toFixed(1)}" font-weight="700" fill="${escapeXml(stroke && stroke !== 'none' ? stroke : '#111111')}" text-anchor="middle" dominant-baseline="central" stroke="rgba(255,255,255,0.92)" stroke-width="${haloW.toFixed(2)}" stroke-linejoin="round" paint-order="stroke fill" style="paint-order: stroke fill;">${escapeXml(labelName)}</text>`,
+        );
+        if (areaText) {
+          const subY = cy + titleSize * 0.62;
+          mapParts.push(
+            `<text x="${cx.toFixed(2)}" y="${subY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${subSize.toFixed(1)}" font-weight="600" fill="#1f2937" text-anchor="middle" dominant-baseline="central" stroke="rgba(255,255,255,0.92)" stroke-width="${Math.max(1.6, haloW * 0.85).toFixed(2)}" stroke-linejoin="round" paint-order="stroke fill" style="paint-order: stroke fill;">${escapeXml(areaText)}</text>`,
+          );
+        }
+      }
     }
   }
 

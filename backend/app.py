@@ -18,7 +18,12 @@ import requests
 
 from backend import renderer
 from backend.batch import render_batch_zip
-from backend.renderer import inspect_geojson, render_map, sanitize_filename
+from backend.renderer import (
+    fetch_geoboundaries_geojson,
+    inspect_geojson,
+    render_map,
+    sanitize_filename,
+)
 from backend.schemas import BatchRenderRequest, MapSpec
 
 logger = logging.getLogger(__name__)
@@ -70,8 +75,8 @@ _GEOJSON_ROOT_TYPES = {
 
 app = FastAPI(
     title="Dusty's Map Studio Pro Engine",
-    version="1.0.0",
-    description="High-DPI Cartopy + GeoPandas map rendering backend.",
+    version="1.1.0",
+    description="High-DPI Cartopy + GSHHG + GeoPandas map rendering backend.",
     lifespan=lifespan,
 )
 
@@ -85,11 +90,13 @@ app.add_middleware(
 
 @app.get("/api/health")
 async def health_check() -> dict[str, Any]:
-    """Report backend readiness and supported export formats."""
+    """Report backend readiness, supported export formats, and fidelity engines."""
     return {
         "status": "ok",
         "engine": "cartopy-geopandas",
         "formats": ["png", "jpeg", "pdf", "svg"],
+        "fidelity": ["110m", "50m", "10m", "ultra-gshhs"],
+        "features": ["region-shadows", "geoboundaries", "bathymetry", "urban-areas", "minor-islands"],
     }
 
 
@@ -162,6 +169,25 @@ async def geojson_inspect_endpoint(body: dict[str, Any] = Body(...)) -> JSONResp
         return JSONResponse(
             status_code=500,
             content={"ok": False, "detail": f"GeoJSON inspection failed: {exc}"},
+        )
+
+
+@app.get("/api/geoboundaries")
+async def geoboundaries_endpoint(
+    iso3: str = Query(..., min_length=3, max_length=3),
+    level: Literal["ADM0", "ADM1", "ADM2"] = Query(default="ADM1"),
+    full: bool = Query(default=False),
+) -> JSONResponse:
+    """Fetch and repair OSM-derived ADM0/ADM1/ADM2 boundaries from geoBoundaries.org."""
+    try:
+        result = await anyio.to_thread.run_sync(fetch_geoboundaries_geojson, iso3, level, full)
+        return JSONResponse(status_code=200, content=result)
+    except (ValueError, requests.RequestException) as exc:
+        return JSONResponse(status_code=400, content={"ok": False, "detail": str(exc)})
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"ok": False, "detail": f"geoBoundaries lookup failed: {exc}"},
         )
 
 
