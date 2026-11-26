@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=24';
+} from './schema.js?v=25';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,16 +14,26 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=24';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=24';
-import { formatArea } from './shadow.js?v=24';
+} from './presets.js?v=25';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=25';
+import { formatArea } from './shadow.js?v=25';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=24';
+} from './osm-coastline.js?v=25';
+
+const controlsDrawerApi = {
+  setSidebarOpen: () => {},
+  setTopbarMenuOpen: () => {},
+  closeMobileDrawers: () => {},
+};
+
+export function closeMobileDrawers() {
+  controlsDrawerApi.closeMobileDrawers?.();
+}
 
 const PALETTE_COLOR_FIELDS = [
   { key: 'land', inputId: 'color-land', noneBtnId: 'btn-land-none', fallback: '#4a4a4a' },
@@ -1168,22 +1178,142 @@ export function renderControls(callbacks) {
     });
   });
 
-  // Mobile sidebar drawer toggle
+  // Responsive Sidebar Drawer (Mobile) & Collapsible Panel (Desktop) + Mobile Topbar Menu
+  const MOBILE_BREAKPOINT_PX = 980;
+  const isMobileViewport = () => window.innerWidth <= MOBILE_BREAKPOINT_PX;
+
+  const setTopbarMenuOpen = (open) => {
+    const actions = $('topbar-actions');
+    const menuBtn = $('btn-toggle-topbar-menu');
+    if (!actions || !menuBtn) return;
+    const next = Boolean(open) && isMobileViewport();
+    actions.classList.toggle('open', next);
+    menuBtn.setAttribute('aria-expanded', String(next));
+    menuBtn.classList.toggle('active', next);
+    if (next) {
+      setSidebarDrawerOpen(false);
+    }
+  };
+
+  const setSidebarDrawerOpen = (open) => {
+    const sidebar = $('sidebar');
+    const backdrop = $('sidebar-backdrop');
+    const toggleBtn = $('btn-toggle-sidebar');
+    if (!sidebar) return;
+
+    if (isMobileViewport()) {
+      const next = Boolean(open);
+      sidebar.classList.toggle('collapsed', !next);
+      if (backdrop) backdrop.hidden = !next;
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', String(next));
+        toggleBtn.classList.toggle('active', next);
+      }
+      if (next) {
+        setTopbarMenuOpen(false);
+      }
+    } else {
+      const next = Boolean(open);
+      sidebar.classList.toggle('desktop-collapsed', !next);
+      sidebar.classList.remove('collapsed');
+      if (backdrop) backdrop.hidden = true;
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', String(next));
+        toggleBtn.classList.toggle('active', next);
+      }
+    }
+  };
+
+  // Expose helper on window/module for app.js auto-close & Escape key
+  controlsDrawerApi.setSidebarOpen = setSidebarDrawerOpen;
+  controlsDrawerApi.setTopbarMenuOpen = setTopbarMenuOpen;
+  controlsDrawerApi.closeMobileDrawers = () => {
+    if (isMobileViewport()) {
+      setSidebarDrawerOpen(false);
+      setTopbarMenuOpen(false);
+    }
+  };
+
+  // Start collapsed on mobile so the map canvas is immediately visible
+  if (isMobileViewport()) {
+    setSidebarDrawerOpen(false);
+  } else {
+    setSidebarDrawerOpen(true);
+  }
+
+  let lastWasMobile = isMobileViewport();
+  window.addEventListener('resize', () => {
+    const nowMobile = isMobileViewport();
+    if (nowMobile !== lastWasMobile) {
+      lastWasMobile = nowMobile;
+      setTopbarMenuOpen(false);
+      setSidebarDrawerOpen(!nowMobile);
+    }
+  });
+
   $('btn-toggle-sidebar')?.addEventListener('click', () => {
-    $('sidebar')?.classList.toggle('collapsed');
+    const sidebar = $('sidebar');
+    if (!sidebar) return;
+    if (isMobileViewport()) {
+      setSidebarDrawerOpen(sidebar.classList.contains('collapsed'));
+    } else {
+      setSidebarDrawerOpen(sidebar.classList.contains('desktop-collapsed'));
+    }
+  });
+
+  $('btn-close-sidebar')?.addEventListener('click', () => {
+    setSidebarDrawerOpen(false);
+  });
+
+  $('sidebar-backdrop')?.addEventListener('click', () => {
+    setSidebarDrawerOpen(false);
+    setTopbarMenuOpen(false);
+  });
+
+  $('btn-toggle-topbar-menu')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = $('topbar-actions')?.classList.contains('open');
+    setTopbarMenuOpen(!isOpen);
+  });
+
+  $('btn-mobile-quick-export')?.addEventListener('click', () => {
+    setTopbarMenuOpen(false);
+    const fmt = $('export-format')?.value || 'png';
+    boundCallbacks.onExport?.(fmt);
+  });
+
+  // Close mobile topbar dropdown when tapping outside header
+  document.addEventListener('click', (e) => {
+    if (!isMobileViewport()) return;
+    const actions = $('topbar-actions');
+    if (!actions?.classList.contains('open')) return;
+    const header = document.querySelector('.topbar');
+    if (header && !header.contains(e.target)) {
+      setTopbarMenuOpen(false);
+    }
   });
 
   // Top Bar actions
   $('preset-select')?.addEventListener('change', (e) => {
     if (e.target.value) {
+      controlsDrawerApi.closeMobileDrawers();
       boundCallbacks.onSelectPreset?.(e.target.value);
     }
   });
   $('btn-undo')?.addEventListener('click', () => boundCallbacks.onUndo?.());
   $('btn-redo')?.addEventListener('click', () => boundCallbacks.onRedo?.());
-  $('btn-share')?.addEventListener('click', () => boundCallbacks.onCopyShareLink?.());
-  $('btn-save-json')?.addEventListener('click', () => boundCallbacks.onSaveProjectJson?.());
-  $('btn-load-json')?.addEventListener('click', () => $('file-load-json')?.click());
+  $('btn-share')?.addEventListener('click', () => {
+    setTopbarMenuOpen(false);
+    boundCallbacks.onCopyShareLink?.();
+  });
+  $('btn-save-json')?.addEventListener('click', () => {
+    setTopbarMenuOpen(false);
+    boundCallbacks.onSaveProjectJson?.();
+  });
+  $('btn-load-json')?.addEventListener('click', () => {
+    setTopbarMenuOpen(false);
+    $('file-load-json')?.click();
+  });
   $('file-load-json')?.addEventListener('change', (e) => {
     const file = e.target.files?.[0];
     if (file) boundCallbacks.onLoadProjectFile?.(file);
@@ -1191,10 +1321,12 @@ export function renderControls(callbacks) {
   });
 
   $('btn-export')?.addEventListener('click', () => {
+    setTopbarMenuOpen(false);
     const fmt = $('export-format')?.value || 'png';
     boundCallbacks.onExport?.(fmt);
   });
   $('btn-export-pair')?.addEventListener('click', () => {
+    setTopbarMenuOpen(false);
     const fmt = $('export-format')?.value || 'png';
     boundCallbacks.onExportPair?.(fmt);
   });
@@ -1367,10 +1499,18 @@ export function renderControls(callbacks) {
     boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: false, simplifyMeters, colorMode });
   });
 
+  $('btn-toggle-osm-coastline')?.addEventListener('click', () => {
+    boundCallbacks.onToggleOsmCoastlines?.();
+  });
+
   $('btn-refresh-osm-coastline')?.addEventListener('click', () => {
     const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
     const colorMode = $('hd-coastline-color-mode')?.value || 'host';
     boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters, colorMode, forceRefresh: true });
+  });
+
+  $('btn-remove-osm-coastline')?.addEventListener('click', () => {
+    boundCallbacks.onRemoveOsmCoastlines?.();
   });
 
   $('btn-load-geoboundaries-land')?.addEventListener('click', () => {
@@ -1387,6 +1527,14 @@ export function renderControls(callbacks) {
     const level = $('geoboundaries-level')?.value || 'ADM1';
     if (!opt || !opt.value) return;
     boundCallbacks.onLoadGeoBoundaries?.(opt.value, opt.dataset.name || opt.textContent, level, { asPrimaryLand: false });
+  });
+
+  $('btn-toggle-geoboundaries')?.addEventListener('click', () => {
+    boundCallbacks.onToggleGeoBoundaries?.();
+  });
+
+  $('btn-remove-geoboundaries')?.addEventListener('click', () => {
+    boundCallbacks.onRemoveGeoBoundaries?.();
   });
 
   $('btn-restore-default-land')?.addEventListener('click', () => {
@@ -1717,6 +1865,8 @@ export function renderControls(callbacks) {
   });
 
   // Stage floating controls
+  $('btn-stage-toggle-hd')?.addEventListener('click', () => boundCallbacks.onToggleSuperAccuracy?.());
+  $('btn-stage-remove-hd')?.addEventListener('click', () => boundCallbacks.onRemoveSuperAccuracy?.());
   $('btn-exit-mode')?.addEventListener('click', () => boundCallbacks.onToggleMode?.('pan'));
   $('btn-ref-peek')?.addEventListener('click', () => boundCallbacks.onToggleRefPeek?.());
   $('btn-zoom-in')?.addEventListener('click', () => boundCallbacks.onZoom?.(0.75));
@@ -1850,31 +2000,60 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   // Layers
   if ($('layer-show-land')) $('layer-show-land').checked = spec.layers.showLand !== false;
   if ($('layer-show-borders')) $('layer-show-borders').checked = Boolean(spec.layers.showBorders);
+  const customLayers = spec.customGeoJsonLayers || [];
+  const hdLayers = customLayers.filter(
+    (l) => l && (String(l.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(l.url)),
+  );
+  const visibleHdLayers = hdLayers.filter((l) => l.visible !== false);
+  const gbLayers = customLayers.filter((l) => l && String(l.id || '').startsWith('gb_'));
+  const visibleGbLayers = gbLayers.filter((l) => l.visible !== false);
+
   const landBanner = $('primary-land-status');
   const landBannerText = $('primary-land-status-text');
+  const gbToggleBtn = $('btn-toggle-geoboundaries');
+  const gbRemoveBtn = $('btn-remove-geoboundaries');
+  const restoreLandBtn = $('btn-restore-default-land');
   if (landBanner) {
-    const primaryLandLayers = (spec.customGeoJsonLayers || []).filter(
-      (l) => l && l.visible !== false && l.role === 'land',
-    );
+    const primaryLandLayers = customLayers.filter((l) => l && l.visible !== false && l.role === 'land');
     const defaultUnshaded = spec.layers.showLand === false;
-    landBanner.hidden = !defaultUnshaded && primaryLandLayers.length === 0;
+    const hasGb = gbLayers.length > 0;
+    const gbVisible = visibleGbLayers.length > 0;
+    landBanner.hidden = !defaultUnshaded && primaryLandLayers.length === 0 && !hasGb;
+    landBanner.classList.toggle('is-paused', hasGb && !gbVisible);
+    if (gbToggleBtn) {
+      gbToggleBtn.hidden = !hasGb;
+      gbToggleBtn.textContent = gbVisible ? 'Hide' : 'Show';
+      gbToggleBtn.setAttribute('aria-pressed', String(gbVisible));
+      gbToggleBtn.classList.toggle('active', !gbVisible);
+    }
+    if (gbRemoveBtn) {
+      gbRemoveBtn.hidden = !hasGb;
+    }
+    if (restoreLandBtn) {
+      restoreLandBtn.hidden = !defaultUnshaded;
+    }
     if (landBannerText) {
-      if (primaryLandLayers.length > 0 && defaultUnshaded) {
+      if (hasGb && !gbVisible) {
+        landBannerText.textContent = `Hidden: ${gbLayers.map((l) => l.label).join(', ')} (default map shown)`;
+      } else if (primaryLandLayers.length > 0 && defaultUnshaded) {
         landBannerText.textContent = `Primary Land: ${primaryLandLayers.map((l) => l.label).join(', ')} (default land unshaded)`;
       } else if (defaultUnshaded) {
         landBannerText.textContent = 'Default land layers are unshaded';
+      } else if (hasGb) {
+        landBannerText.textContent = `Active: ${visibleGbLayers.map((l) => l.label).join(', ')}`;
       } else if (primaryLandLayers.length > 0) {
         landBannerText.textContent = `Primary Land active (${primaryLandLayers.length})`;
       }
     }
   }
 
-  // On-Demand OSM HD Coastlines live span, color sync & active status
+  // On-Demand OSM HD Coastlines live span, color sync & active/hidden status
   const hdSpanEl = $('hd-coastline-view-span');
   const hdColorModeEl = $('hd-coastline-color-mode');
   const hdColorEl = $('hd-coastline-color');
   const hdStatusEl = $('hd-coastline-status');
   const hdStatusText = $('hd-coastline-status-text');
+  const hdToggleBtn = $('btn-toggle-osm-coastline');
   const hdBBox = computePaddedCoastlineBBox(spec);
   if (hdSpanEl) {
     const lonStr = hdBBox.rawSpanLon < 1 ? hdBBox.rawSpanLon.toFixed(2) : hdBBox.rawSpanLon.toFixed(1);
@@ -1903,28 +2082,60 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     hdColorEl.value = uiState.hdCoastlineColor;
   }
   if (hdStatusEl) {
-    const activeHdLayer = (spec.customGeoJsonLayers || []).find(
-      (l) => l && l.visible !== false && (String(l.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(l.url)),
-    );
-    if (!activeHdLayer) {
+    if (hdLayers.length === 0) {
       hdStatusEl.hidden = true;
-      hdStatusEl.classList.remove('is-stale');
+      hdStatusEl.classList.remove('is-stale', 'is-paused');
     } else {
       hdStatusEl.hidden = false;
-      const parsedBBox = parseOsmCoastlineUrl(activeHdLayer.url);
+      const isVisible = visibleHdLayers.length > 0;
+      const primaryHd = visibleHdLayers[0] || hdLayers[0];
+      const parsedBBox = parseOsmCoastlineUrl(primaryHd.url);
       const currentViewBounds = [
         hdBBox.centerLon - hdBBox.rawSpanLon / 2,
         hdBBox.centerLon + hdBBox.rawSpanLon / 2,
         hdBBox.centerLat - hdBBox.rawSpanLat / 2,
         hdBBox.centerLat + hdBBox.rawSpanLat / 2,
       ];
-      const isStale = parsedBBox ? isViewOutsideCoastlineBBox(currentViewBounds, parsedBBox) : false;
+      const isStale = isVisible && parsedBBox ? isViewOutsideCoastlineBBox(currentViewBounds, parsedBBox) : false;
       hdStatusEl.classList.toggle('is-stale', isStale);
+      hdStatusEl.classList.toggle('is-paused', !isVisible);
+      if (hdToggleBtn) {
+        hdToggleBtn.textContent = isVisible ? 'Hide HD' : 'Show HD';
+        hdToggleBtn.setAttribute('aria-pressed', String(isVisible));
+        hdToggleBtn.classList.toggle('active', !isVisible);
+      }
       if (hdStatusText) {
-        const polyCount = Array.isArray(activeHdLayer.data?.features) ? activeHdLayer.data.features.length : 0;
-        hdStatusText.textContent = isStale
-          ? 'View moved outside HD bounds — refresh for current area'
-          : `OSM HD active (${polyCount} shoreline shape${polyCount === 1 ? '' : 's'})`;
+        const polyCount = Array.isArray(primaryHd.data?.features) ? primaryHd.data.features.length : 0;
+        if (!isVisible) {
+          hdStatusText.textContent = 'OSM HD Coastlines hidden — default map shown';
+        } else if (isStale) {
+          hdStatusText.textContent = 'View moved outside HD bounds — refresh for current area';
+        } else {
+          hdStatusText.textContent = `OSM HD active (${polyCount} shoreline shape${polyCount === 1 ? '' : 's'})`;
+        }
+      }
+    }
+  }
+
+  // Stage quick toggle/remove pill for loaded super-accuracy map (OSM HD Coastlines or geoBoundaries)
+  const stageHdPill = $('hd-stage-pill');
+  const stageHdToggle = $('btn-stage-toggle-hd');
+  const stageHdLabel = $('stage-hd-label');
+  if (stageHdPill) {
+    const hasSuperAcc = hdLayers.length > 0 || gbLayers.length > 0;
+    if (!hasSuperAcc) {
+      stageHdPill.hidden = true;
+      stageHdPill.classList.remove('is-off');
+    } else {
+      stageHdPill.hidden = false;
+      const anyVisible = visibleHdLayers.length > 0 || visibleGbLayers.length > 0;
+      stageHdPill.classList.toggle('is-off', !anyVisible);
+      const prefix = hdLayers.length > 0 ? 'HD Map' : 'Ultra Map';
+      if (stageHdLabel) {
+        stageHdLabel.textContent = anyVisible ? `${prefix}: On` : `${prefix}: Off`;
+      }
+      if (stageHdToggle) {
+        stageHdToggle.setAttribute('aria-pressed', String(anyVisible));
       }
     }
   }

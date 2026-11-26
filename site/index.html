@@ -2,95 +2,119 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=24" />
+  <link rel="stylesheet" href="./styles/main.css?v=25" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
     <!-- Top Bar -->
     <header class="topbar" role="banner">
-      <div class="topbar-brand">
-        <button id="btn-toggle-sidebar" class="icon-btn mobile-only" type="button" title="Toggle controls panel" aria-label="Toggle controls panel">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="16" cy="16" r="12" />
-            <ellipse cx="16" cy="16" rx="5.5" ry="12" />
-            <path d="M5 12h22M5 20h22" />
-          </svg>
+      <div class="topbar-primary">
+        <div class="topbar-brand">
+          <button id="btn-toggle-sidebar" class="icon-btn sidebar-toggle-btn" type="button" title="Toggle controls panel" aria-label="Toggle controls panel" aria-controls="sidebar" aria-expanded="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="16" cy="16" r="12" />
+              <ellipse cx="16" cy="16" rx="5.5" ry="12" />
+              <path d="M5 12h22M5 20h22" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>Dusty's Map Studio</h1>
+            <span class="brand-sub">AtlasForge</span>
+          </div>
+          <span id="engine-status" class="engine-badge engine-standalone" title="Map engine mode">
+            Standalone Studio &bull; 300 DPI
+          </span>
         </div>
-        <div class="brand-text">
-          <h1>Dusty's Map Studio</h1>
-          <span class="brand-sub">AtlasForge</span>
+
+        <div class="topbar-mobile-quick mobile-only">
+          <button id="btn-mobile-quick-export" class="btn btn-primary btn-sm" type="button" title="Download Map">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Export</span>
+          </button>
+          <button id="btn-toggle-topbar-menu" class="icon-btn topbar-menu-btn" type="button" title="Presets, History &amp; Export Options" aria-label="Presets, History and Export Options" aria-controls="topbar-actions" aria-expanded="false">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
+          </button>
         </div>
-        <span id="engine-status" class="engine-badge engine-standalone" title="Map engine mode">
-          Standalone Studio &bull; 300 DPI
-        </span>
       </div>
 
-      <div class="topbar-center">
-        <label class="inline-select-wrap" for="preset-select">
-          <span class="sr-only">Quick Region Preset</span>
-          <select id="preset-select" title="Load a region preset">
-            <option value="">Load Region Preset...</option>
+      <div id="topbar-actions" class="topbar-actions">
+        <div class="topbar-center">
+          <label class="inline-select-wrap" for="preset-select">
+            <span class="sr-only">Quick Region Preset</span>
+            <select id="preset-select" title="Load a region preset">
+              <option value="">Load Region Preset...</option>
+            </select>
+          </label>
+
+          <div class="btn-group" role="group" aria-label="History">
+            <button id="btn-undo" class="btn btn-secondary btn-sm" type="button" title="Undo (Ctrl+Z)" disabled>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+              <span class="btn-text-desktop-hide-md">Undo</span>
+            </button>
+            <button id="btn-redo" class="btn btn-secondary btn-sm" type="button" title="Redo (Ctrl+Y)" disabled>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+              <span class="btn-text-desktop-hide-md">Redo</span>
+            </button>
+          </div>
+
+          <div class="btn-group topbar-project-group" role="group" aria-label="Project">
+            <button id="btn-share" class="btn btn-secondary btn-sm" type="button" title="Copy shareable studio link">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span class="label-full">Copy Share Link</span>
+              <span class="label-compact">Share</span>
+            </button>
+            <button id="btn-save-json" class="btn btn-secondary btn-sm" type="button" title="Save project as .json file">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              <span class="label-full">Save Project</span>
+              <span class="label-compact">Save</span>
+            </button>
+            <button id="btn-load-json" class="btn btn-secondary btn-sm" type="button" title="Load saved .json project">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span class="label-full">Load Project</span>
+              <span class="label-compact">Load</span>
+            </button>
+            <input id="file-load-json" type="file" accept=".json,application/json" hidden />
+          </div>
+        </div>
+
+        <div class="topbar-export">
+          <label class="sr-only" for="export-format">Export Format</label>
+          <select id="export-format" title="Export file format">
+            <option value="png">PNG (300/600 DPI)</option>
+            <option value="jpeg">JPEG</option>
+            <option value="svg">Vector SVG</option>
+            <option value="pdf" disabled>PDF (Python Pro Only)</option>
           </select>
-        </label>
 
-        <div class="btn-group" role="group" aria-label="History">
-          <button id="btn-undo" class="btn btn-secondary btn-sm" type="button" title="Undo (Ctrl+Z)" disabled>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-            <span>Undo</span>
+          <button id="btn-export" class="btn btn-primary" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download Map</span>
           </button>
-          <button id="btn-redo" class="btn btn-secondary btn-sm" type="button" title="Redo (Ctrl+Y)" disabled>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
-            <span>Redo</span>
+
+          <button id="btn-export-pair" class="btn btn-accent" type="button" title="Download two maps: one with borders on, one with borders off">
+            <span class="label-full">Download With &amp; No Borders</span>
+            <span class="label-compact">With &amp; No Borders</span>
           </button>
         </div>
-
-        <div class="btn-group" role="group" aria-label="Project">
-          <button id="btn-share" class="btn btn-secondary btn-sm" type="button" title="Copy shareable studio link">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            <span>Copy Share Link</span>
-          </button>
-          <button id="btn-save-json" class="btn btn-secondary btn-sm" type="button" title="Save project as .json file">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span>Save Project</span>
-          </button>
-          <button id="btn-load-json" class="btn btn-secondary btn-sm" type="button" title="Load saved .json project">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <span>Load Project</span>
-          </button>
-          <input id="file-load-json" type="file" accept=".json,application/json" hidden />
-        </div>
-      </div>
-
-      <div class="topbar-export">
-        <label class="sr-only" for="export-format">Export Format</label>
-        <select id="export-format" title="Export file format">
-          <option value="png">PNG (300/600 DPI)</option>
-          <option value="jpeg">JPEG</option>
-          <option value="svg">Vector SVG</option>
-          <option value="pdf" disabled>PDF (Python Pro Only)</option>
-        </select>
-
-        <button id="btn-export" class="btn btn-primary" type="button">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Download Map</span>
-        </button>
-
-        <button id="btn-export-pair" class="btn btn-accent" type="button" title="Download two maps: one with borders on, one with borders off">
-          <span>Download With &amp; No Borders</span>
-        </button>
       </div>
     </header>
 
     <!-- Main Workspace -->
     <div class="studio-workspace">
+      <div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div>
       <!-- Left Sidebar -->
       <aside id="sidebar" class="sidebar" aria-label="Map Controls">
+        <div class="sidebar-mobile-header mobile-only">
+          <span class="sidebar-mobile-title">Map Controls</span>
+          <button id="btn-close-sidebar" class="icon-btn sidebar-close-btn" type="button" title="Close controls panel" aria-label="Close controls panel">&times;</button>
+        </div>
         <nav class="sidebar-tabs" role="tablist" aria-label="Control sections">
           <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-tab="area">Area &amp; Page</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="colors">Colors &amp; Map</button>
@@ -187,7 +211,7 @@
                   <input id="span-lat" type="number" step="any" min="0.005" max="175" />
                 </div>
               </div>
-              <p class="helper-text subtle">Tip: Drag directly on the map to pan, or scroll to zoom in and out.</p>
+              <p class="helper-text subtle">Tip: Drag directly on the map to pan, or scroll / pinch to zoom in and out.</p>
             </div>
           </section>
 
@@ -426,9 +450,16 @@
                     + Add HD Shapes as Overlay
                   </button>
                 </div>
-                <div id="hd-coastline-status" class="primary-land-banner" hidden>
-                  <span id="hd-coastline-status-text">HD Coastlines active</span>
-                  <button id="btn-refresh-osm-coastline" class="btn-chip" type="button">Refresh View</button>
+                <div id="hd-coastline-status" class="primary-land-banner banner-stack" hidden>
+                  <div class="banner-status-row">
+                    <span class="banner-status-dot" aria-hidden="true"></span>
+                    <span id="hd-coastline-status-text">HD Coastlines active</span>
+                  </div>
+                  <div class="banner-actions">
+                    <button id="btn-toggle-osm-coastline" class="btn-chip" type="button" aria-pressed="true" title="Toggle HD Coastlines visibility on or off">Hide HD</button>
+                    <button id="btn-refresh-osm-coastline" class="btn-chip" type="button" title="Re-fetch HD Coastlines for the current framed view">Refresh View</button>
+                    <button id="btn-remove-osm-coastline" class="btn-chip btn-chip-danger" type="button" title="Remove HD Coastlines and restore default map">Remove</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -456,9 +487,16 @@
                     + Add as Overlay
                   </button>
                 </div>
-                <div id="primary-land-status" class="primary-land-banner" hidden>
-                  <span id="primary-land-status-text">Default land layers unshaded</span>
-                  <button id="btn-restore-default-land" class="btn-chip" type="button">Restore Default Land</button>
+                <div id="primary-land-status" class="primary-land-banner banner-stack" hidden>
+                  <div class="banner-status-row">
+                    <span class="banner-status-dot" aria-hidden="true"></span>
+                    <span id="primary-land-status-text">Default land layers unshaded</span>
+                  </div>
+                  <div class="banner-actions">
+                    <button id="btn-toggle-geoboundaries" class="btn-chip" type="button" aria-pressed="true" hidden title="Toggle OSM Ultra-Detail Boundaries on or off">Hide</button>
+                    <button id="btn-remove-geoboundaries" class="btn-chip btn-chip-danger" type="button" hidden title="Remove OSM Ultra-Detail Boundaries and restore default map">Remove</button>
+                    <button id="btn-restore-default-land" class="btn-chip" type="button">Restore Default Land</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -982,6 +1020,14 @@
       <!-- Center / Right Map Canvas Stage -->
       <main class="stage" aria-label="Interactive Map Preview">
         <div class="stage-toolbar-top">
+          <div id="hd-stage-pill" class="stage-pill hd-stage-pill" hidden>
+            <span class="hd-stage-dot" aria-hidden="true"></span>
+            <button id="btn-stage-toggle-hd" class="btn-stage-inline" type="button" aria-pressed="true" title="Toggle super-accuracy map on or off">
+              <span id="stage-hd-label">HD Map: On</span>
+            </button>
+            <button id="btn-stage-remove-hd" class="btn-pill-remove" type="button" title="Remove super-accuracy map" aria-label="Remove super-accuracy map">&times;</button>
+          </div>
+
           <div id="interaction-mode-badge" class="stage-pill mode-pan">
             <span class="mode-dot"></span>
             <span id="interaction-mode-text">Mode: Pan &amp; Zoom</span>
@@ -990,7 +1036,8 @@
 
           <button id="btn-ref-peek" class="stage-pill btn-toggle-pill" type="button" aria-pressed="false" title="Temporarily show reference city labels on screen only (never exported)">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <span>Reference Labels Peek</span>
+            <span class="label-full">Reference Labels Peek</span>
+            <span class="label-compact">Ref Labels</span>
           </button>
         </div>
 
@@ -1015,8 +1062,8 @@
           </div>
 
           <div class="zoom-controls" role="group" aria-label="Zoom controls">
-            <button id="btn-zoom-in" class="zoom-btn" type="button" title="Zoom In (+)">+</button>
-            <button id="btn-zoom-out" class="zoom-btn" type="button" title="Zoom Out (&minus;)">&minus;</button>
+            <button id="btn-zoom-in" class="zoom-btn" type="button" title="Zoom In (+)" aria-label="Zoom In">+</button>
+            <button id="btn-zoom-out" class="zoom-btn" type="button" title="Zoom Out (&minus;)" aria-label="Zoom Out">&minus;</button>
             <button id="btn-reset-view" class="zoom-btn zoom-reset" type="button" title="Reset framing">Reset View</button>
           </div>
         </div>
@@ -1026,6 +1073,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=24"></script>
+  <script type="module" src="./js/app.js?v=25"></script>
 </body>
 </html>

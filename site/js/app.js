@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=24';
+} from './schema.js?v=25';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -22,7 +22,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=24';
+} from './data-loader.js?v=25';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -31,12 +31,12 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=24';
+} from './cartography.js?v=25';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=24';
+} from './osm-coastline.js?v=25';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -45,16 +45,17 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=24';
+} from './exporter.js?v=25';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=24';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=24';
+} from './presets.js?v=25';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=25';
 import {
+  closeMobileDrawers,
   populateCountryCatalog,
   populateShadowRegionCatalog,
   renderControls,
@@ -63,13 +64,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=24';
+} from './controls.js?v=25';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=24';
+} from './shadow.js?v=25';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -80,7 +81,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=24';
+} from './timeline.js?v=25';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -188,6 +189,7 @@ const state = {
   hdCoastlineColorMode: 'host', // 'host' | 'land' | 'custom'
   hdCoastlineCustomColor: null,
   hdCoastlineReplacedHighlight: null,
+  gbReplacedHighlights: [],
   loadRequestToken: 0,
   searchAbortController: null,
   wheelCommitTimer: null,
@@ -303,6 +305,182 @@ function isOsmHdLayer(layer) {
     layer &&
       (String(layer.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(layer.url)),
   );
+}
+
+function isGeoBoundariesLayer(layer) {
+  return Boolean(layer && String(layer.id || '').startsWith('gb_'));
+}
+
+function isSuperAccuracyLayer(layer) {
+  return isOsmHdLayer(layer) || isGeoBoundariesLayer(layer);
+}
+
+function mergeRestoredHighlights(currentHighlights, toRestore) {
+  const list = [...(currentHighlights || [])];
+  let changed = false;
+  for (const stashed of toRestore || []) {
+    if (!stashed) continue;
+    const alreadyPresent = list.some(
+      (hc) =>
+        (stashed.id && String(hc.id || '') === String(stashed.id)) ||
+        (stashed.name && String(hc.name || '').toLowerCase() === String(stashed.name).toLowerCase()),
+    );
+    if (!alreadyPresent) {
+      list.push(structuredClone(stashed));
+      changed = true;
+    }
+  }
+  return changed ? list : null;
+}
+
+function toggleSuperAccuracyLayers(matcher, labelName, forceVisible = null) {
+  const spec = state.spec;
+  const current = spec?.customGeoJsonLayers || [];
+  const matching = current.filter(matcher);
+  if (!matching.length) return false;
+
+  const anyCurrentlyVisible = matching.some((l) => l.visible !== false);
+  const nextVisible = forceVisible !== null ? Boolean(forceVisible) : !anyCurrentlyVisible;
+  const touchesHd = matching.some(isOsmHdLayer);
+  const touchesGb = matching.some(isGeoBoundariesLayer);
+  const touchesLand = matching.some((l) => l.role === 'land');
+
+  const nextLayers = current.map((l) => (matcher(l) ? { ...l, visible: nextVisible } : l));
+  const patch = { customGeoJsonLayers: nextLayers };
+
+  if (!nextVisible) {
+    hideFeatureHover();
+    if (state.selectedFeature?.layer && matcher(state.selectedFeature.layer)) {
+      closeFeatureInfoCard();
+    }
+    const stillHasVisibleLand = nextLayers.some((l) => l?.visible !== false && l?.role === 'land');
+    if (touchesLand && !stillHasVisibleLand) {
+      patch.layers = { showLand: true };
+      if (isNoneColor(spec.colors?.land)) {
+        patch.colors = { land: resolveRestoredPaletteColor('land') };
+      }
+      const restorePool = [];
+      if (touchesHd && state.hdCoastlineReplacedHighlight) {
+        restorePool.push(state.hdCoastlineReplacedHighlight);
+      }
+      if (touchesGb && state.gbReplacedHighlights.length) {
+        restorePool.push(...state.gbReplacedHighlights);
+      }
+      const merged = mergeRestoredHighlights(spec.highlightedCountries, restorePool);
+      if (merged) {
+        patch.highlightedCountries = merged;
+      }
+    }
+    patchSpec(patch);
+    showToast(
+      touchesLand && !stillHasVisibleLand
+        ? `${labelName} toggled off — default map shown`
+        : `${labelName} hidden`,
+      'info',
+      2400,
+    );
+  } else {
+    if (touchesLand) {
+      patch.layers = { showLand: false };
+      let nextHighlights = spec.highlightedCountries || [];
+      let highlightsChanged = false;
+      if (touchesHd) {
+        const visibleBounds = computeCurrentVisibleBounds(spec);
+        const colorInfo = resolveHdCoastlineColorInfo(spec, state.hdCoastlineColorMode, visibleBounds);
+        if (colorInfo.liveHost) {
+          const normId = String(colorInfo.liveHost.id || '');
+          const normName = String(colorInfo.liveHost.name || '').trim().toLowerCase();
+          const removed = nextHighlights.find(
+            (hc) =>
+              (normId && String(hc.id || '') === normId) ||
+              (normName && String(hc.name || '').trim().toLowerCase() === normName),
+          );
+          if (removed) {
+            state.hdCoastlineReplacedHighlight = structuredClone(removed);
+            nextHighlights = nextHighlights.filter((hc) => hc !== removed);
+            highlightsChanged = true;
+          }
+        }
+      }
+      if (touchesGb && state.gbReplacedHighlights.length) {
+        const replacedIds = new Set(state.gbReplacedHighlights.map((h) => String(h.id || '')));
+        const replacedNames = new Set(
+          state.gbReplacedHighlights.map((h) => String(h.name || '').trim().toLowerCase()),
+        );
+        const filtered = nextHighlights.filter(
+          (hc) =>
+            !replacedIds.has(String(hc.id || '')) &&
+            !replacedNames.has(String(hc.name || '').trim().toLowerCase()),
+        );
+        if (filtered.length !== nextHighlights.length) {
+          nextHighlights = filtered;
+          highlightsChanged = true;
+        }
+      }
+      if (highlightsChanged) {
+        patch.highlightedCountries = nextHighlights;
+      }
+    }
+    patchSpec(patch);
+    showToast(`${labelName} toggled on`, 'success', 2200);
+  }
+  return true;
+}
+
+function removeSuperAccuracyLayers(matcher, labelName) {
+  const spec = state.spec;
+  const current = spec?.customGeoJsonLayers || [];
+  const removedList = current.filter(matcher);
+  if (!removedList.length) return false;
+
+  const nextLayers = current.filter((l) => !matcher(l));
+  const removedHadLand = removedList.some((l) => l.role === 'land');
+  const removedHd = removedList.some(isOsmHdLayer);
+  const removedGb = removedList.some(isGeoBoundariesLayer);
+
+  hideFeatureHover();
+  if (state.selectedFeature?.layer && matcher(state.selectedFeature.layer)) {
+    closeFeatureInfoCard();
+  }
+
+  const patch = { customGeoJsonLayers: nextLayers };
+  const stillHasVisibleLand = nextLayers.some((l) => l?.visible !== false && l?.role === 'land');
+  const restoreDefault = removedHadLand && !stillHasVisibleLand;
+
+  if (restoreDefault || (removedHadLand && spec.layers?.showLand === false && !stillHasVisibleLand)) {
+    patch.layers = { showLand: true };
+    if (isNoneColor(spec.colors?.land)) {
+      patch.colors = { land: resolveRestoredPaletteColor('land') };
+    }
+    const restorePool = [];
+    if (removedHd && state.hdCoastlineReplacedHighlight) {
+      restorePool.push(state.hdCoastlineReplacedHighlight);
+    }
+    if (removedGb && state.gbReplacedHighlights.length) {
+      restorePool.push(...state.gbReplacedHighlights);
+    }
+    const merged = mergeRestoredHighlights(spec.highlightedCountries, restorePool);
+    if (merged) {
+      patch.highlightedCountries = merged;
+    }
+  }
+
+  if (removedHd && !nextLayers.some(isOsmHdLayer)) {
+    state.hdCoastlineReplacedHighlight = null;
+  }
+  if (removedGb && !nextLayers.some(isGeoBoundariesLayer)) {
+    state.gbReplacedHighlights = [];
+  }
+
+  patchSpec(patch);
+  showToast(
+    restoreDefault
+      ? `Removed ${labelName} — default map restored`
+      : `Removed ${labelName}`,
+    'info',
+    2600,
+  );
+  return true;
 }
 
 function computeCurrentVisibleBounds(spec) {
@@ -588,8 +766,11 @@ function layoutCanvasSize() {
   const canvas = document.getElementById('map-canvas');
   if (!viewport || !canvas || !state.spec) return;
 
-  const availW = Math.max(240, viewport.clientWidth - 60);
-  const availH = Math.max(240, viewport.clientHeight - 116);
+  const cs = window.getComputedStyle(viewport);
+  const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) + 14;
+  const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0) + 14;
+  const availW = Math.max(160, viewport.clientWidth - padX);
+  const availH = Math.max(160, viewport.clientHeight - padY);
   const widthIn = Number(state.spec.page?.widthIn) || 4.6;
   const heightIn = Number(state.spec.page?.heightIn) || 7.0;
   const aspect = Math.max(0.2, Math.min(5, widthIn / heightIn));
@@ -601,21 +782,22 @@ function layoutCanvasSize() {
     cssW = cssH * aspect;
   }
 
-  const roundedCssW = Math.max(200, Math.round(cssW));
-  const roundedCssH = Math.max(200, Math.round(cssH));
+  const roundedCssW = Math.max(140, Math.round(cssW));
+  const roundedCssH = Math.max(140, Math.round(cssH));
   canvas.style.width = `${roundedCssW}px`;
   canvas.style.height = `${roundedCssH}px`;
 
-  // Keep logical canvas width >= 800 while capping preview max dimension at 1380px (preserving exact aspect)
+  // Keep logical canvas crisp across mobile and desktop while capping preview max dimension at 1380px
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let targetW = Math.max(800, Math.round(roundedCssW * dpr));
-  let targetH = Math.max(200, Math.round(targetW / aspect));
+  const minLogicalW = window.innerWidth <= 640 ? 640 : 800;
+  let targetW = Math.max(minLogicalW, Math.round(roundedCssW * dpr));
+  let targetH = Math.max(160, Math.round(targetW / aspect));
 
   const maxDim = Math.max(targetW, targetH);
   if (maxDim > 1380) {
     const scale = 1380 / maxDim;
-    targetW = Math.max(200, Math.round(targetW * scale));
-    targetH = Math.max(200, Math.round(targetH * scale));
+    targetW = Math.max(160, Math.round(targetW * scale));
+    targetH = Math.max(160, Math.round(targetH * scale));
   }
 
   if (canvas.width !== targetW || canvas.height !== targetH) {
@@ -1060,8 +1242,12 @@ function setupCanvasInteractions() {
   const canvas = document.getElementById('map-canvas');
   if (!canvas) return;
 
+  const activePointers = new Map();
+  let primaryPointerId = null;
   let pointerDown = false;
   let dragging = false;
+  let pinching = false;
+  let suppressTapUntilAllUp = false;
   let startClientX = 0;
   let startClientY = 0;
   let startCanvasX = 0;
@@ -1072,8 +1258,69 @@ function setupCanvasInteractions() {
   let draggingShadowIdx = -1;
   let startShadowAnchor = null;
 
+  // Multi-touch pinch state
+  let startPinchDist = 0;
+  let startPinchMidX = 0;
+  let startPinchMidY = 0;
+  let startPinchSpan = null;
+  let startPinchCenter = null;
+  let startPinchRect = null;
+
+  const getPinchMetrics = () => {
+    const pts = Array.from(activePointers.values());
+    if (pts.length < 2) return null;
+    const [p1, p2] = pts;
+    const dist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+    return {
+      dist: Math.max(10, dist),
+      midX: (p1.clientX + p2.clientX) * 0.5,
+      midY: (p1.clientY + p2.clientY) * 0.5,
+    };
+  };
+
   canvas.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || !state.spec) return;
+    if ((e.pointerType === 'mouse' && e.button !== 0) || !state.spec) return;
+    activePointers.set(e.pointerId, {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      pointerType: e.pointerType || 'mouse',
+    });
+    canvas.setPointerCapture?.(e.pointerId);
+
+    // Second finger down -> switch cleanly to two-finger pinch-zoom + pan
+    if (activePointers.size === 2) {
+      const metrics = getPinchMetrics();
+      if (metrics) {
+        pinching = true;
+        suppressTapUntilAllUp = true;
+        pointerDown = false;
+        dragging = false;
+        draggingShadowIdx = -1;
+        startShadowAnchor = null;
+        primaryPointerId = null;
+        canvas.classList.remove('dragging');
+        hideFeatureHover();
+        if (state.wheelCommitTimer) {
+          clearTimeout(state.wheelCommitTimer);
+          state.wheelCommitTimer = null;
+        }
+        startPinchDist = metrics.dist;
+        startPinchMidX = metrics.midX;
+        startPinchMidY = metrics.midY;
+        startPinchSpan = {
+          lonDeg: Math.max(0.005, Number(state.spec.span?.lonDeg) || 24),
+          latDeg: Math.max(0.005, Number(state.spec.span?.latDeg) || 14),
+        };
+        startPinchCenter = { ...state.spec.center };
+        startPinchRect = canvas.getBoundingClientRect();
+        state.isInteracting = true;
+      }
+      return;
+    }
+
+    if (activePointers.size > 2 || pinching) return;
+
+    primaryPointerId = e.pointerId;
     pointerDown = true;
     dragging = false;
     draggingShadowIdx = -1;
@@ -1092,7 +1339,6 @@ function setupCanvasInteractions() {
     if ((state.mode === 'shadow' || e.shiftKey) && shadows.length > 0 && state.renderedShadows.length > 0) {
       let hit = hitTestShadow(startProjection, state.renderedShadows, pt.x, pt.y);
       if (!hit && state.mode === 'shadow') {
-        // In shadow mode, pick the nearest visible shadow if only one exists or user clicked near it
         const visibleEntries = state.renderedShadows.filter((r) => r?.shadow?.visible !== false);
         if (visibleEntries.length === 1) {
           hit = visibleEntries[0];
@@ -1109,14 +1355,67 @@ function setupCanvasInteractions() {
         }
       }
     }
-
-    canvas.setPointerCapture?.(e.pointerId);
   });
 
   canvas.addEventListener('pointermove', (e) => {
-    if (pointerDown && startCenter) {
+    if (activePointers.has(e.pointerId)) {
+      activePointers.set(e.pointerId, {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        pointerType: e.pointerType || 'mouse',
+      });
+    }
+
+    // Two-finger pinch-to-zoom + midpoint pan
+    if (pinching && activePointers.size >= 2 && startPinchSpan && startPinchCenter && state.spec) {
+      const metrics = getPinchMetrics();
+      if (!metrics) return;
+      state.isInteracting = true;
+      const MIN_SPAN_DEG = 0.005;
+      const MAX_LON_DEG = 360;
+      const MAX_LAT_DEG = 175;
+      const rawFactor = startPinchDist / metrics.dist;
+      const minFactor = Math.max(MIN_SPAN_DEG / startPinchSpan.lonDeg, MIN_SPAN_DEG / startPinchSpan.latDeg);
+      const maxFactor = Math.min(MAX_LON_DEG / startPinchSpan.lonDeg, MAX_LAT_DEG / startPinchSpan.latDeg);
+      const clampedFactor =
+        minFactor <= maxFactor ? Math.max(minFactor, Math.min(maxFactor, rawFactor)) : rawFactor;
+
+      const nextLonSpan = Math.max(
+        MIN_SPAN_DEG,
+        Math.min(MAX_LON_DEG, Number((startPinchSpan.lonDeg * clampedFactor).toFixed(4))),
+      );
+      const nextLatSpan = Math.max(
+        MIN_SPAN_DEG,
+        Math.min(MAX_LAT_DEG, Number((startPinchSpan.latDeg * clampedFactor).toFixed(4))),
+      );
+
+      const rectW = Math.max(100, startPinchRect?.width || canvas.clientWidth || 320);
+      const rectH = Math.max(100, startPinchRect?.height || canvas.clientHeight || 320);
+      const dxNorm = (metrics.midX - startPinchMidX) / rectW;
+      const dyNorm = (metrics.midY - startPinchMidY) / rectH;
+      const nextCenterLon = Number(wrapLon(startPinchCenter.lon - dxNorm * nextLonSpan).toFixed(3));
+      const nextCenterLat = Number(
+        Math.max(-85, Math.min(85, startPinchCenter.lat + dyNorm * nextLatSpan)).toFixed(3),
+      );
+
+      state.spec.span.lonDeg = nextLonSpan;
+      state.spec.span.latDeg = nextLatSpan;
+      state.spec.center.lon = nextCenterLon;
+      state.spec.center.lat = nextCenterLat;
+
+      setNumericInputValue('span-lon', nextLonSpan);
+      setNumericInputValue('span-lat', nextLatSpan);
+      setNumericInputValue('center-lat', nextCenterLat);
+      setNumericInputValue('center-lon', nextCenterLon);
+      clearActivePresetDirect();
+      scheduleRender();
+      return;
+    }
+
+    if (pointerDown && e.pointerId === primaryPointerId && startCenter) {
       const dist = Math.hypot(e.clientX - startClientX, e.clientY - startClientY);
-      if (dist > 3) {
+      const dragThreshold = e.pointerType === 'touch' ? 8 : 3;
+      if (dist > dragThreshold) {
         dragging = true;
         canvas.classList.add('dragging');
         hideFeatureHover();
@@ -1191,6 +1490,9 @@ function setupCanvasInteractions() {
       }
     }
 
+    // Skip hover coordinate/tooltip updates for touch pointers
+    if (e.pointerType === 'touch') return;
+
     if (state.lastProjection) {
       state.pendingCoordsEvent = e;
       if (!state.coordsRafId) {
@@ -1198,7 +1500,7 @@ function setupCanvasInteractions() {
           state.coordsRafId = 0;
           const ev = state.pendingCoordsEvent;
           state.pendingCoordsEvent = null;
-          if (!ev || !state.lastProjection || dragging) return;
+          if (!ev || !state.lastProjection || dragging || pinching) return;
           const pt = getCanvasPointerCoords(canvas, ev);
           const coords = screenToLonLat(state.lastProjection, pt.x, pt.y);
           if (coords) {
@@ -1229,13 +1531,40 @@ function setupCanvasInteractions() {
   });
 
   const finishPointer = (e, wasCancelled = false) => {
-    if (!pointerDown) return;
+    activePointers.delete(e.pointerId);
+    canvas.releasePointerCapture?.(e.pointerId);
+
+    if (pinching) {
+      if (activePointers.size < 2) {
+        pinching = false;
+        startPinchSpan = null;
+        startPinchCenter = null;
+        startPinchRect = null;
+        state.isInteracting = false;
+        commitSpec(state.spec, { commitHistory: true });
+      }
+      if (activePointers.size === 0) {
+        suppressTapUntilAllUp = false;
+      }
+      return;
+    }
+
+    if (suppressTapUntilAllUp) {
+      if (activePointers.size === 0) {
+        suppressTapUntilAllUp = false;
+      }
+      pointerDown = false;
+      primaryPointerId = null;
+      return;
+    }
+
+    if (!pointerDown || e.pointerId !== primaryPointerId) return;
     pointerDown = false;
+    primaryPointerId = null;
     const wasShadowDrag = draggingShadowIdx >= 0;
     draggingShadowIdx = -1;
     startShadowAnchor = null;
     canvas.classList.remove('dragging');
-    canvas.releasePointerCapture?.(e.pointerId);
 
     if (wasCancelled || dragging) {
       if (dragging) {
@@ -1246,14 +1575,13 @@ function setupCanvasInteractions() {
       return;
     }
 
-    // Handle single click
+    // Handle single click / tap
     const pt = getCanvasPointerCoords(canvas, e);
     if (state.mode === 'country') {
       handleCountryMapClick(pt.x, pt.y);
     } else if (state.mode === 'pin') {
       handlePinMapClick(pt.x, pt.y);
     } else if (state.mode === 'shadow') {
-      // Single click in shadow mode moves the last visible shadow right under the cursor
       const shadows = [...(state.spec.regionShadows || [])];
       const targetIdx = shadows.findLastIndex((s) => s.visible !== false);
       const clickCoords = startProjection ? screenToLonLat(startProjection, pt.x, pt.y) : null;
@@ -2161,7 +2489,9 @@ function buildCallbacks() {
       if (!preset) return;
       hideFeatureHover();
       closeFeatureInfoCard();
+      closeMobileDrawers();
       state.hdCoastlineReplacedHighlight = null;
+      state.gbReplacedHighlights = [];
       state.activePresetId = preset.id;
       commitSpec(structuredClone(preset.spec), { commitHistory: true, keepPreset: true });
       void hydrateRemoteGeoJsonLayers();
@@ -2294,6 +2624,7 @@ function buildCallbacks() {
               center: { lat: item.lat, lon: item.lon },
               span: { lonDeg: item.spanLonDeg, latDeg: item.spanLatDeg },
             });
+            closeMobileDrawers();
             showToast(`Framed on ${item.name}`, 'success', 2200);
           },
           onPin: (item) => {
@@ -2490,7 +2821,52 @@ function buildCallbacks() {
 
     onToggleMode: (targetMode) => {
       state.mode = state.mode === targetMode ? 'pan' : targetMode;
+      if (state.mode !== 'pan') {
+        closeMobileDrawers();
+      }
       syncAllUi();
+    },
+
+    onToggleOsmCoastlines: (forceVisible = null) => {
+      toggleSuperAccuracyLayers(isOsmHdLayer, 'OSM HD Coastlines', forceVisible);
+    },
+
+    onRemoveOsmCoastlines: () => {
+      removeSuperAccuracyLayers(isOsmHdLayer, 'OSM HD Coastlines');
+    },
+
+    onToggleGeoBoundaries: (forceVisible = null) => {
+      toggleSuperAccuracyLayers(isGeoBoundariesLayer, 'OSM Ultra-Detail Boundaries', forceVisible);
+    },
+
+    onRemoveGeoBoundaries: () => {
+      removeSuperAccuracyLayers(isGeoBoundariesLayer, 'OSM Ultra-Detail Boundaries');
+    },
+
+    onToggleSuperAccuracy: () => {
+      const layers = state.spec?.customGeoJsonLayers || [];
+      const hasHd = layers.some(isOsmHdLayer);
+      const hasGb = layers.some(isGeoBoundariesLayer);
+      if (hasHd && !hasGb) {
+        toggleSuperAccuracyLayers(isOsmHdLayer, 'OSM HD Coastlines');
+      } else if (hasGb && !hasHd) {
+        toggleSuperAccuracyLayers(isGeoBoundariesLayer, 'OSM Ultra-Detail Boundaries');
+      } else if (hasHd || hasGb) {
+        toggleSuperAccuracyLayers(isSuperAccuracyLayer, 'Super-Accuracy Map');
+      }
+    },
+
+    onRemoveSuperAccuracy: () => {
+      const layers = state.spec?.customGeoJsonLayers || [];
+      const hasHd = layers.some(isOsmHdLayer);
+      const hasGb = layers.some(isGeoBoundariesLayer);
+      if (hasHd && !hasGb) {
+        removeSuperAccuracyLayers(isOsmHdLayer, 'OSM HD Coastlines');
+      } else if (hasGb && !hasHd) {
+        removeSuperAccuracyLayers(isGeoBoundariesLayer, 'OSM Ultra-Detail Boundaries');
+      } else if (hasHd || hasGb) {
+        removeSuperAccuracyLayers(isSuperAccuracyLayer, 'Super-Accuracy Map');
+      }
     },
 
     onChangeHdCoastlineColorMode: (mode) => {
@@ -2729,11 +3105,14 @@ function buildCallbacks() {
           patch.layers = { showLand: false };
           const normId = String(countryId || '');
           const normName = String(countryName || '').trim().toLowerCase();
-          const filteredHighlights = (state.spec.highlightedCountries || []).filter(
-            (hc) => String(hc.id || '') !== normId && String(hc.name || '').trim().toLowerCase() !== normName,
+          const currentHighlights = state.spec.highlightedCountries || [];
+          const removedHighlights = currentHighlights.filter(
+            (hc) => String(hc.id || '') === normId || String(hc.name || '').trim().toLowerCase() === normName,
           );
-          if (filteredHighlights.length !== (state.spec.highlightedCountries || []).length) {
-            patch.highlightedCountries = filteredHighlights;
+          if (removedHighlights.length) {
+            const existingStashed = state.gbReplacedHighlights || [];
+            state.gbReplacedHighlights = mergeRestoredHighlights(existingStashed, removedHighlights) || existingStashed;
+            patch.highlightedCountries = currentHighlights.filter((hc) => !removedHighlights.includes(hc));
           }
         }
         patchSpec(patch);
@@ -2987,13 +3366,35 @@ function buildCallbacks() {
       if (!next[idx]) return;
       const targetLayer = next[idx];
       next[idx] = { ...targetLayer, ...patch };
+      const specPatch = { customGeoJsonLayers: next };
+
       if (patch?.visible === false) {
         hideFeatureHover();
         if (state.selectedFeature?.layer?.id === targetLayer.id) {
           closeFeatureInfoCard();
         }
+        const stillHasVisibleLand = next.some((l) => l?.visible !== false && l?.role === 'land');
+        if (targetLayer.role === 'land' && !stillHasVisibleLand) {
+          specPatch.layers = { showLand: true };
+          if (isNoneColor(state.spec.colors?.land)) {
+            specPatch.colors = { land: resolveRestoredPaletteColor('land') };
+          }
+          const restorePool = [];
+          if (isOsmHdLayer(targetLayer) && state.hdCoastlineReplacedHighlight) {
+            restorePool.push(state.hdCoastlineReplacedHighlight);
+          }
+          if (isGeoBoundariesLayer(targetLayer) && state.gbReplacedHighlights.length) {
+            restorePool.push(...state.gbReplacedHighlights);
+          }
+          const merged = mergeRestoredHighlights(state.spec.highlightedCountries, restorePool);
+          if (merged) {
+            specPatch.highlightedCountries = merged;
+          }
+        }
+      } else if (patch?.visible === true && targetLayer.role === 'land') {
+        specPatch.layers = { showLand: false };
       }
-      patchSpec({ customGeoJsonLayers: next }, opts);
+      patchSpec(specPatch, opts);
     },
 
     onToggleGeoJsonPrimaryLand: (idx) => {
@@ -3066,18 +3467,18 @@ function buildCallbacks() {
       if (isNoneColor(state.spec.colors?.land)) {
         patch.colors = { land: resolveRestoredPaletteColor('land') };
       }
+      const restorePool = [];
       if (state.hdCoastlineReplacedHighlight) {
-        const curHighlights = state.spec.highlightedCountries || [];
-        const stashed = state.hdCoastlineReplacedHighlight;
-        const alreadyPresent = curHighlights.some(
-          (hc) =>
-            (stashed.id && String(hc.id || '') === String(stashed.id)) ||
-            (stashed.name && String(hc.name || '').toLowerCase() === String(stashed.name).toLowerCase()),
-        );
-        if (!alreadyPresent) {
-          patch.highlightedCountries = [...curHighlights, structuredClone(stashed)];
-        }
+        restorePool.push(state.hdCoastlineReplacedHighlight);
         state.hdCoastlineReplacedHighlight = null;
+      }
+      if (state.gbReplacedHighlights.length) {
+        restorePool.push(...state.gbReplacedHighlights);
+        state.gbReplacedHighlights = [];
+      }
+      const merged = mergeRestoredHighlights(state.spec.highlightedCountries, restorePool);
+      if (merged) {
+        patch.highlightedCountries = merged;
       }
       patchSpec(patch);
       showToast('Default land shading restored', 'info', 2200);
@@ -3091,12 +3492,33 @@ function buildCallbacks() {
         closeFeatureInfoCard();
       }
       const stillHasLand = next.some((l) => l?.visible !== false && l?.role === 'land');
-      patchSpec({
-        customGeoJsonLayers: next,
-        ...(removed?.role === 'land' && !stillHasLand && state.spec.layers?.showLand === false
-          ? { layers: { showLand: true } }
-          : {}),
-      });
+      const specPatch = { customGeoJsonLayers: next };
+      if (removed?.role === 'land' && !stillHasLand) {
+        if (state.spec.layers?.showLand === false) {
+          specPatch.layers = { showLand: true };
+        }
+        if (isNoneColor(state.spec.colors?.land)) {
+          specPatch.colors = { land: resolveRestoredPaletteColor('land') };
+        }
+        const restorePool = [];
+        if (isOsmHdLayer(removed) && state.hdCoastlineReplacedHighlight) {
+          restorePool.push(state.hdCoastlineReplacedHighlight);
+        }
+        if (isGeoBoundariesLayer(removed) && state.gbReplacedHighlights.length) {
+          restorePool.push(...state.gbReplacedHighlights);
+        }
+        const merged = mergeRestoredHighlights(state.spec.highlightedCountries, restorePool);
+        if (merged) {
+          specPatch.highlightedCountries = merged;
+        }
+      }
+      if (isOsmHdLayer(removed) && !next.some(isOsmHdLayer)) {
+        state.hdCoastlineReplacedHighlight = null;
+      }
+      if (isGeoBoundariesLayer(removed) && !next.some(isGeoBoundariesLayer)) {
+        state.gbReplacedHighlights = [];
+      }
+      patchSpec(specPatch);
     },
 
     onToggleHistoricalLayer: async (layerDef, enabled) => {
@@ -3415,6 +3837,7 @@ function buildCallbacks() {
     },
 
     onFrameHistoricalRegion: (regionKey) => {
+      closeMobileDrawers();
       if (regionKey === 'alaska') {
         patchSpec({
           projection: 'mercator',
@@ -3695,6 +4118,7 @@ function setupKeyboardShortcuts() {
     }
 
     if (e.key === 'Escape') {
+      closeMobileDrawers();
       if (state.selectedFeature) {
         closeFeatureInfoCard();
       }
