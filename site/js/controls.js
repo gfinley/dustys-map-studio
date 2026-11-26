@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=23';
+} from './schema.js?v=24';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,16 +14,16 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=23';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=23';
-import { formatArea } from './shadow.js?v=23';
+} from './presets.js?v=24';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=24';
+import { formatArea } from './shadow.js?v=24';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=23';
+} from './osm-coastline.js?v=24';
 
 const PALETTE_COLOR_FIELDS = [
   { key: 'land', inputId: 'color-land', noneBtnId: 'btn-land-none', fallback: '#4a4a4a' },
@@ -1344,19 +1344,33 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ layers: { graticuleStepDeg: Number(e.target.value) || 10 } });
   });
 
+  $('hd-coastline-color-mode')?.addEventListener('change', (e) => {
+    boundCallbacks.onChangeHdCoastlineColorMode?.(e.target.value);
+  });
+
+  $('hd-coastline-color')?.addEventListener('input', (e) => {
+    boundCallbacks.onPickHdCoastlineColor?.(e.target.value, { commitHistory: false, skipDynamicLists: true });
+  });
+  $('hd-coastline-color')?.addEventListener('change', (e) => {
+    boundCallbacks.onPickHdCoastlineColor?.(e.target.value, { commitHistory: true });
+  });
+
   $('btn-fetch-osm-coastline-land')?.addEventListener('click', () => {
     const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
-    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters });
+    const colorMode = $('hd-coastline-color-mode')?.value || 'host';
+    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters, colorMode });
   });
 
   $('btn-fetch-osm-coastline-overlay')?.addEventListener('click', () => {
     const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
-    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: false, simplifyMeters });
+    const colorMode = $('hd-coastline-color-mode')?.value || 'host';
+    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: false, simplifyMeters, colorMode });
   });
 
   $('btn-refresh-osm-coastline')?.addEventListener('click', () => {
     const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
-    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters, forceRefresh: true });
+    const colorMode = $('hd-coastline-color-mode')?.value || 'host';
+    boundCallbacks.onFetchOsmCoastlines?.({ asPrimaryLand: true, simplifyMeters, colorMode, forceRefresh: true });
   });
 
   $('btn-load-geoboundaries-land')?.addEventListener('click', () => {
@@ -1855,8 +1869,10 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     }
   }
 
-  // On-Demand OSM HD Coastlines live span & active status
+  // On-Demand OSM HD Coastlines live span, color sync & active status
   const hdSpanEl = $('hd-coastline-view-span');
+  const hdColorModeEl = $('hd-coastline-color-mode');
+  const hdColorEl = $('hd-coastline-color');
   const hdStatusEl = $('hd-coastline-status');
   const hdStatusText = $('hd-coastline-status-text');
   const hdBBox = computePaddedCoastlineBBox(spec);
@@ -1872,6 +1888,19 @@ export function syncControlsFromSpec(spec, uiState = {}) {
       hdSpanEl.classList.add('is-ready');
       hdSpanEl.classList.remove('is-too-wide');
     }
+  }
+  if (hdColorModeEl) {
+    const mode = uiState.hdCoastlineColorMode || 'host';
+    hdColorModeEl.value = mode;
+    const hostOpt = hdColorModeEl.querySelector('option[value="host"]');
+    if (hostOpt) {
+      hostOpt.textContent = uiState.hdHostCountryName
+        ? `Sync Host (${uiState.hdHostCountryName})`
+        : 'Sync Host Country';
+    }
+  }
+  if (hdColorEl && typeof uiState.hdCoastlineColor === 'string' && /^#[0-9a-f]{6}$/i.test(uiState.hdCoastlineColor)) {
+    hdColorEl.value = uiState.hdCoastlineColor;
   }
   if (hdStatusEl) {
     const activeHdLayer = (spec.customGeoJsonLayers || []).find(

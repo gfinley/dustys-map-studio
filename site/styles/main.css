@@ -1690,6 +1690,36 @@ input[type='range'] {
   color: #fbbf24;
 }
 
+.hd-coastline-color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hd-coastline-color-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.hd-coastline-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hd-coastline-color-controls input[type="color"] {
+  width: 30px;
+  height: 28px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input, rgba(15, 23, 42, 0.6));
+  cursor: pointer;
+}
+
 .list-card-actions {
   display: inline-flex;
   align-items: center;

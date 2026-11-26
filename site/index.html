@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=23" />
+  <link rel="stylesheet" href="./styles/main.css?v=24" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -403,9 +403,20 @@
                   <span id="hd-coastline-view-span" class="hd-coastline-span-badge">View: —</span>
                   <select id="hd-coastline-detail" class="mini-select" aria-label="HD coastline resolution" style="flex: 0 0 auto; width: 132px;">
                     <option value="0" selected>Full (1–5m)</option>
-                    <option value="15">Fine (~15m)</option>
+                    <option value="15">Medium (~15m)</option>
                     <option value="40">Smooth (~40m)</option>
                   </select>
+                </div>
+                <div class="hd-coastline-color-row">
+                  <label class="hd-coastline-color-label" for="hd-coastline-color-mode">Shape Color</label>
+                  <div class="hd-coastline-color-controls">
+                    <select id="hd-coastline-color-mode" class="mini-select" aria-label="HD coastline color sync mode">
+                      <option value="host" selected>Sync Host Country</option>
+                      <option value="land">Sync Land Fill</option>
+                      <option value="custom">Custom Color</option>
+                    </select>
+                    <input id="hd-coastline-color" type="color" value="#7a7d7a" aria-label="HD coastline fill color" title="Pick custom HD coastline fill color" />
+                  </div>
                 </div>
                 <div class="btn-stack-2">
                   <button id="btn-fetch-osm-coastline-land" class="btn btn-primary" type="button">
@@ -1015,6 +1026,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=23"></script>
+  <script type="module" src="./js/app.js?v=24"></script>
 </body>
 </html>

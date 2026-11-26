@@ -12,14 +12,14 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=23';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=23';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=23';
+} from './ornaments.js?v=24';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=24';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=24';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=23';
+} from './data-loader.js?v=24';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -307,6 +307,90 @@ function matchCountryFeatures(countries, hc) {
     }
   }
   return matched;
+}
+
+/**
+ * Find the highlighted country covering or surrounding the current viewBounds
+ * (e.g. Philippines when framed on Corregidor Island in Manila Bay).
+ */
+export function findHostHighlightedCountry(spec, datasets, viewBounds) {
+  const highlighted = Array.isArray(spec?.highlightedCountries) ? spec.highlightedCountries : [];
+  if (highlighted.length === 0) return null;
+
+  const countries = datasets?.countries;
+  const fallbackFill = spec?.colors?.highlightFill || '#7a7d7a';
+  const toResult = (hc) => ({
+    id: hc.id != null ? String(hc.id) : '',
+    name: String(hc.name || '').trim(),
+    fill: !isNoneColor(hc.fill) && hc.fill ? hc.fill : fallbackFill,
+    stroke: hc.stroke || spec?.colors?.highlightStroke || '#ffffff',
+    hatch: hc.hatch || 'none',
+  });
+
+  if (!countries || !Array.isArray(viewBounds) || viewBounds.length < 4) {
+    return highlighted.length === 1 ? toResult(highlighted[0]) : null;
+  }
+
+  const [minLon, maxLon, minLat, maxLat] = viewBounds.map(Number);
+  if (![minLon, maxLon, minLat, maxLat].every(Number.isFinite)) {
+    return highlighted.length === 1 ? toResult(highlighted[0]) : null;
+  }
+
+  const cLon = (minLon + maxLon) / 2;
+  const cLat = (minLat + maxLat) / 2;
+  const dLon = (maxLon - minLon) * 0.35;
+  const dLat = (maxLat - minLat) * 0.35;
+  const samples = [
+    [wrapLon(cLon), cLat],
+    [wrapLon(cLon), Math.min(85, cLat + dLat)],
+    [wrapLon(cLon), Math.max(-85, cLat - dLat)],
+    [wrapLon(cLon - dLon), cLat],
+    [wrapLon(cLon + dLon), cLat],
+    [wrapLon(cLon - dLon), Math.min(85, cLat + dLat)],
+    [wrapLon(cLon + dLon), Math.min(85, cLat + dLat)],
+    [wrapLon(cLon - dLon), Math.max(-85, cLat - dLat)],
+    [wrapLon(cLon + dLon), Math.max(-85, cLat - dLat)],
+  ];
+
+  const candidates = highlighted.map((hc) => ({
+    hc,
+    features: matchCountryFeatures(countries, hc),
+  }));
+
+  // Pass 1: exact spherical containment on center or surrounding sample points
+  for (let s = 0; s < samples.length; s += 1) {
+    const pt = samples[s];
+    for (let i = 0; i < candidates.length; i += 1) {
+      const { hc, features } = candidates[i];
+      for (let j = 0; j < features.length; j += 1) {
+        if (d3.geoContains(features[j], pt)) {
+          return toResult(hc);
+        }
+      }
+    }
+  }
+
+  // Pass 2: bounding-box intersection fallback (e.g. tight zoom inside a bay/strait)
+  let best = null;
+  let bestBBoxArea = Infinity;
+  for (let i = 0; i < candidates.length; i += 1) {
+    const { hc, features } = candidates[i];
+    for (let j = 0; j < features.length; j += 1) {
+      const bbox = features[j]?._bbox;
+      if (bboxMayIntersectView(bbox, viewBounds, false)) {
+        const area =
+          Array.isArray(bbox) && bbox.length >= 4 && !bbox[4]
+            ? Math.max(0.01, (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]))
+            : 1e6;
+        if (area < bestBBoxArea) {
+          bestBBoxArea = area;
+          best = hc;
+        }
+      }
+    }
+  }
+
+  return best ? toResult(best) : null;
 }
 
 function createCanvasHatchPattern(ctx, hatch, color, scaleFactor) {

@@ -647,6 +647,8 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         for elem_id in (
             "hd-coastline-view-span",
             "hd-coastline-detail",
+            "hd-coastline-color-mode",
+            "hd-coastline-color",
             "btn-fetch-osm-coastline-land",
             "btn-fetch-osm-coastline-overlay",
             "hd-coastline-status",
@@ -655,8 +657,14 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
             self.assertIn(f'id="{elem_id}"', html)
 
         app_js = (SITE_DIR / "js" / "app.js").read_text(encoding="utf-8")
-        self.assertIn("onFetchOsmCoastlines", app_js)
-        self.assertIn("osm_hd_coastline_land", app_js)
+        for sym in (
+            "onFetchOsmCoastlines",
+            "onChangeHdCoastlineColorMode",
+            "onPickHdCoastlineColor",
+            "findHostHighlightedCountry",
+            "osm_hd_coastline_land",
+        ):
+            self.assertIn(sym, app_js)
 
         if shutil.which("node"):
             proc = subprocess.run(

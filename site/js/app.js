@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=23';
+} from './schema.js?v=24';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -22,20 +22,21 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=23';
+} from './data-loader.js?v=24';
 import {
   buildProjection,
   computeVisibleBounds,
+  findHostHighlightedCountry,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=23';
+} from './cartography.js?v=24';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=23';
+} from './osm-coastline.js?v=24';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -44,15 +45,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=23';
+} from './exporter.js?v=24';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=23';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=23';
+} from './presets.js?v=24';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=24';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -62,13 +63,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=23';
+} from './controls.js?v=24';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=23';
+} from './shadow.js?v=24';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -79,7 +80,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=23';
+} from './timeline.js?v=24';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -184,6 +185,9 @@ const state = {
   proStatusText: '',
   activePresetId: '',
   lastPaletteColors: {},
+  hdCoastlineColorMode: 'host', // 'host' | 'land' | 'custom'
+  hdCoastlineCustomColor: null,
+  hdCoastlineReplacedHighlight: null,
   loadRequestToken: 0,
   searchAbortController: null,
   wheelCommitTimer: null,
@@ -294,26 +298,130 @@ function commitSpec(nextSpecRaw, { commitHistory = true, keepPreset = false, ski
   void ensureDatasetsForSpec();
 }
 
+function isOsmHdLayer(layer) {
+  return Boolean(
+    layer &&
+      (String(layer.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(layer.url)),
+  );
+}
+
+function computeCurrentVisibleBounds(spec) {
+  const { widthPx, heightPx } = getPixelDimensions(spec?.page);
+  const projWidth = Math.max(200, Math.min(1200, widthPx));
+  const projHeight = Math.max(200, Math.round((projWidth * heightPx) / Math.max(1, widthPx)));
+  const projection = buildProjection(spec, projWidth, projHeight);
+  return computeVisibleBounds(spec, projection, projWidth, projHeight);
+}
+
+function resolveHdCoastlineColorInfo(spec, modeOverride = null, visibleBoundsOverride = null) {
+  const mode = modeOverride || state.hdCoastlineColorMode || 'host';
+  const colors = spec?.colors || {};
+  const landFill = !isNoneColor(colors.land) && colors.land
+    ? colors.land
+    : resolveRestoredPaletteColor('land');
+  const bounds = visibleBoundsOverride || computeCurrentVisibleBounds(spec);
+  const ds = state.datasets || state.fastDatasets;
+
+  // Detect live highlighted host country covering current view, or fallback to stashed host / geoBoundaries land
+  const liveHost = findHostHighlightedCountry(spec, ds, bounds);
+  const activeGbLand = (spec?.customGeoJsonLayers || []).find(
+    (l) => l && l.visible !== false && l.role === 'land' && String(l.id || '').startsWith('gb_'),
+  );
+  const stashedHost = state.hdCoastlineReplacedHighlight
+    ? {
+        ...state.hdCoastlineReplacedHighlight,
+        fill:
+          !isNoneColor(colors.highlightFill) && colors.highlightFill
+            ? colors.highlightFill
+            : state.hdCoastlineReplacedHighlight.fill,
+      }
+    : null;
+  const hostCountry = liveHost || stashedHost || null;
+
+  const activeHdLayer = (spec?.customGeoJsonLayers || []).find(
+    (l) => l && l.visible !== false && isOsmHdLayer(l),
+  );
+
+  if (mode === 'custom') {
+    const color =
+      state.hdCoastlineCustomColor ||
+      (activeHdLayer && !isNoneColor(activeHdLayer.color) ? activeHdLayer.color : null) ||
+      hostCountry?.fill ||
+      landFill;
+    return {
+      mode,
+      color,
+      hostCountry,
+      liveHost,
+      sourceLabel: 'Custom',
+    };
+  }
+
+  if (mode === 'land') {
+    return {
+      mode,
+      color: landFill,
+      hostCountry,
+      liveHost,
+      sourceLabel: 'Land Fill',
+    };
+  }
+
+  // mode === 'host'
+  if (hostCountry && hostCountry.fill && !isNoneColor(hostCountry.fill)) {
+    return {
+      mode: 'host',
+      color: hostCountry.fill,
+      hostCountry,
+      liveHost,
+      sourceLabel: hostCountry.name || 'Host Country',
+    };
+  }
+  if (activeGbLand && activeGbLand.color && !isNoneColor(activeGbLand.color)) {
+    return {
+      mode: 'host',
+      color: activeGbLand.color,
+      hostCountry: null,
+      liveHost: null,
+      sourceLabel: activeGbLand.label || 'Primary Land',
+    };
+  }
+  return {
+    mode: 'host',
+    color: landFill,
+    hostCountry: null,
+    liveHost: null,
+    sourceLabel: 'Land Fill',
+  };
+}
+
 function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynamicLists = false } = {}) {
   const prevColors = state.spec?.colors || {};
   const prevLayers = state.spec?.layers || {};
   let effectivePatch = patch;
-  if (
-    (patch?.colors || patch?.layers) &&
-    !patch.customGeoJsonLayers &&
+  const hasAnySyncTarget =
     Array.isArray(state.spec?.customGeoJsonLayers) &&
-    state.spec.customGeoJsonLayers.some((l) => l?.role === 'land')
+    state.spec.customGeoJsonLayers.some((l) => l?.role === 'land' || isOsmHdLayer(l));
+
+  if (
+    (patch?.colors || patch?.layers || patch?.highlightedCountries) &&
+    !patch.customGeoJsonLayers &&
+    hasAnySyncTarget
   ) {
     const nextColors = { ...prevColors, ...(patch.colors || {}) };
     const nextLayers = { ...prevLayers, ...(patch.layers || {}) };
+    const previewSpec = {
+      ...state.spec,
+      colors: nextColors,
+      layers: nextLayers,
+      ...(patch.highlightedCountries ? { highlightedCountries: patch.highlightedCountries } : {}),
+    };
     let changed = false;
     const syncedLayers = state.spec.customGeoJsonLayers.map((layer) => {
-      if (layer?.role !== 'land') return layer;
-      const next = { ...layer };
-      const isOsmHdLand = String(layer.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(layer.url);
-
-      if (isOsmHdLand) {
-        if (typeof patch.colors?.land === 'string') {
+      if (isOsmHdLayer(layer)) {
+        const next = { ...layer };
+        const hdMode = state.hdCoastlineColorMode || 'host';
+        if (hdMode === 'land' && typeof patch.colors?.land === 'string') {
           if (isNoneColor(patch.colors.land)) {
             next.fillOpacity = 0;
           } else {
@@ -321,6 +429,18 @@ function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynami
             next.fillOpacity = 1.0;
           }
           changed = true;
+        } else if (
+          hdMode === 'host' &&
+          (typeof patch.colors?.highlightFill === 'string' ||
+            typeof patch.colors?.land === 'string' ||
+            Array.isArray(patch.highlightedCountries))
+        ) {
+          const info = resolveHdCoastlineColorInfo(previewSpec, 'host');
+          if (info.color && !isNoneColor(info.color)) {
+            next.color = info.color;
+            next.fillOpacity = 1.0;
+            changed = true;
+          }
         }
         if (
           typeof patch.colors?.coastline === 'string' ||
@@ -337,6 +457,9 @@ function patchSpec(patch, { commitHistory = true, keepPreset = false, skipDynami
         }
         return next;
       }
+
+      if (layer?.role !== 'land') return layer;
+      const next = { ...layer };
 
       if (
         typeof patch.colors?.land === 'string' &&
@@ -416,6 +539,7 @@ function computeShadowMetrics() {
 }
 
 function syncAllUi({ skipDynamicLists = false } = {}) {
+  const hdColorInfo = state.spec ? resolveHdCoastlineColorInfo(state.spec) : null;
   syncControlsFromSpec(state.spec, {
     canUndo: state.historyIndex > 0,
     canRedo: state.historyIndex < state.history.length - 1,
@@ -425,6 +549,9 @@ function syncAllUi({ skipDynamicLists = false } = {}) {
     refPeek: state.refPeek,
     activePresetId: state.activePresetId,
     alaskaYear: state.alaskaYear,
+    hdCoastlineColorMode: state.hdCoastlineColorMode,
+    hdCoastlineColor: hdColorInfo?.color || '#7a7d7a',
+    hdHostCountryName: hdColorInfo?.hostCountry?.name || '',
     skipDynamicLists,
     shadowMetrics: skipDynamicLists ? null : computeShadowMetrics(),
   });
@@ -2034,6 +2161,7 @@ function buildCallbacks() {
       if (!preset) return;
       hideFeatureHover();
       closeFeatureInfoCard();
+      state.hdCoastlineReplacedHighlight = null;
       state.activePresetId = preset.id;
       commitSpec(structuredClone(preset.spec), { commitHistory: true, keepPreset: true });
       void hydrateRemoteGeoJsonLayers();
@@ -2365,13 +2493,68 @@ function buildCallbacks() {
       syncAllUi();
     },
 
-    onFetchOsmCoastlines: async ({ asPrimaryLand = true, simplifyMeters = 0, forceRefresh = false } = {}) => {
+    onChangeHdCoastlineColorMode: (mode) => {
+      const nextMode = ['host', 'land', 'custom'].includes(mode) ? mode : 'host';
+      state.hdCoastlineColorMode = nextMode;
       const spec = state.spec;
-      const { widthPx, heightPx } = getPixelDimensions(spec.page);
-      const projWidth = Math.max(200, Math.min(1200, widthPx));
-      const projHeight = Math.max(200, Math.round((projWidth * heightPx) / Math.max(1, widthPx)));
-      const projection = buildProjection(spec, projWidth, projHeight);
-      const visibleBounds = computeVisibleBounds(spec, projection, projWidth, projHeight);
+      const info = resolveHdCoastlineColorInfo(spec, nextMode);
+      if (nextMode === 'custom') {
+        state.hdCoastlineCustomColor = info.color;
+      }
+
+      const layers = spec.customGeoJsonLayers || [];
+      const hasHd = layers.some((l) => isOsmHdLayer(l));
+      if (!hasHd) {
+        syncAllUi({ skipDynamicLists: true });
+        return;
+      }
+
+      const nextLayers = layers.map((l) => {
+        if (!isOsmHdLayer(l)) return l;
+        return {
+          ...l,
+          color: info.color,
+          fillOpacity: nextMode === 'land' && isNoneColor(spec.colors?.land) ? 0 : 1.0,
+        };
+      });
+      patchSpec({ customGeoJsonLayers: nextLayers });
+      showToast(`HD Coastlines color synced to ${info.sourceLabel} (${info.color})`, 'info', 2200);
+    },
+
+    onPickHdCoastlineColor: (color, opts = {}) => {
+      if (typeof color !== 'string' || !color) return;
+      state.hdCoastlineColorMode = 'custom';
+      state.hdCoastlineCustomColor = color;
+
+      const layers = state.spec?.customGeoJsonLayers || [];
+      const hasHd = layers.some((l) => isOsmHdLayer(l));
+      if (!hasHd) {
+        syncAllUi({ skipDynamicLists: true });
+        return;
+      }
+
+      const nextLayers = layers.map((l) => {
+        if (!isOsmHdLayer(l)) return l;
+        return {
+          ...l,
+          color,
+          fillOpacity: 1.0,
+        };
+      });
+      patchSpec({ customGeoJsonLayers: nextLayers }, opts);
+    },
+
+    onFetchOsmCoastlines: async ({
+      asPrimaryLand = true,
+      simplifyMeters = 0,
+      colorMode = null,
+      forceRefresh = false,
+    } = {}) => {
+      const spec = state.spec;
+      if (colorMode && ['host', 'land', 'custom'].includes(colorMode)) {
+        state.hdCoastlineColorMode = colorMode;
+      }
+      const visibleBounds = computeCurrentVisibleBounds(spec);
       const bbox = computePaddedCoastlineBBox(visibleBounds);
 
       if (bbox.tooWide) {
@@ -2394,10 +2577,9 @@ function buildCallbacks() {
 
         const colors = spec.colors || {};
         const layersSpec = spec.layers || {};
-        const landIsNone = isNoneColor(colors.land);
-        const primaryFill = !landIsNone && colors.land
-          ? colors.land
-          : resolveRestoredPaletteColor('land');
+        const colorInfo = resolveHdCoastlineColorInfo(spec, state.hdCoastlineColorMode, visibleBounds);
+        const fillColor = colorInfo.color;
+        const fillIsNone = state.hdCoastlineColorMode === 'land' && isNoneColor(colors.land);
         const wantCoastStroke =
           Boolean(layersSpec.showCoastlines) &&
           Boolean(colors.coastline) &&
@@ -2419,9 +2601,9 @@ function buildCallbacks() {
               data: result.data,
               visible: true,
               role: 'land',
-              color: primaryFill,
+              color: fillColor,
               strokeColor: wantCoastStroke ? colors.coastline : 'none',
-              fillOpacity: landIsNone ? 0 : 1.0,
+              fillOpacity: fillIsNone ? 0 : 1.0,
               strokeWidth: Number(layersSpec.coastlineWidth) || 0.75,
               dashed: false,
               hatch: 'none',
@@ -2433,10 +2615,10 @@ function buildCallbacks() {
               data: result.data,
               visible: true,
               role: 'overlay',
-              color: '#0284c7',
-              strokeColor: '#0369a1',
-              fillOpacity: 0.18,
-              strokeWidth: 1.2,
+              color: fillColor,
+              strokeColor: wantCoastStroke ? colors.coastline : 'none',
+              fillOpacity: fillIsNone ? 0 : 1.0,
+              strokeWidth: Number(layersSpec.coastlineWidth) || 0.75,
               dashed: false,
               hatch: 'none',
             };
@@ -2449,15 +2631,33 @@ function buildCallbacks() {
         };
         if (asPrimaryLand) {
           patch.layers = { showLand: false };
+          // Remove overlapping low-poly Natural Earth host country highlight so it does not draw over crisp HD shorelines
+          if (colorInfo.liveHost) {
+            const normId = String(colorInfo.liveHost.id || '');
+            const normName = String(colorInfo.liveHost.name || '').trim().toLowerCase();
+            const currentHighlights = spec.highlightedCountries || [];
+            const removed = currentHighlights.find(
+              (hc) =>
+                (normId && String(hc.id || '') === normId) ||
+                (normName && String(hc.name || '').trim().toLowerCase() === normName),
+            );
+            if (removed) {
+              state.hdCoastlineReplacedHighlight = structuredClone(removed);
+              patch.highlightedCountries = currentHighlights.filter((hc) => hc !== removed);
+            }
+          }
         }
         patchSpec(patch);
 
         const st = result.stats || {};
         const summary = `${st.polygonCount || 0} shape${st.polygonCount === 1 ? '' : 's'} (${st.islandCount || 0} island${st.islandCount === 1 ? '' : 's'}, ${(st.vertexCount || 0).toLocaleString()} pts)`;
+        const matchNote = colorInfo.hostCountry && state.hdCoastlineColorMode === 'host'
+          ? ` · matched ${colorInfo.hostCountry.name}`
+          : '';
         showToast(
           asPrimaryLand
-            ? `Loaded OSM HD Coastlines as Primary Land — ${summary}`
-            : `Added OSM HD Coastlines overlay — ${summary}`,
+            ? `Loaded OSM HD Coastlines${matchNote} — ${summary}`
+            : `Added OSM HD Coastlines overlay${matchNote} — ${summary}`,
           'success',
           4200,
         );
@@ -2865,6 +3065,19 @@ function buildCallbacks() {
       const patch = { layers: { showLand: true } };
       if (isNoneColor(state.spec.colors?.land)) {
         patch.colors = { land: resolveRestoredPaletteColor('land') };
+      }
+      if (state.hdCoastlineReplacedHighlight) {
+        const curHighlights = state.spec.highlightedCountries || [];
+        const stashed = state.hdCoastlineReplacedHighlight;
+        const alreadyPresent = curHighlights.some(
+          (hc) =>
+            (stashed.id && String(hc.id || '') === String(stashed.id)) ||
+            (stashed.name && String(hc.name || '').toLowerCase() === String(stashed.name).toLowerCase()),
+        );
+        if (!alreadyPresent) {
+          patch.highlightedCountries = [...curHighlights, structuredClone(stashed)];
+        }
+        state.hdCoastlineReplacedHighlight = null;
       }
       patchSpec(patch);
       showToast('Default land shading restored', 'info', 2200);
