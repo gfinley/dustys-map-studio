@@ -12,10 +12,10 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=15';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=15';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=15';
-import { sanitizeGeoJsonWinding } from './data-loader.js?v=15';
+} from './ornaments.js?v=16';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=16';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=16';
+import { sanitizeGeoJsonWinding } from './data-loader.js?v=16';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -410,7 +410,7 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, roleFilter =
     const dashed = Boolean(layer.dashed);
     const hatch = layer.hatch || 'none';
     const hatchColor = hasStroke ? rawStroke : color;
-    const pointRadius = Math.max(3, Math.max(0.5, strokeWidthNum) * 2.5) * scaleFactor;
+    const pointRadius = Math.max(1.5, Math.max(0.4, strokeWidthNum) * 2.5) * scaleFactor;
     const pointPath = d3.geoPath(projection, ctx).pointRadius(pointRadius);
 
     const groups = { polygons: [], lines: [], points: [] };
@@ -474,12 +474,13 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, roleFilter =
         features: groups.points.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
       };
       ctx.save();
+      ctx.globalAlpha *= Math.max(0.05, Math.min(1, fillOpacity));
       ctx.beginPath();
       pointPath(fc);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = Math.max(0.8, 1.2 * scaleFactor);
+      ctx.lineWidth = Math.max(0.7, Math.min(1.4, strokeWidthNum * 0.85) * scaleFactor);
       ctx.stroke();
       ctx.restore();
     }
@@ -508,7 +509,7 @@ function appendCustomLayersSvg(mapParts, svgPath, projection, spec, scaleFactor,
       ? ` stroke="${escapeXml(rawStroke)}" stroke-width="${strokeWidth.toFixed(2)}" stroke-linejoin="round" stroke-linecap="round"${dashAttr}`
       : ' stroke="none"';
     const hatchId = getHatchPatternId(layer.hatch || 'none', hasStroke ? rawStroke : color);
-    const pointRadius = Math.max(3, Math.max(0.5, strokeWidthNum) * 2.5) * scaleFactor;
+    const pointRadius = Math.max(1.5, Math.max(0.4, strokeWidthNum) * 2.5) * scaleFactor;
     const pointSvgPath = d3.geoPath(projection).pointRadius(pointRadius);
 
     const groups = { polygons: [], lines: [], points: [] };
@@ -551,8 +552,10 @@ function appendCustomLayersSvg(mapParts, svgPath, projection, spec, scaleFactor,
           features: groups.points.map((g) => ({ type: 'Feature', properties: {}, geometry: g })),
         }) || '';
       if (d) {
+        const ptOpacity = Math.max(0.05, Math.min(1, fillOpacity));
+        const ptStroke = Math.max(0.7, Math.min(1.4, strokeWidthNum * 0.85) * scaleFactor);
         mapParts.push(
-          `<path d="${d}" fill="${escapeXml(color)}" stroke="#ffffff" stroke-width="${Math.max(0.8, 1.2 * scaleFactor).toFixed(2)}" />`,
+          `<path d="${d}" fill="${escapeXml(color)}" fill-opacity="${ptOpacity}" stroke="#ffffff" stroke-opacity="${ptOpacity}" stroke-width="${ptStroke.toFixed(2)}" />`,
         );
       }
     }
@@ -1619,7 +1622,8 @@ export function hitTestGeoJsonPoint(projection, spec, x, y, width, height) {
     const layer = overlays[i];
     if (layer?.visible === false || layer?.role === 'land' || !layer?.data) continue;
 
-    const pointRadius = Math.max(3, (Number(layer.strokeWidth) || 1.5) * 2.5) * scaleFactor;
+    const strokeWidthNum = Number.isFinite(Number(layer.strokeWidth)) ? Number(layer.strokeWidth) : 1.5;
+    const pointRadius = Math.max(1.5, Math.max(0.4, strokeWidthNum) * 2.5) * scaleFactor;
     const hitRadius = Math.max(12 * scaleFactor, pointRadius + 8 * scaleFactor);
     const features = collectGeoJsonFeatures(layer.data);
 

@@ -6,10 +6,15 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=15';
-import { GEOJSON_EXAMPLES, REGION_PRESETS } from './presets.js?v=15';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=15';
-import { formatArea } from './shadow.js?v=15';
+} from './schema.js?v=16';
+import {
+  AIRFIELD_1941_LAYERS,
+  GEOJSON_EXAMPLES,
+  PHILIPPINES_RAIL_1942_LAYERS,
+  REGION_PRESETS,
+} from './presets.js?v=16';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=16';
+import { formatArea } from './shadow.js?v=16';
 
 const HATCH_LABELS = {
   none: 'No Hatch',
@@ -822,9 +827,208 @@ export function renderGeoJsonLayersList(spec, callbacks = boundCallbacks) {
     });
 
     ctrls.append(colorInput, strokeCombo, opacityRange, opacityVal, dashedLabel, hatchSelect);
-    card.append(top, ctrls);
+
+    const widthRow = document.createElement('div');
+    widthRow.className = 'pin-scale-row';
+    const widthLbl = document.createElement('span');
+    widthLbl.className = 'pin-scale-label';
+    widthLbl.textContent = 'Size';
+    const rawW = Number(layer.strokeWidth ?? 1.5);
+    const strokeW = Number.isFinite(rawW) ? rawW : 1.5;
+    const widthRange = document.createElement('input');
+    widthRange.type = 'range';
+    widthRange.min = '0.4';
+    widthRange.max = '4.5';
+    widthRange.step = '0.1';
+    widthRange.title = 'Overlay line width / point dot size';
+    widthRange.value = String(strokeW);
+    const widthVal = document.createElement('span');
+    widthVal.className = 'mini-val';
+    widthVal.textContent = strokeW.toFixed(1);
+    widthRange.addEventListener('input', (e) => {
+      const val = Number(e.target.value);
+      widthVal.textContent = val.toFixed(1);
+      callbacks.onUpdateGeoJsonLayer?.(idx, { strokeWidth: val }, { commitHistory: false, skipDynamicLists: true });
+    });
+    widthRange.addEventListener('change', (e) => {
+      const val = Number(e.target.value);
+      widthVal.textContent = val.toFixed(1);
+      callbacks.onUpdateGeoJsonLayer?.(idx, { strokeWidth: val }, { commitHistory: true });
+    });
+    widthRow.append(widthLbl, widthRange, widthVal);
+
+    card.append(top, ctrls, widthRow);
     listEl.appendChild(card);
   });
+}
+
+function renderHistoricalLayerGroup(listId, defs, spec, callbacks) {
+  const listEl = $(listId);
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  const layersById = new Map();
+  for (const l of spec.customGeoJsonLayers || []) {
+    if (l?.id) layersById.set(l.id, l);
+  }
+
+  for (const def of defs) {
+    const activeLayer = layersById.get(def.id) || null;
+    const isVisible = Boolean(activeLayer && activeLayer.visible !== false);
+    const currentColor = safeHexColor(activeLayer?.color || def.color, def.color);
+    const currentWidth = Number.isFinite(Number(activeLayer?.strokeWidth))
+      ? Number(activeLayer.strokeWidth)
+      : def.strokeWidth;
+    const currentOpacity = Number.isFinite(Number(activeLayer?.fillOpacity))
+      ? Number(activeLayer.fillOpacity)
+      : def.fillOpacity;
+    const currentDashed = activeLayer ? Boolean(activeLayer.dashed) : Boolean(def.dashed);
+    const isPoint = def.geometryKind === 'point';
+
+    const item = document.createElement('div');
+    item.className = `historical-layer-item${isVisible ? ' active' : ''}`;
+
+    const top = document.createElement('div');
+    top.className = 'historical-layer-top';
+
+    const toggleLabel = document.createElement('label');
+    toggleLabel.className = 'switch-label';
+    toggleLabel.title = def.label;
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = isVisible;
+    checkbox.addEventListener('change', (e) => {
+      callbacks.onToggleHistoricalLayer?.(def, e.target.checked);
+    });
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'historical-layer-name';
+    nameSpan.textContent = def.shortLabel;
+
+    toggleLabel.append(checkbox, nameSpan);
+
+    const right = document.createElement('div');
+    right.className = 'historical-layer-right';
+
+    const metaSpan = document.createElement('span');
+    metaSpan.className = 'historical-meta';
+    metaSpan.textContent = def.meta;
+
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.className = 'historical-color';
+    colorInput.title = `${def.shortLabel} color`;
+    colorInput.value = currentColor;
+    colorInput.addEventListener('input', (e) => {
+      callbacks.onUpdateHistoricalLayer?.(
+        def,
+        { color: e.target.value },
+        { commitHistory: false, skipDynamicLists: true },
+      );
+    });
+    colorInput.addEventListener('change', (e) => {
+      callbacks.onUpdateHistoricalLayer?.(def, { color: e.target.value }, { commitHistory: true });
+    });
+
+    right.append(metaSpan, colorInput);
+    top.append(toggleLabel, right);
+    item.appendChild(top);
+
+    if (isVisible) {
+      const sub = document.createElement('div');
+      sub.className = 'historical-layer-sub';
+
+      // Size / Width slider
+      const sizeCtrl = document.createElement('label');
+      sizeCtrl.className = 'historical-sub-control';
+      const sizeLbl = document.createElement('span');
+      sizeLbl.textContent = isPoint ? 'Dot' : 'Width';
+      const sizeInput = document.createElement('input');
+      sizeInput.type = 'range';
+      sizeInput.min = '0.4';
+      sizeInput.max = '4.0';
+      sizeInput.step = '0.1';
+      sizeInput.title = isPoint ? 'Dot radius scale' : 'Track line width';
+      sizeInput.value = String(currentWidth);
+      const sizeVal = document.createElement('span');
+      sizeVal.className = 'mini-val';
+      sizeVal.textContent = currentWidth.toFixed(1);
+      sizeInput.addEventListener('input', (e) => {
+        const val = Number(e.target.value);
+        sizeVal.textContent = val.toFixed(1);
+        callbacks.onUpdateHistoricalLayer?.(
+          def,
+          { strokeWidth: val },
+          { commitHistory: false, skipDynamicLists: true },
+        );
+      });
+      sizeInput.addEventListener('change', (e) => {
+        const val = Number(e.target.value);
+        sizeVal.textContent = val.toFixed(1);
+        callbacks.onUpdateHistoricalLayer?.(def, { strokeWidth: val }, { commitHistory: true });
+      });
+      sizeCtrl.append(sizeLbl, sizeInput, sizeVal);
+      sub.appendChild(sizeCtrl);
+
+      if (isPoint) {
+        // Opacity slider for point layers (airfields & stations)
+        const opCtrl = document.createElement('label');
+        opCtrl.className = 'historical-sub-control';
+        const opLbl = document.createElement('span');
+        opLbl.textContent = 'Alpha';
+        const opInput = document.createElement('input');
+        opInput.type = 'range';
+        opInput.min = '0.2';
+        opInput.max = '1.0';
+        opInput.step = '0.05';
+        opInput.title = 'Dot opacity';
+        opInput.value = String(currentOpacity);
+        const opVal = document.createElement('span');
+        opVal.className = 'mini-val';
+        opVal.textContent = `${Math.round(currentOpacity * 100)}%`;
+        opInput.addEventListener('input', (e) => {
+          const val = Number(e.target.value);
+          opVal.textContent = `${Math.round(val * 100)}%`;
+          callbacks.onUpdateHistoricalLayer?.(
+            def,
+            { fillOpacity: val },
+            { commitHistory: false, skipDynamicLists: true },
+          );
+        });
+        opInput.addEventListener('change', (e) => {
+          const val = Number(e.target.value);
+          opVal.textContent = `${Math.round(val * 100)}%`;
+          callbacks.onUpdateHistoricalLayer?.(def, { fillOpacity: val }, { commitHistory: true });
+        });
+        opCtrl.append(opLbl, opInput, opVal);
+        sub.appendChild(opCtrl);
+      } else {
+        // Dashed toggle for railway line layers
+        const dashLabel = document.createElement('label');
+        dashLabel.className = 'switch-label';
+        const dashCheck = document.createElement('input');
+        dashCheck.type = 'checkbox';
+        dashCheck.checked = currentDashed;
+        dashCheck.addEventListener('change', (e) => {
+          callbacks.onUpdateHistoricalLayer?.(def, { dashed: e.target.checked });
+        });
+        const dashSpan = document.createElement('span');
+        dashSpan.textContent = 'Dashed';
+        dashLabel.append(dashCheck, dashSpan);
+        sub.appendChild(dashLabel);
+      }
+
+      item.appendChild(sub);
+    }
+
+    listEl.appendChild(item);
+  }
+}
+
+export function renderHistoricalTabLists(spec, callbacks = boundCallbacks) {
+  renderHistoricalLayerGroup('airfield-1941-layers-list', AIRFIELD_1941_LAYERS, spec, callbacks);
+  renderHistoricalLayerGroup('ph-rail-layers-list', PHILIPPINES_RAIL_1942_LAYERS, spec, callbacks);
 }
 
 function populateStaticOptions(callbacks) {
@@ -1303,6 +1507,69 @@ export function renderControls(callbacks) {
   $('btn-render-pro')?.addEventListener('click', () => boundCallbacks.onRenderPro?.());
   $('btn-export-batch-pro')?.addEventListener('click', () => boundCallbacks.onExportBatchPro?.());
 
+  // Tab 4: Historical Layers (1941 Airfields & 1942-1945 Philippines Railways)
+  $('btn-hist-airfields-both')?.addEventListener('click', () => {
+    boundCallbacks.onApplyAirfieldPreset?.('both');
+  });
+  $('btn-hist-airfields-none')?.addEventListener('click', () => {
+    boundCallbacks.onApplyAirfieldPreset?.('none');
+  });
+  $('btn-hist-frame-seasia')?.addEventListener('click', () => {
+    boundCallbacks.onFrameHistoricalRegion?.('se_asia');
+  });
+  $('btn-hist-frame-ph-air')?.addEventListener('click', () => {
+    boundCallbacks.onFrameHistoricalRegion?.('philippines');
+  });
+
+  $('airfield-master-size')?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('airfield-master-size-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onSetHistoricalGroupSize?.('airfields', val, { commitHistory: false, skipDynamicLists: true });
+  });
+  $('airfield-master-size')?.addEventListener('change', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('airfield-master-size-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onSetHistoricalGroupSize?.('airfields', val, { commitHistory: true });
+  });
+
+  $('btn-hist-rail-common')?.addEventListener('click', () => {
+    boundCallbacks.onApplyRailPreset?.('common_carrier');
+  });
+  $('btn-hist-rail-all')?.addEventListener('click', () => {
+    boundCallbacks.onApplyRailPreset?.('all');
+  });
+  $('btn-hist-rail-none')?.addEventListener('click', () => {
+    boundCallbacks.onApplyRailPreset?.('none');
+  });
+  $('btn-hist-frame-ph-rail')?.addEventListener('click', () => {
+    boundCallbacks.onFrameHistoricalRegion?.('philippines');
+  });
+
+  $('ph-rail-master-width')?.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('ph-rail-master-width-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onSetHistoricalGroupSize?.('ph_rail_lines', val, { commitHistory: false, skipDynamicLists: true });
+  });
+  $('ph-rail-master-width')?.addEventListener('change', (e) => {
+    const val = Number(e.target.value);
+    const lbl = $('ph-rail-master-width-val');
+    if (lbl) lbl.textContent = val.toFixed(1);
+    boundCallbacks.onSetHistoricalGroupSize?.('ph_rail_lines', val, { commitHistory: true });
+  });
+
+  $('btn-preset-ph-rail')?.addEventListener('click', () => {
+    boundCallbacks.onSelectPreset?.('philippines_railways_1942_1945');
+  });
+  $('btn-preset-ph-combined')?.addEventListener('click', () => {
+    boundCallbacks.onSelectPreset?.('philippines_wwii_combined');
+  });
+  $('btn-preset-seasia-air')?.addEventListener('click', () => {
+    boundCallbacks.onSelectPreset?.('se_asia_1941_airfields');
+  });
+
   // Stage floating controls
   $('btn-exit-mode')?.addEventListener('click', () => boundCallbacks.onToggleMode?.('pan'));
   $('btn-ref-peek')?.addEventListener('click', () => boundCallbacks.onToggleRefPeek?.());
@@ -1576,11 +1843,32 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     peekBtn.setAttribute('aria-pressed', String(Boolean(refPeek)));
   }
 
+  // Historical tab master sliders (reflect average of active layers when present)
+  const overlays = spec.customGeoJsonLayers || [];
+  const airIds = new Set(AIRFIELD_1941_LAYERS.map((d) => d.id));
+  const activeAir = overlays.filter((l) => l?.id && airIds.has(l.id) && l.visible !== false);
+  const airAvg = activeAir.length
+    ? activeAir.reduce((s, l) => s + (Number(l.strokeWidth) || 1.5), 0) / activeAir.length
+    : 1.5;
+  if ($('airfield-master-size')) $('airfield-master-size').value = airAvg.toFixed(1);
+  if ($('airfield-master-size-val')) $('airfield-master-size-val').textContent = airAvg.toFixed(1);
+
+  const railLineIds = new Set(
+    PHILIPPINES_RAIL_1942_LAYERS.filter((d) => d.geometryKind === 'line').map((d) => d.id),
+  );
+  const activeRailLines = overlays.filter((l) => l?.id && railLineIds.has(l.id) && l.visible !== false);
+  const railAvg = activeRailLines.length
+    ? activeRailLines.reduce((s, l) => s + (Number(l.strokeWidth) || 1.6), 0) / activeRailLines.length
+    : 1.6;
+  if ($('ph-rail-master-width')) $('ph-rail-master-width').value = railAvg.toFixed(1);
+  if ($('ph-rail-master-width-val')) $('ph-rail-master-width-val').textContent = railAvg.toFixed(1);
+
   // Dynamic lists (skip rebuild mid-slider/picker drag to preserve native input capture)
   if (!skipDynamicLists) {
     renderRegionShadowsList(spec, boundCallbacks, shadowMetrics);
     renderCountryHighlightsList(spec, boundCallbacks);
     renderCitiesList(spec, boundCallbacks);
     renderGeoJsonLayersList(spec, boundCallbacks);
+    renderHistoricalTabLists(spec, boundCallbacks);
   }
 }

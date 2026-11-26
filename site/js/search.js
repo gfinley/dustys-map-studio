@@ -1,5 +1,5 @@
-import { sanitizeFilename } from './schema.js?v=15';
-import { getCitiesInBounds } from './data-loader.js?v=15';
+import { sanitizeFilename } from './schema.js?v=16';
+import { getCitiesInBounds } from './data-loader.js?v=16';
 
 function clamp(val, min, max, fallback) {
   const n = Number(val);

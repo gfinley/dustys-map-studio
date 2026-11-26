@@ -6,7 +6,7 @@ import {
   getPixelDimensions,
   normalizeMapSpec,
   sanitizeFilename,
-} from './schema.js?v=15';
+} from './schema.js?v=16';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -19,14 +19,14 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=15';
+} from './data-loader.js?v=16';
 import {
   buildProjection,
   hitTestCountry,
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=15';
+} from './cartography.js?v=16';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -35,9 +35,13 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=15';
-import { REGION_PRESETS } from './presets.js?v=15';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=15';
+} from './exporter.js?v=16';
+import {
+  AIRFIELD_1941_LAYERS,
+  PHILIPPINES_RAIL_1942_LAYERS,
+  REGION_PRESETS,
+} from './presets.js?v=16';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=16';
 import {
   populateCountryCatalog,
   populateShadowRegionCatalog,
@@ -47,13 +51,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=15';
+} from './controls.js?v=16';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=15';
+} from './shadow.js?v=16';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -298,6 +302,7 @@ function undo() {
   layoutCanvasSize();
   scheduleRender();
   void ensureDatasetsForSpec();
+  void hydrateRemoteGeoJsonLayers();
 }
 
 function redo() {
@@ -310,6 +315,7 @@ function redo() {
   layoutCanvasSize();
   scheduleRender();
   void ensureDatasetsForSpec();
+  void hydrateRemoteGeoJsonLayers();
 }
 
 function layoutCanvasSize() {
@@ -1461,6 +1467,14 @@ function showFeatureInfoCard(hit) {
       [p.modern_equivalent, p.modern_country].filter(Boolean).join(' — '),
     );
     addRow('Confidence', formatEnumLabel(p.source_confidence));
+  } else if (p.feature_type === 'station' || (p.line && p.island && p.role)) {
+    addRow('Railway Line', p.line);
+    addRow('Island', p.island);
+    addRow('Station Role', formatEnumLabel(p.role));
+    if (p.km_post !== null && p.km_post !== undefined && p.km_post !== '') {
+      addRow('Km Post', `km ${p.km_post}`);
+    }
+    if (p.system) addRow('System', p.system);
   } else {
     let added = 0;
     for (const [k, rawVal] of Object.entries(p)) {
@@ -1616,6 +1630,7 @@ function buildCallbacks() {
         const parsed = JSON.parse(text);
         const normalized = normalizeMapSpec(parsed);
         commitSpec(normalized, { commitHistory: true });
+        void hydrateRemoteGeoJsonLayers();
         showToast(`Loaded project: ${file.name}`, 'success');
       } catch (err) {
         showToast(`Invalid project file: ${err.message}`, 'error', 4500);
@@ -2210,6 +2225,279 @@ function buildCallbacks() {
       });
     },
 
+    onToggleHistoricalLayer: async (layerDef, enabled) => {
+      if (!layerDef?.id) return;
+      const current = [...(state.spec.customGeoJsonLayers || [])];
+      const existingIdx = current.findIndex((l) => l?.id === layerDef.id);
+
+      if (!enabled) {
+        if (existingIdx !== -1) {
+          current[existingIdx] = { ...current[existingIdx], visible: false };
+          hideFeatureHover();
+          if (state.selectedFeature?.layer?.id === layerDef.id) {
+            closeFeatureInfoCard();
+          }
+          patchSpec({ customGeoJsonLayers: current });
+        }
+        return;
+      }
+
+      if (existingIdx !== -1 && current[existingIdx].data) {
+        current[existingIdx] = { ...current[existingIdx], visible: true };
+        patchSpec({ customGeoJsonLayers: current });
+        return;
+      }
+
+      try {
+        setLoadingProgress(true, `Loading ${layerDef.shortLabel}...`);
+        const data = await fetchCustomGeoJson(layerDef.url);
+        setLoadingProgress(false);
+
+        const latest = [...(state.spec.customGeoJsonLayers || [])];
+        const idx = latest.findIndex((l) => l?.id === layerDef.id);
+        if (idx !== -1) {
+          latest[idx] = { ...latest[idx], data, visible: true };
+        } else {
+          latest.push({
+            id: layerDef.id,
+            label: layerDef.label,
+            url: layerDef.url,
+            data,
+            visible: true,
+            color: layerDef.color,
+            fillOpacity: layerDef.fillOpacity,
+            strokeWidth: layerDef.strokeWidth,
+            dashed: Boolean(layerDef.dashed),
+            hatch: 'none',
+          });
+        }
+        patchSpec({ customGeoJsonLayers: latest });
+      } catch (err) {
+        setLoadingProgress(false);
+        syncAllUi();
+        showToast(`Could not load ${layerDef.shortLabel}: ${err.message}`, 'error', 4500);
+      }
+    },
+
+    onUpdateHistoricalLayer: async (layerDef, patch, opts = {}) => {
+      if (!layerDef?.id) return;
+      const current = [...(state.spec.customGeoJsonLayers || [])];
+      const idx = current.findIndex((l) => l?.id === layerDef.id);
+      if (idx !== -1) {
+        current[idx] = { ...current[idx], ...patch };
+        patchSpec({ customGeoJsonLayers: current }, opts);
+        return;
+      }
+
+      try {
+        const data = await fetchCustomGeoJson(layerDef.url);
+        const latest = [...(state.spec.customGeoJsonLayers || [])];
+        const latestIdx = latest.findIndex((l) => l?.id === layerDef.id);
+        if (latestIdx !== -1) {
+          latest[latestIdx] = { ...latest[latestIdx], data, ...patch };
+        } else {
+          latest.push({
+            id: layerDef.id,
+            label: layerDef.label,
+            url: layerDef.url,
+            data,
+            visible: true,
+            color: layerDef.color,
+            fillOpacity: layerDef.fillOpacity,
+            strokeWidth: layerDef.strokeWidth,
+            dashed: Boolean(layerDef.dashed),
+            hatch: 'none',
+            ...patch,
+          });
+        }
+        patchSpec({ customGeoJsonLayers: latest }, opts);
+      } catch (err) {
+        showToast(`Could not load ${layerDef.shortLabel}: ${err.message}`, 'error', 4500);
+      }
+    },
+
+    onSetHistoricalGroupSize: (groupKey, sizeVal, opts = {}) => {
+      const targetIds = new Set(
+        groupKey === 'airfields'
+          ? AIRFIELD_1941_LAYERS.map((d) => d.id)
+          : PHILIPPINES_RAIL_1942_LAYERS.filter((d) => d.geometryKind === 'line').map((d) => d.id),
+      );
+      const current = [...(state.spec.customGeoJsonLayers || [])];
+      let touched = false;
+      const next = current.map((l) => {
+        if (l?.id && targetIds.has(l.id)) {
+          touched = true;
+          return { ...l, strokeWidth: sizeVal };
+        }
+        return l;
+      });
+      if (touched) {
+        patchSpec({ customGeoJsonLayers: next }, opts);
+      }
+    },
+
+    onApplyAirfieldPreset: async (mode) => {
+      const targetVisible = (def) => (mode === 'both' ? Boolean(def.defaultOn) : false);
+      const neededDefs = AIRFIELD_1941_LAYERS.filter((def) => targetVisible(def));
+      const loadedById = new Map();
+
+      if (neededDefs.length > 0) {
+        try {
+          setLoadingProgress(true, 'Loading 1941 land airfield layers...');
+          await Promise.all(
+            neededDefs.map(async (def) => {
+              const existing = (state.spec.customGeoJsonLayers || []).find((l) => l?.id === def.id);
+              const data = existing?.data || (await fetchCustomGeoJson(def.url));
+              loadedById.set(def.id, data);
+            }),
+          );
+          setLoadingProgress(false);
+        } catch (err) {
+          setLoadingProgress(false);
+          showToast(`Could not load 1941 airfield layers: ${err.message}`, 'error', 4500);
+          return;
+        }
+      }
+
+      const groupIds = new Set(AIRFIELD_1941_LAYERS.map((d) => d.id));
+      const existingById = new Map();
+      const others = [];
+      for (const l of state.spec.customGeoJsonLayers || []) {
+        if (l?.id && groupIds.has(l.id)) existingById.set(l.id, l);
+        else others.push(l);
+      }
+
+      const nextGroup = [];
+      for (const def of AIRFIELD_1941_LAYERS) {
+        const vis = targetVisible(def);
+        const prev = existingById.get(def.id);
+        if (prev) {
+          nextGroup.push({ ...prev, data: prev.data || loadedById.get(def.id) || null, visible: vis });
+        } else if (vis) {
+          nextGroup.push({
+            id: def.id,
+            label: def.label,
+            url: def.url,
+            data: loadedById.get(def.id) || null,
+            visible: true,
+            color: def.color,
+            fillOpacity: def.fillOpacity,
+            strokeWidth: def.strokeWidth,
+            dashed: false,
+            hatch: 'none',
+          });
+        }
+      }
+
+      if (mode === 'none') {
+        hideFeatureHover();
+        if (state.selectedFeature?.layer?.id && groupIds.has(state.selectedFeature.layer.id)) {
+          closeFeatureInfoCard();
+        }
+      }
+      patchSpec({ customGeoJsonLayers: [...others, ...nextGroup] });
+      showToast(
+        mode === 'both'
+          ? 'Enabled 1941 Military & Civilian land airfields (163 sites).'
+          : 'Hid all 1941 land airfield layers.',
+        'success',
+        2400,
+      );
+    },
+
+    onApplyRailPreset: async (mode) => {
+      const targetVisible = (def) => {
+        if (mode === 'all') return true;
+        if (mode === 'common_carrier') return Boolean(def.commonCarrier);
+        return false;
+      };
+      const neededDefs = PHILIPPINES_RAIL_1942_LAYERS.filter((def) => targetVisible(def));
+      const loadedById = new Map();
+
+      if (neededDefs.length > 0) {
+        try {
+          setLoadingProgress(true, 'Loading Philippines 1942–1945 railway layers...');
+          await Promise.all(
+            neededDefs.map(async (def) => {
+              const existing = (state.spec.customGeoJsonLayers || []).find((l) => l?.id === def.id);
+              const data = existing?.data || (await fetchCustomGeoJson(def.url));
+              loadedById.set(def.id, data);
+            }),
+          );
+          setLoadingProgress(false);
+        } catch (err) {
+          setLoadingProgress(false);
+          showToast(`Could not load railway layers: ${err.message}`, 'error', 4500);
+          return;
+        }
+      }
+
+      const groupIds = new Set(PHILIPPINES_RAIL_1942_LAYERS.map((d) => d.id));
+      const existingById = new Map();
+      const others = [];
+      for (const l of state.spec.customGeoJsonLayers || []) {
+        if (l?.id && groupIds.has(l.id)) existingById.set(l.id, l);
+        else others.push(l);
+      }
+
+      const nextGroup = [];
+      for (const def of PHILIPPINES_RAIL_1942_LAYERS) {
+        const vis = targetVisible(def);
+        const prev = existingById.get(def.id);
+        if (prev) {
+          nextGroup.push({ ...prev, data: prev.data || loadedById.get(def.id) || null, visible: vis });
+        } else if (vis) {
+          nextGroup.push({
+            id: def.id,
+            label: def.label,
+            url: def.url,
+            data: loadedById.get(def.id) || null,
+            visible: true,
+            color: def.color,
+            fillOpacity: def.fillOpacity,
+            strokeWidth: def.strokeWidth,
+            dashed: Boolean(def.dashed),
+            hatch: 'none',
+          });
+        }
+      }
+
+      if (mode === 'none') {
+        hideFeatureHover();
+        if (state.selectedFeature?.layer?.id && groupIds.has(state.selectedFeature.layer.id)) {
+          closeFeatureInfoCard();
+        }
+      }
+      patchSpec({ customGeoJsonLayers: [...others, ...nextGroup] });
+      const msg =
+        mode === 'all'
+          ? 'Enabled all 7 Philippines 1942–1945 railway layers.'
+          : mode === 'common_carrier'
+            ? 'Enabled 1942–1945 common-carrier railroads (MRR + Panay + Cebu).'
+            : 'Hid all Philippines 1942–1945 railway layers.';
+      showToast(msg, 'success', 2400);
+    },
+
+    onFrameHistoricalRegion: (regionKey) => {
+      if (regionKey === 'se_asia') {
+        patchSpec({
+          projection: 'mercator',
+          detailLevel: '50m',
+          center: { lat: 5.5, lon: 113.5 },
+          span: { lonDeg: 44.0, latDeg: 35.0 },
+        });
+        showToast('Framed SE Asia & Western Pacific theater', 'info', 2200);
+      } else {
+        patchSpec({
+          projection: 'mercator',
+          detailLevel: '10m',
+          center: { lat: 13.4, lon: 122.0 },
+          span: { lonDeg: 8.5, latDeg: 11.5 },
+        });
+        showToast('Framed Philippines (Luzon & Visayas, 10m detail)', 'info', 2200);
+      }
+    },
+
     onToggleRefPeek: async () => {
       state.refPeek = !state.refPeek;
       syncAllUi();
@@ -2268,25 +2556,36 @@ function buildCallbacks() {
 }
 
 async function hydrateRemoteGeoJsonLayers() {
-  const layers = state.spec?.customGeoJsonLayers || [];
-  let updated = false;
-  const nextLayers = [...layers];
+  const initialLayers = state.spec?.customGeoJsonLayers || [];
+  const pending = initialLayers.filter((l) => l?.url && !l?.data && l?.visible !== false);
+  if (pending.length === 0) return;
 
-  for (let i = 0; i < nextLayers.length; i += 1) {
-    const layer = nextLayers[i];
-    if (layer.url && !layer.data) {
+  const fetched = new Map();
+  await Promise.all(
+    pending.map(async (layer) => {
       try {
         const data = await fetchCustomGeoJson(layer.url);
-        nextLayers[i] = { ...layer, data };
-        updated = true;
+        fetched.set(layer.id || layer.url, data);
       } catch {
         // Leave layer intact if remote GeoJSON temporarily unavailable
       }
+    }),
+  );
+
+  if (fetched.size === 0) return;
+  let updated = false;
+  const nextLayers = (state.spec?.customGeoJsonLayers || []).map((layer) => {
+    const key = layer?.id || layer?.url;
+    if (layer?.url && !layer?.data && fetched.has(key)) {
+      updated = true;
+      return { ...layer, data: fetched.get(key) };
     }
-  }
+    return layer;
+  });
 
   if (updated) {
     state.spec = normalizeMapSpec({ ...state.spec, customGeoJsonLayers: nextLayers });
+    syncAllUi();
     scheduleRender();
   }
 }

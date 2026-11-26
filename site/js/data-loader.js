@@ -959,6 +959,11 @@ export async function fetchCustomGeoJson(url) {
     throw new Error('Unsupported URL scheme.');
   }
 
+  const cacheKey = `custom_geojson::${trimmed}`;
+  if (jsonMemoryCache.has(cacheKey)) {
+    return jsonMemoryCache.get(cacheKey);
+  }
+
   const res = await fetch(trimmed);
   if (!res.ok) {
     throw new Error(`Failed to fetch GeoJSON (${res.status} ${res.statusText})`);
@@ -970,5 +975,7 @@ export async function fetchCustomGeoJson(url) {
   } catch {
     throw new Error('Remote response is not valid JSON.');
   }
-  return validateGeoJson(data);
+  const validated = validateGeoJson(data);
+  jsonMemoryCache.set(cacheKey, validated);
+  return validated;
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=15" />
+  <link rel="stylesheet" href="./styles/main.css?v=16" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -93,9 +93,10 @@
       <aside id="sidebar" class="sidebar" aria-label="Map Controls">
         <nav class="sidebar-tabs" role="tablist" aria-label="Control sections">
           <button class="tab-btn active" type="button" role="tab" aria-selected="true" data-tab="area">Area &amp; Page</button>
-          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="colors">Colors &amp; Layers</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="colors">Colors &amp; Map</button>
           <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="features">Regions &amp; Pins</button>
-          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="pro">Scale, Globe &amp; Pro</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="historical">Historical</button>
+          <button class="tab-btn" type="button" role="tab" aria-selected="false" data-tab="pro">Scale &amp; Pro</button>
         </nav>
 
         <div class="sidebar-body">
@@ -490,7 +491,69 @@
             </div>
           </section>
 
-          <!-- TAB 4: Scale, Globe & Pro -->
+          <!-- TAB 4: Historical Layers (1941 Airfields & 1942–1945 Philippines Railways) -->
+          <section class="tab-panel" id="tab-historical" role="tabpanel" hidden>
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>1941 Land Airfields</h2>
+                <span class="helper-pill">SE Asia &bull; 163</span>
+              </div>
+              <p class="helper-text subtle">December 1941 military &amp; civilian land airfields. Hover or click any airfield dot on the map for runway &amp; garrison details.</p>
+              <div class="example-chips historical-actions">
+                <button id="btn-hist-airfields-both" class="example-chip" type="button" title="Turn on Military and Civilian 1941 airfield layers">Mil + Civ</button>
+                <button id="btn-hist-airfields-none" class="example-chip" type="button" title="Hide all 1941 airfield layers">All Off</button>
+                <button id="btn-hist-frame-seasia" class="example-chip" type="button" title="Frame Southeast Asia and Western Pacific">Frame SE Asia</button>
+                <button id="btn-hist-frame-ph-air" class="example-chip" type="button" title="Frame Philippines at 10m detail">Frame PH</button>
+              </div>
+              <div class="historical-master-row">
+                <label class="historical-master-label" for="airfield-master-size">Dot Size</label>
+                <input id="airfield-master-size" type="range" min="0.4" max="4.0" step="0.1" value="1.5" title="Resize all active 1941 airfield layers together" />
+                <span id="airfield-master-size-val" class="mini-val">1.5</span>
+              </div>
+              <div id="airfield-1941-layers-list" class="toggle-list historical-layers-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Philippines Railways (1942–1945)</h2>
+                <span class="helper-pill">7 Layers</span>
+              </div>
+              <p class="helper-text subtle">WWII-era Luzon MRR, 1943–45 Japanese Sudipen extension, Manila Tranv&iacute;a, Panay/Cebu PRC, Negros industrial tracks &amp; 105 stations.</p>
+              <div class="example-chips historical-actions">
+                <button id="btn-hist-rail-common" class="example-chip" type="button" title="Turn on common-carrier railroads only (MRR + Panay + Cebu)">Common-Carrier</button>
+                <button id="btn-hist-rail-all" class="example-chip" type="button" title="Turn on all 7 Philippines 1942–1945 railway layers">All On</button>
+                <button id="btn-hist-rail-none" class="example-chip" type="button" title="Hide all Philippines 1942–1945 railway layers">All Off</button>
+                <button id="btn-hist-frame-ph-rail" class="example-chip" type="button" title="Frame Luzon and Visayas at 10m coast detail">Frame PH</button>
+              </div>
+              <div class="historical-master-row">
+                <label class="historical-master-label" for="ph-rail-master-width">Track Width</label>
+                <input id="ph-rail-master-width" type="range" min="0.4" max="4.0" step="0.1" value="1.6" title="Resize all active Philippines railway line layers together" />
+                <span id="ph-rail-master-width-val" class="mini-val">1.6</span>
+              </div>
+              <div id="ph-rail-layers-list" class="toggle-list historical-layers-list"></div>
+            </div>
+
+            <div class="panel-card">
+              <div class="card-header">
+                <h2>Quick WWII Theater Presets</h2>
+                <span class="helper-pill">1-Click</span>
+              </div>
+              <p class="helper-text subtle">Load a complete framed map with legend, scale bar, and layers pre-configured.</p>
+              <div class="btn-stack-vertical historical-preset-btns">
+                <button id="btn-preset-ph-rail" class="btn btn-secondary btn-sm" type="button">
+                  Philippines Railways (1942–1945)
+                </button>
+                <button id="btn-preset-ph-combined" class="btn btn-primary btn-sm" type="button">
+                  Philippines WWII (Railways + 1941 Airfields)
+                </button>
+                <button id="btn-preset-seasia-air" class="btn btn-secondary btn-sm" type="button">
+                  SE Asia &amp; W. Pacific (1941 Airfields)
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- TAB 5: Scale, Globe & Pro -->
           <section class="tab-panel" id="tab-pro" role="tabpanel" hidden>
             <div class="panel-card">
               <div class="card-header">
@@ -705,6 +768,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=15"></script>
+  <script type="module" src="./js/app.js?v=16"></script>
 </body>
 </html>

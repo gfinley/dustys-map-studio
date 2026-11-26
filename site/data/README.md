@@ -50,3 +50,20 @@ Each feature is a `Point` in WGS84 (`EPSG:4326`, `[longitude, latitude]`) with:
 ```bash
 python3 scripts/build_1941_airfields.py
 ```
+
+---
+
+# Philippines Railway System (1942–1945, WWII Era)
+
+Seven individually toggleable WGS 84 (`EPSG:4326`) GeoJSON layers in [`philippines_railways_1942_1945/`](philippines_railways_1942_1945/) covering **1,537.7 km** of track across 24 corridors and **105** verified stations/junctions during 1942–1945:
+
+| File | Features | Coverage |
+| --- | ---: | --- |
+| [`philippines_railways_1942_1945/mrr_main_lines.geojson`](philippines_railways_1942_1945/mrr_main_lines.geojson) | 2 | MRR Main Line North & Main Line South (`746.7 km`, Luzon) |
+| [`philippines_railways_1942_1945/japanese_sudipen_extension.geojson`](philippines_railways_1942_1945/japanese_sudipen_extension.geojson) | 2 | 1943–1945 Japanese Army San Fernando–Bacnotan–Sudipen extension (`41.6 km`, Luzon) |
+| [`philippines_railways_1942_1945/mrr_branch_lines.geojson`](philippines_railways_1942_1945/mrr_branch_lines.geojson) | 12 | All 12 active/standing Luzon MRR branches & port spurs (`379.2 km`) |
+| [`philippines_railways_1942_1945/prc_panay_cebu.geojson`](philippines_railways_1942_1945/prc_panay_cebu.geojson) | 3 | Philippine Railway Co. Panay & Cebu divisions (`212.6 km`) |
+| [`philippines_railways_1942_1945/manila_tranvia.geojson`](philippines_railways_1942_1945/manila_tranvia.geojson) | 1 | Manila MERALCO Tranvía electric streetcars (`55.3 km`, destroyed Feb 1945) |
+| [`philippines_railways_1942_1945/negros_industrial.geojson`](philippines_railways_1942_1945/negros_industrial.geojson) | 4 | Surveyed Negros sugar & logging railways (`102.4 km`: ILCO, Bais, Hawaiian-Philippine, Victorias) |
+| [`philippines_railways_1942_1945/major_stations.geojson`](philippines_railways_1942_1945/major_stations.geojson) | 105 | Verified WWII-era stations & junctions (hover/click on map for details) |
+

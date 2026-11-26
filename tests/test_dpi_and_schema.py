@@ -354,6 +354,50 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         for elem_id in ("feature-hover-ring", "feature-hover-tooltip", "feature-info-card"):
             self.assertIn(f'id="{elem_id}"', html)
 
+    def test_1942_1945_philippines_railways_and_historical_tab(self) -> None:
+        """1942-1945 Philippines railway layers are valid and consolidated with 1941 airfields in the Historical tab."""
+        import json
+
+        rail_dir = SITE_DIR / "data" / "philippines_railways_1942_1945"
+        expected_files = (
+            "mrr_main_lines.geojson",
+            "japanese_sudipen_extension.geojson",
+            "mrr_branch_lines.geojson",
+            "prc_panay_cebu.geojson",
+            "manila_tranvia.geojson",
+            "negros_industrial.geojson",
+            "major_stations.geojson",
+        )
+        total_features = 0
+        for fname in expected_files:
+            fpath = rail_dir / fname
+            self.assertTrue(fpath.is_file(), f"Missing railway GeoJSON: {fpath}")
+            fc = json.loads(fpath.read_text(encoding="utf-8"))
+            self.assertEqual(fc.get("type"), "FeatureCollection")
+            self.assertGreater(len(fc.get("features", [])), 0)
+            total_features += len(fc["features"])
+
+        self.assertEqual(total_features, 129)
+
+        presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
+        for symbol in (
+            "export const AIRFIELD_1941_LAYERS",
+            "export const PHILIPPINES_RAIL_1942_LAYERS",
+            "philippines_railways_1942_1945",
+            "philippines_wwii_combined",
+        ):
+            self.assertIn(symbol, presets_js)
+
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        for elem_id in (
+            "tab-historical",
+            "airfield-1941-layers-list",
+            "ph-rail-layers-list",
+            "airfield-master-size",
+            "ph-rail-master-width",
+        ):
+            self.assertIn(f'id="{elem_id}"', html)
+
 
 if __name__ == "__main__":
     unittest.main()
