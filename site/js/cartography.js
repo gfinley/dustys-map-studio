@@ -7,24 +7,25 @@ import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 import { geoRobinson } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4/+esm';
 import {
   drawScaleBar,
+  drawAltitudeScale,
   drawLocatorGlobe,
   drawNorthArrow,
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=28';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=28';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=28';
+} from './ornaments.js?v=29';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=29';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=29';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=28';
+} from './data-loader.js?v=29';
 import {
   buildProjectedTerrainLayer,
   contourSegmentsToSvgPath,
   resolveContourPalette,
-} from './terrain-relief.js?v=28';
+} from './terrain-relief.js?v=29';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -1536,6 +1537,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // 11. Ornaments
   if (!options.skipOrnaments) {
     drawScaleBar(ctx, spec, projection, width, height, scaleFactor);
+    drawAltitudeScale(ctx, spec, datasets, projection, width, height, scaleFactor);
     drawLocatorGlobe(ctx, spec, datasets, width, height, scaleFactor, projection);
     drawNorthArrow(ctx, spec, width, height, scaleFactor);
     drawLegend(ctx, spec, width, height, scaleFactor);

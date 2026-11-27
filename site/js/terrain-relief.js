@@ -656,6 +656,105 @@ function interpolateJogColor(elevMeters) {
   return [last.r, last.g, last.b];
 }
 
+/**
+ * Sample a CSS rgb() color from the DMA/NGA JOG hypsometric elevation ramp with
+ * tone and contrast applied (matching rendered terrain pixels).
+ */
+export function sampleJogElevationColor(elevMeters, { tone = 'charcoal', contrast = 1.0 } = {}) {
+  const toneDef = TERRAIN_TONES[tone] || TERRAIN_TONES.charcoal;
+  const clampedContrast = clamp(Number(contrast) || 1.0, 0.4, 2.2);
+  let [r, g, b] = interpolateJogColor(elevMeters);
+  if (toneDef.desaturateJog) {
+    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    r = gray;
+    g = gray;
+    b = gray;
+  } else {
+    const [jr, jg, jb] = toneDef.jogTintShift || [1, 1, 1];
+    r = clamp(Math.round(r * jr), 0, 255);
+    g = clamp(Math.round(g * jg), 0, 255);
+    b = clamp(Math.round(b * jb), 0, 255);
+  }
+  const colorContrast = 0.65 + 0.35 * clampedContrast;
+  const cR = clamp(Math.round(128 + (r - 128) * colorContrast), 0, 255);
+  const cG = clamp(Math.round(128 + (g - 128) * colorContrast), 0, 255);
+  const cB = clamp(Math.round(128 + (b - 128) * colorContrast), 0, 255);
+  return `rgb(${cR}, ${cG}, ${cB})`;
+}
+
+/**
+ * Compute clean altitude scale bounds, labeled tick stops, and contour interval
+ * metadata for the on-map Altitude Scale ornament.
+ */
+export function computeAltitudeScaleInfo(spec, dem) {
+  const tr = spec?.terrainRelief;
+  if (!tr?.enabled || tr.showAltitudeScale === false || !dem) return null;
+
+  const style = TERRAIN_STYLES[tr.style] ? tr.style : 'army_topo';
+  const styleDef = TERRAIN_STYLES[style];
+  const tone = TERRAIN_TONES[tr.tone] ? tr.tone : 'charcoal';
+  const contrast = clamp(Number(tr.contrast) || 1.0, 0.4, 2.2);
+  const showContours = wantsTerrainContours(tr);
+  const spanDeg = Math.max(Number(spec?.span?.lonDeg) || 10, Number(spec?.span?.latDeg) || 10);
+
+  const cachedArtifact = dem._renderCache?.artifact || null;
+  const maxElev = Math.max(
+    100,
+    Math.round(cachedArtifact?.maxVisibleElev || dem.stats?.maxLandElev || 0),
+  );
+  const p98Elev = Math.max(maxElev, Math.round(dem.stats?.p98LandElev || 0));
+
+  const interval = cachedArtifact?.effectiveInterval || resolveEffectiveContourInterval(
+    tr.contourInterval,
+    p98Elev,
+    spanDeg,
+  );
+
+  let indexInterval = interval * 5;
+  if (maxElev < indexInterval) {
+    indexInterval = maxElev >= interval * 2 ? interval * 2 : interval;
+  }
+
+  // Choose clean tick step producing 3–5 labeled divisions covering maxElev
+  const tickCandidates = [50, 100, 200, 250, 500, 1000, 1500, 2000];
+  let tickStep = indexInterval;
+  if (maxElev / tickStep > 5 || maxElev / tickStep < 2) {
+    tickStep = tickCandidates[tickCandidates.length - 1];
+    for (let i = 0; i < tickCandidates.length; i += 1) {
+      const cand = tickCandidates[i];
+      if (Math.ceil(maxElev / cand) <= 5) {
+        tickStep = cand;
+        break;
+      }
+    }
+  }
+
+  const scaleMax = Math.max(tickStep * 2, Math.ceil(maxElev / tickStep) * tickStep);
+  const ticks = [];
+  for (let v = 0; v <= scaleMax; v += tickStep) {
+    ticks.push(v);
+  }
+  if (ticks[ticks.length - 1] !== scaleMax) {
+    ticks.push(scaleMax);
+  }
+
+  return {
+    style,
+    tone,
+    contrast,
+    contourColor: typeof tr.contourColor === 'string' ? tr.contourColor : 'auto',
+    hasHypsometric: Boolean(styleDef.hasHypsometric),
+    showContours,
+    maxElev,
+    interval,
+    indexInterval,
+    tickStep,
+    scaleMax,
+    ticks,
+    position: tr.altitudeScalePosition || 'bottom-right',
+  };
+}
+
 function localGeoDistanceMeters(lon1, lat1, lon2, lat2) {
   const dLat = (lat2 - lat1) * 111132.95;
   const meanLatRad = (((lat1 + lat2) * 0.5) * Math.PI) / 180;

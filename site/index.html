@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=28" />
+  <link rel="stylesheet" href="./styles/main.css?v=29" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -497,6 +497,19 @@
                       <button id="btn-terrain-contour-color-auto" class="btn-chip active" type="button" aria-pressed="true" title="Automatically adapt contour color to light or dark map themes">Auto</button>
                     </div>
                   </div>
+                </div>
+
+                <div class="field-grid-2 compact-row">
+                  <label class="switch-label" for="terrain-show-altitude-scale">
+                    <input id="terrain-show-altitude-scale" type="checkbox" checked />
+                    <span>Altitude Scale</span>
+                  </label>
+                  <select id="terrain-altitude-scale-pos" aria-label="Altitude scale corner position">
+                    <option value="bottom-right" selected>Bottom Right</option>
+                    <option value="bottom-left">Bottom Left</option>
+                    <option value="top-right">Top Right</option>
+                    <option value="top-left">Top Left</option>
+                  </select>
                 </div>
 
                 <button id="btn-fetch-terrain-relief" class="btn btn-primary btn-full" type="button">
@@ -1182,6 +1195,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=28"></script>
+  <script type="module" src="./js/app.js?v=29"></script>
 </body>
 </html>

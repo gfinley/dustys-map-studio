@@ -712,6 +712,8 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
             "terrain-contour-interval",
             "terrain-contour-color",
             "btn-terrain-contour-color-auto",
+            "terrain-show-altitude-scale",
+            "terrain-altitude-scale-pos",
             "btn-fetch-terrain-relief",
             "terrain-relief-status",
             "btn-toggle-terrain-relief",

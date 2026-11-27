@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=28';
+} from './schema.js?v=29';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,23 +14,23 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=28';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=28';
-import { formatArea } from './shadow.js?v=28';
+} from './presets.js?v=29';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=29';
+import { formatArea } from './shadow.js?v=29';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=28';
+} from './osm-coastline.js?v=29';
 import {
   TERRAIN_STYLES,
   TERRAIN_TONES,
   isViewOutsideTerrainBounds,
   resolveContourPalette,
   wantsTerrainContours,
-} from './terrain-relief.js?v=28';
+} from './terrain-relief.js?v=29';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -1569,6 +1569,13 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ terrainRelief: { contourColor: 'auto' } });
   });
 
+  $('terrain-show-altitude-scale')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { showAltitudeScale: Boolean(e.target.checked) } });
+  });
+  $('terrain-altitude-scale-pos')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { altitudeScalePosition: e.target.value } });
+  });
+
   $('btn-fetch-terrain-relief')?.addEventListener('click', () => {
     boundCallbacks.onFetchTerrainRelief?.({ forceRefresh: false });
   });
@@ -2336,6 +2343,12 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   const ciWrap = $('terrain-contour-interval-wrap');
   if (ciWrap) {
     ciWrap.hidden = !trShowContours;
+  }
+  if ($('terrain-show-altitude-scale')) {
+    $('terrain-show-altitude-scale').checked = tr.showAltitudeScale !== false;
+  }
+  if ($('terrain-altitude-scale-pos')) {
+    $('terrain-altitude-scale-pos').value = tr.altitudeScalePosition || 'bottom-right';
   }
 
   const trFetchBtn = $('btn-fetch-terrain-relief');

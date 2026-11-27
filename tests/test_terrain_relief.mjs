@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   TERRAIN_STYLES,
   chooseAutoContourInterval,
+  computeAltitudeScaleInfo,
   computeDemStats,
   contourSegmentsToSvgPath,
   decodeTerrariumElevation,
@@ -14,6 +15,7 @@ import {
   resolveContourPalette,
   resolveEffectiveContourInterval,
   sampleDemElevation,
+  sampleJogElevationColor,
   smoothElevationGrid,
   wantsTerrainContours,
 } from '../site/js/terrain-relief.js';
@@ -230,5 +232,30 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
   assert.equal(decoded.terrainRelief.showContourLabels, true);
   assert.equal(decoded.terrainRelief.contourColor, '#6b2c12');
   assert.equal(decoded.terrainRelief.contourInterval, 200);
+  assert.equal(decoded.terrainRelief.showAltitudeScale, true);
+  assert.equal(decoded.terrainRelief.altitudeScalePosition, 'bottom-right');
   assert.equal(decoded.terrainRelief.bounds.zoom, 8);
+});
+
+test('computeAltitudeScaleInfo builds clean altitude ticks, index interval, and JOG ramp colors', () => {
+  const spec = normalizeMapSpec({
+    ...createDefaultMapSpec(),
+    span: { lonDeg: 10, latDeg: 7 },
+    terrainRelief: {
+      enabled: true,
+      style: 'jog_elevation',
+      showContours: true,
+      showAltitudeScale: true,
+      altitudeScalePosition: 'bottom-right',
+    },
+  });
+  const dem = { stats: { maxLandElev: 2295, p98LandElev: 2100 } };
+  const info = computeAltitudeScaleInfo(spec, dem);
+  assert.ok(info);
+  assert.equal(info.maxElev, 2295);
+  assert.ok(info.scaleMax >= 2295);
+  assert.equal(info.ticks[0], 0);
+  assert.equal(info.ticks[info.ticks.length - 1], info.scaleMax);
+  assert.ok(info.ticks.length >= 3 && info.ticks.length <= 6);
+  assert.match(sampleJogElevationColor(1200, { tone: 'sepia', contrast: 1.4 }), /^rgb\(\d+, \d+, \d+\)$/);
 });

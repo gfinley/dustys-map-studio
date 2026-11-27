@@ -5,6 +5,11 @@
 
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 import { geoSatellite } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4/+esm';
+import {
+  computeAltitudeScaleInfo,
+  resolveContourPalette,
+  sampleJogElevationColor,
+} from './terrain-relief.js?v=29';
 
 const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
@@ -561,6 +566,47 @@ function getTitleBannerBox(spec, width, scaleFactor, ctx = null) {
   return { title, fontSize, padX, padY, x, y, boxW, boxH };
 }
 
+function measureAltitudeScaleBox(spec, datasets, width, height, scaleFactor) {
+  const dem = datasets === undefined
+    ? { stats: { maxLandElev: 2000, p98LandElev: 2000 } }
+    : datasets?.terrainRelief;
+  const info = computeAltitudeScaleInfo(spec, dem);
+  if (!info) return null;
+
+  const textScale = Math.max(scaleFactor, Math.max(width, height * 0.78) / 900);
+  const padX = Math.max(9, 11 * textScale);
+  const padY = Math.max(7, 8 * textScale);
+  const headerFont = Math.max(8, 9.2 * textScale);
+  const tickFont = Math.max(7.5, 8.6 * textScale);
+  const keyFont = Math.max(7.5, 8.5 * textScale);
+  const barH = Math.max(8, 10 * textScale);
+  const barW = Math.min(width * 0.36, Math.max(138 * textScale, 178 * textScale));
+  const boxW = barW + padX * 2;
+  const keyRowH = info.showContours ? keyFont + 6 * textScale : 0;
+  const boxH =
+    padY * 2 +
+    headerFont +
+    5 * textScale +
+    barH +
+    4 * textScale +
+    tickFont +
+    (keyRowH > 0 ? 5 * textScale + keyRowH : 0);
+
+  return {
+    info,
+    textScale,
+    padX,
+    padY,
+    headerFont,
+    tickFont,
+    keyFont,
+    barW,
+    barH,
+    boxW,
+    boxH,
+  };
+}
+
 function getOrnamentSizes(spec, projection, datasets, width, height, scaleFactor, ctx = null) {
   const sizes = {};
   const orn = spec?.ornaments || {};
@@ -572,6 +618,16 @@ function getOrnamentSizes(spec, projection, datasets, width, height, scaleFactor
       boxW: scaleMeta.boxW,
       boxH: scaleMeta.boxH,
       meta: scaleMeta,
+    };
+  }
+
+  const altMeta = measureAltitudeScaleBox(spec, datasets, width, height, scaleFactor);
+  if (altMeta) {
+    sizes.altitudeScale = {
+      position: altMeta.info.position || 'bottom-right',
+      boxW: altMeta.boxW,
+      boxH: altMeta.boxH,
+      meta: altMeta,
     };
   }
 
@@ -617,7 +673,7 @@ function computeCornerPositions(spec, projection, datasets, width, height, scale
   const margin = Math.round(width * 0.03);
   const gap = Math.max(6, Math.round(10 * scaleFactor));
 
-  const order = ['scaleBar', 'legend', 'northArrow', 'locatorGlobe'];
+  const order = ['scaleBar', 'altitudeScale', 'legend', 'northArrow', 'locatorGlobe'];
   const corners = {
     'bottom-left': [],
     'bottom-right': [],
@@ -772,6 +828,169 @@ export function drawScaleBar(ctx, spec, projection, width, height, scaleFactor) 
 
   ctx.textAlign = 'right';
   ctx.fillText(formatScaleLabel(value, units), barX + barPx, labelY);
+  ctx.restore();
+}
+
+function getTopoRampStopsForTone(tone) {
+  switch (tone) {
+    case 'sepia':
+      return ['#f5eee2', '#e1cfb5', '#c5a47e', '#9e754f', '#6d4728'];
+    case 'olive':
+      return ['#edf1eb', '#d1dcd0', '#aabca9', '#7d957f', '#4e6752'];
+    case 'bw_print':
+      return ['#f7f7f7', '#dbdbdb', '#b5b5b5', '#828282', '#474747'];
+    case 'charcoal':
+    default:
+      return ['#f2efe9', '#dbd5ca', '#bdb5a7', '#948b7d', '#625a4e'];
+  }
+}
+
+function formatAltitudeTick(val) {
+  return Math.round(val).toLocaleString('en-US');
+}
+
+export function drawAltitudeScale(ctx, spec, datasets, projection, width, height, scaleFactor) {
+  if (!spec?.terrainRelief?.enabled || spec?.terrainRelief?.showAltitudeScale === false || !datasets?.terrainRelief) {
+    return;
+  }
+  const { placements } = computeCornerPositions(spec, projection, datasets, width, height, scaleFactor, ctx);
+  const slot = placements.altitudeScale;
+  if (!slot) return;
+
+  const { x, y, boxW, boxH, meta } = slot;
+  const { info, textScale, padX, padY, headerFont, tickFont, keyFont, barW, barH } = meta;
+  const contourPalette = resolveContourPalette('#f4f0e6', info.style, {
+    contourColor: info.contourColor,
+    tone: info.tone,
+    contrast: info.contrast,
+  });
+  const barX = x + padX;
+  const headerY = y + padY;
+  const barY = headerY + headerFont + 5 * textScale;
+  const tickLabelY = barY + barH + 4 * textScale;
+
+  ctx.save();
+  drawRoundedRect(ctx, x, y, boxW, boxH, 4 * scaleFactor);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+  ctx.fill();
+  ctx.strokeStyle = '#111111';
+  ctx.lineWidth = Math.max(0.8, 1.0 * scaleFactor);
+  ctx.stroke();
+
+  // Header row: "ALTITUDE (m)" + "▲ Peak"
+  ctx.fillStyle = '#111111';
+  ctx.font = `700 ${headerFont.toFixed(1)}px ${FONT_FAMILY}`;
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillText('ALTITUDE (m)', barX, headerY);
+
+  ctx.fillStyle = contourPalette.indexColor;
+  ctx.textAlign = 'right';
+  ctx.fillText(`▲ ${formatAltitudeTick(info.maxElev)} m`, barX + barW, headerY);
+
+  // Altitude scale bar fill
+  if (info.hasHypsometric) {
+    const slices = 36;
+    const sliceW = barW / slices;
+    for (let i = 0; i < slices; i += 1) {
+      const e = ((i + 0.5) / slices) * info.scaleMax;
+      ctx.fillStyle = sampleJogElevationColor(e, { tone: info.tone, contrast: info.contrast });
+      ctx.fillRect(barX + i * sliceW, barY, sliceW + 0.5, barH);
+    }
+  } else {
+    const stops = getTopoRampStopsForTone(info.tone);
+    const bandCount = Math.max(3, Math.min(8, Math.round(info.scaleMax / info.tickStep)));
+    const bandW = barW / bandCount;
+    for (let i = 0; i < bandCount; i += 1) {
+      const stopIdx = Math.min(stops.length - 1, Math.round((i / Math.max(1, bandCount - 1)) * (stops.length - 1)));
+      ctx.fillStyle = stops[stopIdx];
+      ctx.fillRect(barX + i * bandW, barY, bandW + 0.5, barH);
+    }
+  }
+
+  // Contour interval tick lines across the bar
+  if (info.showContours && info.interval > 0) {
+    for (let v = info.interval; v < info.scaleMax; v += info.interval) {
+      const tx = barX + (v / info.scaleMax) * barW;
+      const isIdx = v % info.indexInterval === 0;
+      ctx.beginPath();
+      ctx.moveTo(tx, barY);
+      ctx.lineTo(tx, barY + barH + (isIdx ? 2.5 * textScale : 0));
+      ctx.strokeStyle = isIdx ? contourPalette.indexColor : contourPalette.intermediateColor;
+      ctx.lineWidth = isIdx ? Math.max(1.0, 1.5 * textScale) : Math.max(0.5, 0.75 * textScale);
+      ctx.globalAlpha = isIdx ? 0.92 : 0.6;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Bar border
+  ctx.strokeStyle = '#111111';
+  ctx.lineWidth = Math.max(0.75, 0.95 * scaleFactor);
+  ctx.strokeRect(barX, barY, barW, barH);
+
+  // Peak marker triangle on top edge of bar
+  const peakFrac = Math.min(1, Math.max(0, info.maxElev / info.scaleMax));
+  const peakX = barX + peakFrac * barW;
+  const triSz = Math.max(2.6, 3.2 * textScale);
+  ctx.beginPath();
+  ctx.moveTo(peakX, barY + 0.5);
+  ctx.lineTo(peakX - triSz * 0.75, barY - triSz);
+  ctx.lineTo(peakX + triSz * 0.75, barY - triSz);
+  ctx.closePath();
+  ctx.fillStyle = contourPalette.indexColor;
+  ctx.fill();
+
+  // Altitude tick labels
+  ctx.fillStyle = '#111111';
+  ctx.font = `600 ${tickFont.toFixed(1)}px ${FONT_FAMILY}`;
+  ctx.textBaseline = 'top';
+  const ticks = info.ticks;
+  for (let i = 0; i < ticks.length; i += 1) {
+    const val = ticks[i];
+    const tx = barX + (val / info.scaleMax) * barW;
+    ctx.textAlign = i === 0 ? 'left' : (i === ticks.length - 1 ? 'right' : 'center');
+    const lbl = i === ticks.length - 1 ? `${formatAltitudeTick(val)}m` : formatAltitudeTick(val);
+    ctx.fillText(lbl, tx, tickLabelY);
+  }
+
+  // Optional contour key row (Index + CI)
+  if (info.showContours) {
+    const keyY = tickLabelY + tickFont + 5 * textScale;
+    const midY = keyY + keyFont * 0.52;
+    const swLen = Math.max(11, 14 * textScale);
+
+    // Index contour swatch
+    ctx.beginPath();
+    ctx.moveTo(barX, midY);
+    ctx.lineTo(barX + swLen, midY);
+    ctx.strokeStyle = contourPalette.indexColor;
+    ctx.lineWidth = Math.max(1.2, 1.8 * textScale);
+    ctx.stroke();
+
+    ctx.fillStyle = '#222222';
+    ctx.font = `600 ${keyFont.toFixed(1)}px ${FONT_FAMILY}`;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Index ${formatAltitudeTick(info.indexInterval)}m`, barX + swLen + 4 * textScale, keyY);
+
+    // Intermediate contour CI swatch on right side
+    const ciText = `CI ${formatAltitudeTick(info.interval)}m`;
+    const ciTextW = ctx.measureText(ciText).width;
+    const ciLineEnd = barX + barW - ciTextW - 4 * textScale;
+    const ciLineStart = ciLineEnd - swLen;
+    if (ciLineStart > barX + swLen + 52 * textScale) {
+      ctx.beginPath();
+      ctx.moveTo(ciLineStart, midY);
+      ctx.lineTo(ciLineEnd, midY);
+      ctx.strokeStyle = contourPalette.intermediateColor;
+      ctx.lineWidth = Math.max(0.65, 0.9 * textScale);
+      ctx.stroke();
+    }
+    ctx.textAlign = 'right';
+    ctx.fillText(ciText, barX + barW, keyY);
+  }
+
   ctx.restore();
 }
 
@@ -1403,6 +1622,109 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
         `<text x="${(swX + swatchW + swatchGap).toFixed(2)}" y="${textY.toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize.toFixed(1)}" font-weight="500" fill="#111111">${escapeXml(item.label)}</text>`,
       );
     }
+    parts.push('</g>');
+  }
+
+  // 4b. Altitude Scale (for active Terrain Relief)
+  if (placements.altitudeScale) {
+    const { x, y, boxW, boxH, meta } = placements.altitudeScale;
+    const { info, textScale, padX, padY, headerFont, tickFont, keyFont, barW, barH } = meta;
+    const contourPalette = resolveContourPalette('#f4f0e6', info.style, {
+      contourColor: info.contourColor,
+      tone: info.tone,
+      contrast: info.contrast,
+    });
+    const r = 4 * scaleFactor;
+    const strokeW = Math.max(0.8, 1.0 * scaleFactor);
+    const barX = x + padX;
+    const headerY = y + padY;
+    const barY = headerY + headerFont + 5 * textScale;
+    const tickLabelY = barY + barH + 4 * textScale;
+
+    parts.push('<g class="ornament-altitude-scale">');
+    parts.push(
+      `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${boxW.toFixed(2)}" height="${boxH.toFixed(2)}" rx="${r.toFixed(2)}" fill="rgba(255,255,255,0.92)" stroke="#111111" stroke-width="${strokeW.toFixed(2)}" />`,
+    );
+    parts.push(
+      `<text x="${barX.toFixed(2)}" y="${(headerY + headerFont * 0.86).toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${headerFont.toFixed(1)}" font-weight="700" fill="#111111" text-anchor="start">ALTITUDE (m)</text>`,
+    );
+    parts.push(
+      `<text x="${(barX + barW).toFixed(2)}" y="${(headerY + headerFont * 0.86).toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${headerFont.toFixed(1)}" font-weight="700" fill="${escapeXml(contourPalette.indexColor)}" text-anchor="end">▲ ${escapeXml(formatAltitudeTick(info.maxElev))} m</text>`,
+    );
+
+    if (info.hasHypsometric) {
+      const slices = 32;
+      const sliceW = barW / slices;
+      for (let i = 0; i < slices; i += 1) {
+        const e = ((i + 0.5) / slices) * info.scaleMax;
+        const fill = sampleJogElevationColor(e, { tone: info.tone, contrast: info.contrast });
+        parts.push(
+          `<rect x="${(barX + i * sliceW).toFixed(2)}" y="${barY.toFixed(2)}" width="${(sliceW + 0.4).toFixed(2)}" height="${barH.toFixed(2)}" fill="${escapeXml(fill)}" />`,
+        );
+      }
+    } else {
+      const stops = getTopoRampStopsForTone(info.tone);
+      const bandCount = Math.max(3, Math.min(8, Math.round(info.scaleMax / info.tickStep)));
+      const bandW = barW / bandCount;
+      for (let i = 0; i < bandCount; i += 1) {
+        const stopIdx = Math.min(stops.length - 1, Math.round((i / Math.max(1, bandCount - 1)) * (stops.length - 1)));
+        parts.push(
+          `<rect x="${(barX + i * bandW).toFixed(2)}" y="${barY.toFixed(2)}" width="${(bandW + 0.4).toFixed(2)}" height="${barH.toFixed(2)}" fill="${escapeXml(stops[stopIdx])}" />`,
+        );
+      }
+    }
+
+    if (info.showContours && info.interval > 0) {
+      for (let v = info.interval; v < info.scaleMax; v += info.interval) {
+        const tx = barX + (v / info.scaleMax) * barW;
+        const isIdx = v % info.indexInterval === 0;
+        const y2 = barY + barH + (isIdx ? 2.5 * textScale : 0);
+        const col = isIdx ? contourPalette.indexColor : contourPalette.intermediateColor;
+        const lw = (isIdx ? Math.max(1.0, 1.5 * textScale) : Math.max(0.5, 0.75 * textScale)).toFixed(2);
+        const op = isIdx ? '0.92' : '0.6';
+        parts.push(
+          `<line x1="${tx.toFixed(2)}" y1="${barY.toFixed(2)}" x2="${tx.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${escapeXml(col)}" stroke-opacity="${op}" stroke-width="${lw}" />`,
+        );
+      }
+    }
+
+    parts.push(
+      `<rect x="${barX.toFixed(2)}" y="${barY.toFixed(2)}" width="${barW.toFixed(2)}" height="${barH.toFixed(2)}" fill="none" stroke="#111111" stroke-width="${Math.max(0.75, 0.95 * scaleFactor).toFixed(2)}" />`,
+    );
+
+    const peakFrac = Math.min(1, Math.max(0, info.maxElev / info.scaleMax));
+    const peakX = barX + peakFrac * barW;
+    const triSz = Math.max(2.6, 3.2 * textScale);
+    parts.push(
+      `<polygon points="${peakX.toFixed(2)},${(barY + 0.5).toFixed(2)} ${(peakX - triSz * 0.75).toFixed(2)},${(barY - triSz).toFixed(2)} ${(peakX + triSz * 0.75).toFixed(2)},${(barY - triSz).toFixed(2)}" fill="${escapeXml(contourPalette.indexColor)}" />`,
+    );
+
+    const ticks = info.ticks;
+    for (let i = 0; i < ticks.length; i += 1) {
+      const val = ticks[i];
+      const tx = barX + (val / info.scaleMax) * barW;
+      const anchor = i === 0 ? 'start' : (i === ticks.length - 1 ? 'end' : 'middle');
+      const lbl = i === ticks.length - 1 ? `${formatAltitudeTick(val)}m` : formatAltitudeTick(val);
+      parts.push(
+        `<text x="${tx.toFixed(2)}" y="${(tickLabelY + tickFont * 0.86).toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${tickFont.toFixed(1)}" font-weight="600" fill="#111111" text-anchor="${anchor}">${escapeXml(lbl)}</text>`,
+      );
+    }
+
+    if (info.showContours) {
+      const keyY = tickLabelY + tickFont + 5 * textScale;
+      const midY = keyY + keyFont * 0.52;
+      const swLen = Math.max(11, 14 * textScale);
+      parts.push(
+        `<line x1="${barX.toFixed(2)}" y1="${midY.toFixed(2)}" x2="${(barX + swLen).toFixed(2)}" y2="${midY.toFixed(2)}" stroke="${escapeXml(contourPalette.indexColor)}" stroke-width="${Math.max(1.2, 1.8 * textScale).toFixed(2)}" />`,
+      );
+      parts.push(
+        `<text x="${(barX + swLen + 4 * textScale).toFixed(2)}" y="${(keyY + keyFont * 0.86).toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${keyFont.toFixed(1)}" font-weight="600" fill="#222222" text-anchor="start">Index ${escapeXml(formatAltitudeTick(info.indexInterval))}m</text>`,
+      );
+      parts.push(
+        `<text x="${(barX + barW).toFixed(2)}" y="${(keyY + keyFont * 0.86).toFixed(2)}" font-family="${escapeXml(FONT_FAMILY)}" font-size="${keyFont.toFixed(1)}" font-weight="600" fill="#222222" text-anchor="end">CI ${escapeXml(formatAltitudeTick(info.interval))}m</text>`,
+      );
+    }
+
     parts.push('</g>');
   }
 

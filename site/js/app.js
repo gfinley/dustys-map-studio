@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=28';
+} from './schema.js?v=29';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -22,7 +22,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=28';
+} from './data-loader.js?v=29';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -31,17 +31,17 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=28';
+} from './cartography.js?v=29';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=28';
+} from './osm-coastline.js?v=29';
 import {
   TERRAIN_STYLES,
   fetchTerrainDemForBounds,
   isViewOutsideTerrainBounds,
-} from './terrain-relief.js?v=28';
+} from './terrain-relief.js?v=29';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -50,15 +50,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=28';
+} from './exporter.js?v=29';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=28';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=28';
+} from './presets.js?v=29';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=29';
 import {
   closeMobileDrawers,
   populateCountryCatalog,
@@ -69,13 +69,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=28';
+} from './controls.js?v=29';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=28';
+} from './shadow.js?v=29';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -86,7 +86,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=28';
+} from './timeline.js?v=29';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH

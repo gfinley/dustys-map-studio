@@ -309,6 +309,8 @@ export function createDefaultMapSpec() {
       showContourLabels: true,
       contourColor: 'auto',
       contourInterval: 'auto',
+      showAltitudeScale: true,
+      altitudeScalePosition: 'bottom-right',
       bounds: null,
     },
     pro: {
@@ -558,6 +560,12 @@ export function normalizeMapSpec(partial) {
           ? terrainRaw.contourColor.trim()
           : def.terrainRelief.contourColor,
       contourInterval: normalizedContourInterval,
+      showAltitudeScale: typeof terrainRaw.showAltitudeScale === 'boolean'
+        ? terrainRaw.showAltitudeScale
+        : def.terrainRelief.showAltitudeScale,
+      altitudeScalePosition: CORNER_POSITIONS.includes(terrainRaw.altitudeScalePosition)
+        ? terrainRaw.altitudeScalePosition
+        : def.terrainRelief.altitudeScalePosition,
       bounds: normalizedTerrainBounds,
     },
     pro: {
