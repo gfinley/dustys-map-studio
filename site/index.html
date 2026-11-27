@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=27" />
+  <link rel="stylesheet" href="./styles/main.css?v=28" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -423,14 +423,25 @@
               </div>
               <p class="helper-text">Fetch on-demand elevation for the framed view with NW shaded relief and optional military-standard brown topographic contour lines.</p>
               <div class="field-stack">
-                <div class="field">
-                  <label for="terrain-relief-style">Relief Style</label>
-                  <select id="terrain-relief-style" aria-label="Military terrain relief style">
-                    <option value="army_topo" selected>Army Topo (NW Shaded Relief)</option>
-                    <option value="jog_elevation">JOG Operational (Elevation Tint + Relief)</option>
-                    <option value="staff_hillshade">Staff Hillshade (Briefing Relief)</option>
-                    <option value="topo_contours">Contour Lines Only (Pure Vector)</option>
-                  </select>
+                <div class="field-grid-2 compact-row">
+                  <div class="field">
+                    <label for="terrain-relief-style">Relief Style</label>
+                    <select id="terrain-relief-style" aria-label="Military terrain relief style">
+                      <option value="army_topo" selected>Army Topo</option>
+                      <option value="jog_elevation">JOG Operational</option>
+                      <option value="staff_hillshade">Staff Hillshade</option>
+                      <option value="topo_contours">Contours Only</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="terrain-relief-tone">Relief Tone</label>
+                    <select id="terrain-relief-tone" aria-label="Terrain relief color tone">
+                      <option value="charcoal" selected>Charcoal</option>
+                      <option value="sepia">Army Sepia</option>
+                      <option value="olive">Olive-Slate</option>
+                      <option value="bw_print">B&amp;W Print</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div class="field">
@@ -441,10 +452,14 @@
                   </div>
                 </div>
 
-                <div class="field-grid-2 compact-row">
+                <div class="field-grid-3 compact-row">
                   <div class="field">
                     <label for="terrain-relief-intensity">Strength: <strong id="terrain-relief-intensity-val">72%</strong></label>
                     <input id="terrain-relief-intensity" type="range" min="0.15" max="1.0" step="0.05" value="0.72" />
+                  </div>
+                  <div class="field">
+                    <label for="terrain-relief-contrast">Contrast: <strong id="terrain-relief-contrast-val">100%</strong></label>
+                    <input id="terrain-relief-contrast" type="range" min="0.4" max="2.2" step="0.05" value="1.0" />
                   </div>
                   <div class="field">
                     <label for="terrain-relief-exag">Vertical: <strong id="terrain-relief-exag-val">2.2&times;</strong></label>
@@ -457,18 +472,31 @@
                   <span>Show Topographic Contour Lines</span>
                 </label>
 
-                <div class="field" id="terrain-contour-interval-wrap" hidden>
-                  <label for="terrain-contour-interval">Contour Interval (CI)</label>
-                  <select id="terrain-contour-interval" aria-label="Topographic contour interval">
-                    <option value="auto" selected>Auto (Smart Military Scale)</option>
-                    <option value="20">20 m (Index 100 m)</option>
-                    <option value="50">50 m (Index 250 m)</option>
-                    <option value="100">100 m (Index 500 m)</option>
-                    <option value="200">200 m (Index 1,000 m)</option>
-                    <option value="250">250 m (Index 1,250 m)</option>
-                    <option value="500">500 m (Index 2,500 m)</option>
-                    <option value="1000">1,000 m (Index 5,000 m)</option>
-                  </select>
+                <div class="field-stack terrain-contour-subpanel" id="terrain-contour-interval-wrap" hidden>
+                  <label class="switch-label" for="terrain-show-contour-labels">
+                    <input id="terrain-show-contour-labels" type="checkbox" checked />
+                    <span>Show Elevation Numbers (Index Contours)</span>
+                  </label>
+                  <div class="field">
+                    <label for="terrain-contour-interval">Contour Interval (CI)</label>
+                    <select id="terrain-contour-interval" aria-label="Topographic contour interval">
+                      <option value="auto" selected>Auto (Smart Military Scale)</option>
+                      <option value="20">20 m (Index 100 m)</option>
+                      <option value="50">50 m (Index 250 m)</option>
+                      <option value="100">100 m (Index 500 m)</option>
+                      <option value="200">200 m (Index 1,000 m)</option>
+                      <option value="250">250 m (Index 1,250 m)</option>
+                      <option value="500">500 m (Index 2,500 m)</option>
+                      <option value="1000">1,000 m (Index 5,000 m)</option>
+                    </select>
+                  </div>
+                  <div class="hd-coastline-color-row">
+                    <label class="hd-coastline-color-label" for="terrain-contour-color">Contour Line Color</label>
+                    <div class="hd-coastline-color-controls">
+                      <input id="terrain-contour-color" type="color" value="#5e3214" aria-label="Custom contour line color" title="Pick custom contour line and elevation number color" />
+                      <button id="btn-terrain-contour-color-auto" class="btn-chip active" type="button" aria-pressed="true" title="Automatically adapt contour color to light or dark map themes">Auto</button>
+                    </div>
+                  </div>
                 </div>
 
                 <button id="btn-fetch-terrain-relief" class="btn btn-primary btn-full" type="button">
@@ -1154,6 +1182,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=27"></script>
+  <script type="module" src="./js/app.js?v=28"></script>
 </body>
 </html>

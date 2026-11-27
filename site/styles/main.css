@@ -2355,6 +2355,17 @@ input[type='range'] {
   color: #f3c486;
 }
 
+.terrain-contour-subpanel {
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.36);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.terrain-contour-subpanel[hidden] {
+  display: none;
+}
+
 .list-card-actions {
   display: inline-flex;
   align-items: center;

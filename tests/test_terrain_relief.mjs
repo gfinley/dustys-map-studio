@@ -125,14 +125,14 @@ test('Army hillshade lights NW slopes, shadows SE slopes, and keeps flat plains 
   assert.ok(jogRgba[peakIdx + 3] > 120);
 });
 
-test('Marching Squares extracts intermediate and every-5th index contour segments', () => {
-  const gw = 40;
-  const gh = 40;
+test('Marching Squares extracts index/intermediate contours and right-side-up elevation labels', () => {
+  const gw = 60;
+  const gh = 60;
   const elev = new Float32Array(gw * gh);
   for (let y = 0; y < gh; y += 1) {
     for (let x = 0; x < gw; x += 1) {
-      const dist = Math.hypot(x - 20, y - 20);
-      elev[y * gw + x] = Math.max(0, 1250 - dist * 80);
+      const dist = Math.hypot(x - 30, y - 30);
+      elev[y * gw + x] = Math.max(0, 1250 - dist * 52);
     }
   }
 
@@ -140,17 +140,30 @@ test('Marching Squares extracts intermediate and every-5th index contour segment
   const stats = computeDemStats(smoothed);
   assert.ok(stats.maxLandElev > 1000);
 
-  const contours = extractContourSegments(smoothed, gw, gh, 400, 400, 100, stats.maxLandElev);
+  const contours = extractContourSegments(smoothed, gw, gh, 600, 600, 100, stats.maxLandElev, {
+    includeLabels: true,
+  });
   assert.ok(contours.levels.includes(500), 'expected 500m index level');
   assert.ok(contours.levels.includes(1000), 'expected 1000m index level');
   assert.ok(contours.indexSegments.length >= 16, 'expected index contour segments');
   assert.ok(contours.intermediateSegments.length >= 32, 'expected intermediate contour segments');
+  assert.ok(contours.labels.length >= 2, `expected elevation labels along index contours, got ${contours.labels.length}`);
+
+  for (const lbl of contours.labels) {
+    assert.match(lbl.text, /^\d+m$/);
+    assert.ok(lbl.angleRad > -Math.PI * 0.5 - 1e-6 && lbl.angleRad <= Math.PI * 0.5 + 1e-6, 'label should stay right-side up');
+  }
+
+  const noLabels = extractContourSegments(smoothed, gw, gh, 600, 600, 100, stats.maxLandElev, {
+    includeLabels: false,
+  });
+  assert.equal(noLabels.labels.length, 0);
 
   const svgD = contourSegmentsToSvgPath(contours.indexSegments);
   assert.ok(svgD.startsWith('M') && svgD.includes('L'));
 });
 
-test('Auto contour interval, adaptive palette, and stale-view bounds checks behave sensibly', () => {
+test('Auto contour interval, contrast/tone palettes, custom contour color, and stale-view bounds checks', () => {
   assert.equal(chooseAutoContourInterval(2600, 2.0), 200);
   assert.equal(chooseAutoContourInterval(2600, 25.0), 250);
   assert.equal(resolveEffectiveContourInterval(100, 2000, 3.0), 100);
@@ -158,7 +171,12 @@ test('Auto contour interval, adaptive palette, and stale-view bounds checks beha
 
   const lightPalette = resolveContourPalette('#ebe6da', 'army_topo');
   const darkPalette = resolveContourPalette('#1d3c5e', 'army_topo');
+  const bwPalette = resolveContourPalette('#ebe6da', 'army_topo', { tone: 'bw_print', contrast: 1.8 });
+  const customPalette = resolveContourPalette('#ebe6da', 'army_topo', { contourColor: '#8b0000' });
   assert.notEqual(lightPalette.indexColor, darkPalette.indexColor);
+  assert.notEqual(bwPalette.indexColor, lightPalette.indexColor);
+  assert.equal(customPalette.indexColor, '#8b0000');
+  assert.ok(bwPalette.indexAlpha > lightPalette.indexAlpha, 'higher contrast should raise contour crispness');
   assert.equal(Object.keys(TERRAIN_STYLES).length, 4);
 
   const bounds = { south: 12, west: 119, north: 19, east: 123 };
@@ -171,7 +189,11 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
   assert.equal(def.terrainRelief.enabled, false);
   assert.equal(def.terrainRelief.style, 'army_topo');
   assert.equal(def.terrainRelief.clipMode, 'land');
+  assert.equal(def.terrainRelief.contrast, 1.0);
+  assert.equal(def.terrainRelief.tone, 'charcoal');
   assert.equal(def.terrainRelief.showContours, false);
+  assert.equal(def.terrainRelief.showContourLabels, true);
+  assert.equal(def.terrainRelief.contourColor, 'auto');
   assert.equal(wantsTerrainContours(def.terrainRelief), false);
 
   const contoursOnly = normalizeMapSpec({ ...def, terrainRelief: { style: 'topo_contours' } });
@@ -185,8 +207,12 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
       style: 'jog_elevation',
       clipMode: 'highlighted',
       intensity: 0.85,
+      contrast: 1.65,
       exaggeration: 3.1,
+      tone: 'sepia',
       showContours: true,
+      showContourLabels: true,
+      contourColor: '#6b2c12',
       contourInterval: 200,
       bounds: { south: 12.1, west: 119.2, north: 18.9, east: 122.8, zoom: 8 },
     },
@@ -198,7 +224,11 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
   assert.equal(decoded.terrainRelief.enabled, true);
   assert.equal(decoded.terrainRelief.style, 'jog_elevation');
   assert.equal(decoded.terrainRelief.clipMode, 'highlighted');
+  assert.equal(decoded.terrainRelief.contrast, 1.65);
+  assert.equal(decoded.terrainRelief.tone, 'sepia');
   assert.equal(decoded.terrainRelief.showContours, true);
+  assert.equal(decoded.terrainRelief.showContourLabels, true);
+  assert.equal(decoded.terrainRelief.contourColor, '#6b2c12');
   assert.equal(decoded.terrainRelief.contourInterval, 200);
   assert.equal(decoded.terrainRelief.bounds.zoom, 8);
 });

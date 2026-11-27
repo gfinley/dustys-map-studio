@@ -12,19 +12,19 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=27';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=27';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=27';
+} from './ornaments.js?v=28';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=28';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=28';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=27';
+} from './data-loader.js?v=28';
 import {
   buildProjectedTerrainLayer,
   contourSegmentsToSvgPath,
   resolveContourPalette,
-} from './terrain-relief.js?v=27';
+} from './terrain-relief.js?v=28';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -944,7 +944,11 @@ function drawTerrainReliefCanvas(
   }
 
   if (artifact.contours) {
-    const palette = resolveContourPalette(surfaceColor, artifact.style);
+    const palette = resolveContourPalette(surfaceColor, artifact.style, {
+      contourColor: artifact.contourColor,
+      tone: artifact.tone,
+      contrast: artifact.contrast,
+    });
     const alphaScale = 0.48 + 0.52 * artifact.intensity;
 
     if (artifact.contours.intermediateSegments.length >= 4) {
@@ -966,6 +970,35 @@ function drawTerrainReliefCanvas(
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       drawContourSegmentList(ctx, artifact.contours.indexSegments);
+      ctx.restore();
+    }
+
+    if (Array.isArray(artifact.contours.labels) && artifact.contours.labels.length > 0) {
+      const textScale = Math.max(scaleFactor, Math.max(width, height * 0.78) / 900);
+      const fontSize = Math.max(10.5, 11.8 * textScale);
+      const haloW = Math.max(2.6, 3.6 * textScale);
+      ctx.save();
+      ctx.font = `700 ${fontSize.toFixed(1)}px ${FONT_FAMILY}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.lineWidth = haloW;
+      ctx.strokeStyle = palette.haloColor;
+      ctx.fillStyle = palette.indexColor;
+
+      const labelAlpha = Math.min(0.98, Math.max(0.84, palette.indexAlpha * (0.68 + 0.32 * artifact.intensity)));
+      for (let i = 0; i < artifact.contours.labels.length; i += 1) {
+        const lbl = artifact.contours.labels[i];
+        ctx.save();
+        ctx.translate(lbl.x, lbl.y);
+        ctx.rotate(lbl.angleRad);
+        ctx.globalAlpha = 0.92;
+        ctx.strokeText(lbl.text, 0, 0);
+        ctx.globalAlpha = labelAlpha;
+        ctx.fillText(lbl.text, 0, 0);
+        ctx.restore();
+      }
       ctx.restore();
     }
   }
@@ -1084,7 +1117,11 @@ function appendTerrainReliefSvg(defs, mapParts, svgPath, projection, spec, datas
   }
 
   if (artifact.contours) {
-    const palette = resolveContourPalette(surfaceColor, artifact.style);
+    const palette = resolveContourPalette(surfaceColor, artifact.style, {
+      contourColor: artifact.contourColor,
+      tone: artifact.tone,
+      contrast: artifact.contrast,
+    });
     const alphaScale = 0.48 + 0.52 * artifact.intensity;
     const interD = contourSegmentsToSvgPath(artifact.contours.intermediateSegments);
     if (interD) {
@@ -1101,6 +1138,19 @@ function appendTerrainReliefSvg(defs, mapParts, svgPath, projection, spec, datas
       mapParts.push(
         `<path d="${idxD}" fill="none" stroke="${escapeXml(palette.indexColor)}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" />`,
       );
+    }
+    if (Array.isArray(artifact.contours.labels) && artifact.contours.labels.length > 0) {
+      const textScale = Math.max(scaleFactor, Math.max(widthPx, heightPx * 0.78) / 900);
+      const fontSize = Math.max(10.5, 11.8 * textScale).toFixed(1);
+      const haloW = Math.max(2.6, 3.6 * textScale).toFixed(2);
+      const labelOp = Math.min(0.98, Math.max(0.84, palette.indexAlpha * (0.68 + 0.32 * artifact.intensity))).toFixed(3);
+      for (let i = 0; i < artifact.contours.labels.length; i += 1) {
+        const lbl = artifact.contours.labels[i];
+        const deg = ((lbl.angleRad * 180) / Math.PI).toFixed(1);
+        mapParts.push(
+          `<text transform="translate(${lbl.x.toFixed(1)},${lbl.y.toFixed(1)}) rotate(${deg})" text-anchor="middle" dominant-baseline="central" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize}" font-weight="700" fill="${escapeXml(palette.indexColor)}" fill-opacity="${labelOp}" stroke="${escapeXml(palette.haloColor)}" stroke-opacity="0.92" stroke-width="${haloW}" stroke-linejoin="round" paint-order="stroke">${escapeXml(lbl.text)}</text>`,
+        );
+      }
     }
   }
 

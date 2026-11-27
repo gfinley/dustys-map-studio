@@ -61,6 +61,46 @@ export const TERRAIN_STYLE_IDS = Object.keys(TERRAIN_STYLES);
 export const TERRAIN_CLIP_MODES = ['land', 'highlighted'];
 export const TERRAIN_CONTOUR_INTERVALS = ['auto', 20, 50, 100, 200, 250, 500, 1000];
 
+export const TERRAIN_TONES = {
+  charcoal: {
+    id: 'charcoal',
+    label: 'Classic Charcoal',
+    shadowRgb: [22, 18, 14],
+    highlightRgb: [255, 252, 244],
+    shadowAlpha: 215,
+    highlightAlpha: 155,
+    jogTintShift: [1.0, 1.0, 1.0],
+  },
+  sepia: {
+    id: 'sepia',
+    label: 'Army Sepia (Warm Topo)',
+    shadowRgb: [56, 31, 14],
+    highlightRgb: [255, 247, 228],
+    shadowAlpha: 225,
+    highlightAlpha: 165,
+    jogTintShift: [1.05, 0.99, 0.91],
+  },
+  olive: {
+    id: 'olive',
+    label: 'Tactical Olive-Slate',
+    shadowRgb: [20, 34, 26],
+    highlightRgb: [242, 248, 238],
+    shadowAlpha: 220,
+    highlightAlpha: 155,
+    jogTintShift: [0.95, 1.03, 0.96],
+  },
+  bw_print: {
+    id: 'bw_print',
+    label: 'High-Contrast B&W Print',
+    shadowRgb: [0, 0, 0],
+    highlightRgb: [255, 255, 255],
+    shadowAlpha: 240,
+    highlightAlpha: 195,
+    jogTintShift: [1.0, 1.0, 1.0],
+    desaturateJog: true,
+  },
+};
+
 export function wantsTerrainContours(terrainRelief) {
   if (!terrainRelief) return false;
   return terrainRelief.style === 'topo_contours' || Boolean(terrainRelief.showContours);
@@ -636,16 +676,20 @@ export function renderTerrainRasterPixels(
   {
     style = 'army_topo',
     intensity = 0.72,
+    contrast = 1.0,
     exaggeration = 2.2,
+    tone = 'charcoal',
   } = {},
 ) {
   const styleDef = TERRAIN_STYLES[style] || TERRAIN_STYLES.army_topo;
+  const toneDef = TERRAIN_TONES[tone] || TERRAIN_TONES.charcoal;
   const rgba = new Uint8ClampedArray(gw * gh * 4);
   if (!styleDef.hasHillshade && !styleDef.hasHypsometric) {
     return rgba;
   }
 
   const clampedIntensity = clamp(Number(intensity) || 0.72, 0.1, 1.0);
+  const clampedContrast = clamp(Number(contrast) || 1.0, 0.4, 2.2);
   const clampedExag = clamp(Number(exaggeration) || 2.2, 0.5, 6.0);
 
   // Multidirectional illumination vectors in screen coordinates (+X east, +Y south, +Z up)
@@ -658,6 +702,12 @@ export function renderTerrainRasterPixels(
   const l3y = -0.74314483;
   const l3z = 0.66913061;
   const flatIllum = 0.7 * l1z + 0.15 * l2z + 0.15 * l3z;
+
+  const [shR, shG, shB] = toneDef.shadowRgb;
+  const [hiR, hiG, hiB] = toneDef.highlightRgb;
+  const [jogR, jogG, jogB] = toneDef.jogTintShift || [1, 1, 1];
+  const hillshadeRange = 0.46 / Math.pow(clampedContrast, 0.85);
+  const hillshadeGamma = clamp(0.88 / Math.pow(clampedContrast, 0.35), 0.52, 1.35);
 
   for (let y = 0; y < gh; y += 1) {
     const yPrev = Math.max(0, y - 1);
@@ -710,30 +760,50 @@ export function renderTerrainRasterPixels(
       const outIdx = idx * 4;
 
       if (styleDef.hasHypsometric) {
-        const [baseR, baseG, baseB] = interpolateJogColor(eC);
-        // Modulate JOG elevation tint by hillshade contrast
-        const shadeGain = clamp(1 + delta * 1.45, 0.45, 1.32);
-        rgba[outIdx] = clamp(Math.round(baseR * shadeGain), 0, 255);
-        rgba[outIdx + 1] = clamp(Math.round(baseG * shadeGain), 0, 255);
-        rgba[outIdx + 2] = clamp(Math.round(baseB * shadeGain), 0, 255);
+        let [baseR, baseG, baseB] = interpolateJogColor(eC);
+        if (toneDef.desaturateJog) {
+          const gray = Math.round(0.299 * baseR + 0.587 * baseG + 0.114 * baseB);
+          baseR = gray;
+          baseG = gray;
+          baseB = gray;
+        } else {
+          baseR = clamp(Math.round(baseR * jogR), 0, 255);
+          baseG = clamp(Math.round(baseG * jogG), 0, 255);
+          baseB = clamp(Math.round(baseB * jogB), 0, 255);
+        }
+        // Apply color contrast around mid-tone + hillshade modulation
+        const colorContrast = 0.65 + 0.35 * clampedContrast;
+        const cR = clamp(128 + (baseR - 128) * colorContrast, 0, 255);
+        const cG = clamp(128 + (baseG - 128) * colorContrast, 0, 255);
+        const cB = clamp(128 + (baseB - 128) * colorContrast, 0, 255);
+        const shadeGain = clamp(1 + delta * 1.45 * clampedContrast, 0.32, 1.42);
+        rgba[outIdx] = clamp(Math.round(cR * shadeGain), 0, 255);
+        rgba[outIdx + 1] = clamp(Math.round(cG * shadeGain), 0, 255);
+        rgba[outIdx + 2] = clamp(Math.round(cB * shadeGain), 0, 255);
         rgba[outIdx + 3] = clamp(Math.round(255 * (0.28 + clampedIntensity * 0.62)), 0, 255);
       } else {
         // Two-tone transparent hillshade: flat plains stay 100% clean across all Dusty themes
         const absD = Math.abs(delta);
-        if (absD < 0.012) continue;
-        const shaped = Math.pow(clamp((absD - 0.012) / 0.46, 0, 1), 0.88);
+        if (absD < 0.011) continue;
+        const shaped = Math.pow(clamp((absD - 0.011) / hillshadeRange, 0, 1), hillshadeGamma);
         if (delta < 0) {
-          // Shadowed SE slope: deep warm charcoal-umber
-          rgba[outIdx] = 22;
-          rgba[outIdx + 1] = 18;
-          rgba[outIdx + 2] = 14;
-          rgba[outIdx + 3] = clamp(Math.round(shaped * clampedIntensity * 215), 0, 230);
+          rgba[outIdx] = shR;
+          rgba[outIdx + 1] = shG;
+          rgba[outIdx + 2] = shB;
+          rgba[outIdx + 3] = clamp(
+            Math.round(shaped * clampedIntensity * toneDef.shadowAlpha * Math.min(1.25, 0.8 + 0.2 * clampedContrast)),
+            0,
+            245,
+          );
         } else {
-          // Sunlit NW slope: crisp warm ivory highlight
-          rgba[outIdx] = 255;
-          rgba[outIdx + 1] = 252;
-          rgba[outIdx + 2] = 244;
-          rgba[outIdx + 3] = clamp(Math.round(shaped * clampedIntensity * 155), 0, 175);
+          rgba[outIdx] = hiR;
+          rgba[outIdx + 1] = hiG;
+          rgba[outIdx + 2] = hiB;
+          rgba[outIdx + 3] = clamp(
+            Math.round(shaped * clampedIntensity * toneDef.highlightAlpha * Math.min(1.25, 0.8 + 0.2 * clampedContrast)),
+            0,
+            215,
+          );
         }
       }
     }
@@ -743,11 +813,204 @@ export function renderTerrainRasterPixels(
 }
 
 /**
- * Extract crisp vector contour segments (index every 5th level + intermediate)
- * from a projected elevation grid via Marching Squares.
+ * Stitch unordered 2D line segments `[x1, y1, x2, y2, ...]` belonging to a single
+ * contour elevation level into continuous polylines for tangent label placement.
+ */
+function stitchContourPolylines(flatSegments) {
+  const segCount = Math.floor(flatSegments.length / 4);
+  if (segCount === 0) return [];
+
+  const qKey = (x, y) => `${Math.round(x * 8)},${Math.round(y * 8)}`;
+  const endpointBuckets = new Map();
+  const addBucket = (key, segIdx, endIdx) => {
+    let list = endpointBuckets.get(key);
+    if (!list) {
+      list = [];
+      endpointBuckets.set(key, list);
+    }
+    list.push([segIdx, endIdx]);
+  };
+
+  for (let i = 0; i < segCount; i += 1) {
+    const base = i * 4;
+    addBucket(qKey(flatSegments[base], flatSegments[base + 1]), i, 0);
+    addBucket(qKey(flatSegments[base + 2], flatSegments[base + 3]), i, 1);
+  }
+
+  const visited = new Uint8Array(segCount);
+  const polylines = [];
+
+  const extendFrom = (pts, fromStart) => {
+    let guard = 0;
+    while (guard < segCount) {
+      guard += 1;
+      const tip = fromStart ? pts[0] : pts[pts.length - 1];
+      const bucket = endpointBuckets.get(qKey(tip[0], tip[1]));
+      if (!bucket) break;
+
+      let matched = false;
+      for (let b = 0; b < bucket.length; b += 1) {
+        const [segIdx, endIdx] = bucket[b];
+        if (visited[segIdx]) continue;
+        visited[segIdx] = 1;
+        const base = segIdx * 4;
+        const otherPt =
+          endIdx === 0
+            ? [flatSegments[base + 2], flatSegments[base + 3]]
+            : [flatSegments[base], flatSegments[base + 1]];
+        if (fromStart) {
+          pts.unshift(otherPt);
+        } else {
+          pts.push(otherPt);
+        }
+        matched = true;
+        break;
+      }
+      if (!matched) break;
+    }
+  };
+
+  for (let i = 0; i < segCount; i += 1) {
+    if (visited[i]) continue;
+    visited[i] = 1;
+    const base = i * 4;
+    const pts = [
+      [flatSegments[base], flatSegments[base + 1]],
+      [flatSegments[base + 2], flatSegments[base + 3]],
+    ];
+    extendFrom(pts, false);
+    extendFrom(pts, true);
+    polylines.push(pts);
+  }
+
+  return polylines;
+}
+
+function samplePointAtArcLength(pts, cumLen, dist) {
+  if (dist <= 0) return pts[0];
+  const last = cumLen.length - 1;
+  if (dist >= cumLen[last]) return pts[last];
+  let lo = 0;
+  let hi = last;
+  while (lo + 1 < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cumLen[mid] <= dist) lo = mid;
+    else hi = mid;
+  }
+  const segLen = Math.max(1e-6, cumLen[lo + 1] - cumLen[lo]);
+  const t = clamp((dist - cumLen[lo]) / segLen, 0, 1);
+  return [
+    pts[lo][0] + (pts[lo + 1][0] - pts[lo][0]) * t,
+    pts[lo][1] + (pts[lo + 1][1] - pts[lo][1]) * t,
+  ];
+}
+
+/**
+ * Place tangent-aligned, right-side-up elevation labels along stitched index contours
+ * with automatic collision avoidance and edge margins.
+ */
+function placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) {
+  const labels = [];
+  if (!indexByLevel || indexByLevel.size === 0) return labels;
+
+  const textScale = Math.max(0.55, Math.max(targetWidth, targetHeight * 0.78) / 900);
+  const edgeMargin = 20 * textScale;
+  const minPolyLen = 28 * textScale;
+  const labelSpacing = 140 * textScale;
+  const minCollisionDistSq = (52 * textScale) ** 2;
+  const tangentHalfWindow = 8 * textScale;
+  const maxLabels = 85;
+
+  // Process levels from higher peaks down so prominent summits & ridges get clean labels first
+  const sortedLevels = Array.from(indexByLevel.keys()).sort((a, b) => b - a);
+
+  for (let li = 0; li < sortedLevels.length && labels.length < maxLabels; li += 1) {
+    const level = sortedLevels[li];
+    const flatSegs = indexByLevel.get(level);
+    if (!flatSegs || flatSegs.length < 8) continue;
+
+    const polylines = stitchContourPolylines(flatSegs);
+    // Prefer longer, smoother contours first
+    polylines.sort((a, b) => b.length - a.length);
+    const labelText = `${level}m`;
+
+    for (let pi = 0; pi < polylines.length && labels.length < maxLabels; pi += 1) {
+      const pts = polylines[pi];
+      if (pts.length < 3) continue;
+
+      const cumLen = new Float64Array(pts.length);
+      for (let k = 1; k < pts.length; k += 1) {
+        cumLen[k] = cumLen[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+      }
+      const totalLen = cumLen[pts.length - 1];
+      if (totalLen < minPolyLen) continue;
+
+      const stations = [];
+      if (totalLen < labelSpacing * 1.15) {
+        stations.push(totalLen * 0.5);
+      } else {
+        for (let s = labelSpacing * 0.38; s <= totalLen - labelSpacing * 0.32; s += labelSpacing) {
+          stations.push(s);
+        }
+      }
+
+      for (let si = 0; si < stations.length && labels.length < maxLabels; si += 1) {
+        const s = stations[si];
+        const pt = samplePointAtArcLength(pts, cumLen, s);
+        const x = pt[0];
+        const y = pt[1];
+        if (
+          x < edgeMargin ||
+          x > targetWidth - edgeMargin ||
+          y < edgeMargin ||
+          y > targetHeight - edgeMargin
+        ) {
+          continue;
+        }
+
+        const pBefore = samplePointAtArcLength(pts, cumLen, Math.max(0, s - tangentHalfWindow));
+        const pAfter = samplePointAtArcLength(pts, cumLen, Math.min(totalLen, s + tangentHalfWindow));
+        const dx = pAfter[0] - pBefore[0];
+        const dy = pAfter[1] - pBefore[1];
+        const chord = Math.hypot(dx, dy);
+        // Skip extreme hairpins where the chord collapses relative to the arc window
+        if (chord < tangentHalfWindow * 0.55) continue;
+
+        let collides = false;
+        for (let ci = 0; ci < labels.length; ci += 1) {
+          const ox = labels[ci].x - x;
+          const oy = labels[ci].y - y;
+          if (ox * ox + oy * oy < minCollisionDistSq) {
+            collides = true;
+            break;
+          }
+        }
+        if (collides) continue;
+
+        let angleRad = Math.atan2(dy, dx);
+        // Always keep contour elevation numbers right-side up for rapid map reading
+        if (angleRad > Math.PI * 0.5) angleRad -= Math.PI;
+        else if (angleRad <= -Math.PI * 0.5) angleRad += Math.PI;
+
+        labels.push({
+          x,
+          y,
+          angleRad,
+          text: labelText,
+          level,
+        });
+      }
+    }
+  }
+
+  return labels;
+}
+
+/**
+ * Extract crisp vector contour segments (heavier index + intermediate) and optional
+ * tangent-aligned elevation labels along index contours via Marching Squares.
  *
- * Returns `{ indexSegments, intermediateSegments, levels }` where each segment
- * list is a flat array `[x1, y1, x2, y2, ...]` in target canvas pixel coordinates.
+ * Returns `{ indexSegments, intermediateSegments, labels, levels, interval, indexInterval }`.
  */
 export function extractContourSegments(
   elevGrid,
@@ -757,6 +1020,7 @@ export function extractContourSegments(
   targetHeight,
   intervalMeters,
   maxElevHint = 0,
+  { includeLabels = true } = {},
 ) {
   const indexSegments = [];
   const intermediateSegments = [];
@@ -770,7 +1034,7 @@ export function extractContourSegments(
     }
   }
   if (maxE < interval) {
-    return { indexSegments, intermediateSegments, levels: [], interval };
+    return { indexSegments, intermediateSegments, labels: [], levels: [], interval, indexInterval: interval * 5 };
   }
 
   const maxLevels = 48;
@@ -779,12 +1043,18 @@ export function extractContourSegments(
     levels.push(level);
   }
   if (levels.length === 0) {
-    return { indexSegments, intermediateSegments, levels, interval };
+    return { indexSegments, intermediateSegments, labels: [], levels, interval, indexInterval: interval * 5 };
   }
 
   const sx = targetWidth / gw;
   const sy = targetHeight / gh;
-  const indexMod = interval * 5;
+  // Standard Army index contour is every 5th line; fall back to every 2nd or 1st on gentler terrain
+  let indexMod = interval * 5;
+  if (maxE < indexMod) {
+    indexMod = maxE >= interval * 2 ? interval * 2 : interval;
+  }
+
+  const indexByLevel = includeLabels ? new Map() : null;
 
   const interp = (a, b, level) => {
     const denom = b - a;
@@ -794,7 +1064,9 @@ export function extractContourSegments(
 
   for (let li = 0; li < levels.length; li += 1) {
     const level = levels[li];
-    const target = level % indexMod === 0 ? indexSegments : intermediateSegments;
+    const isIndex = level % indexMod === 0;
+    const target = isIndex ? indexSegments : intermediateSegments;
+    const levelStartIdx = target.length;
 
     for (let y = 0; y < gh - 1; y += 1) {
       const row0 = y * gw;
@@ -830,7 +1102,6 @@ export function extractContourSegments(
         const px0 = (x + 0.5) * sx;
         const px1 = (x + 1.5) * sx;
 
-        // Edge midpoints lazily computed: 0=Top, 1=Right, 2=Bottom, 3=Left
         const topX = px0 + interp(v0, v1, level) * sx;
         const rightY = py0 + interp(v1, v2, level) * sy;
         const botX = px0 + interp(v3, v2, level) * sx;
@@ -884,40 +1155,98 @@ export function extractContourSegments(
         }
       }
     }
+
+    if (includeLabels && isIndex && target.length > levelStartIdx) {
+      indexByLevel.set(level, target.slice(levelStartIdx));
+    }
   }
 
-  return { indexSegments, intermediateSegments, levels, interval };
+  const labels = includeLabels ? placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) : [];
+  return { indexSegments, intermediateSegments, labels, levels, interval, indexInterval: indexMod };
 }
 
 /**
- * Compute adaptive Army topographic brown contour colors so lines remain crisp
- * on both light parchment/B&W themes and dark charcoal/blueprint themes.
+ * Compute adaptive Army topographic contour colors and label halo, respecting
+ * optional custom contourColor, relief tone, and contrast setting.
  */
-export function resolveContourPalette(surfaceColorHex, style = 'army_topo') {
+export function resolveContourPalette(
+  surfaceColorHex,
+  style = 'army_topo',
+  { contourColor = 'auto', tone = 'charcoal', contrast = 1.0 } = {},
+) {
+  const cBoost = clamp(0.72 + 0.28 * (Number(contrast) || 1.0), 0.65, 1.25);
+  const surfaceLum = parseHexLuminance(surfaceColorHex);
+  const isDarkSurface = style !== 'jog_elevation' && surfaceLum !== null && surfaceLum < 0.34;
+  const defaultHalo =
+    style === 'jog_elevation'
+      ? '#ebe3d2'
+      : (typeof surfaceColorHex === 'string' && /^#[0-9a-f]{6}$/i.test(surfaceColorHex.trim())
+          ? surfaceColorHex.trim()
+          : (isDarkSurface ? '#3f4246' : '#f4f0e6'));
+
+  if (typeof contourColor === 'string' && /^#[0-9a-f]{6}$/i.test(contourColor.trim())) {
+    const custom = contourColor.trim();
+    const customLum = parseHexLuminance(custom);
+    const haloColor =
+      surfaceLum !== null && customLum !== null && Math.abs(surfaceLum - customLum) < 0.22
+        ? (customLum < 0.45 ? '#f5f2eb' : '#1e242b')
+        : defaultHalo;
+    return {
+      indexColor: custom,
+      intermediateColor: custom,
+      indexAlpha: clamp(0.84 * cBoost, 0.45, 0.98),
+      intermediateAlpha: clamp(0.5 * cBoost, 0.25, 0.8),
+      haloColor,
+    };
+  }
+
+  if (tone === 'bw_print') {
+    if (isDarkSurface) {
+      return {
+        indexColor: '#e5e7eb',
+        intermediateColor: '#cbd5e1',
+        indexAlpha: clamp(0.8 * cBoost, 0.45, 0.96),
+        intermediateAlpha: clamp(0.46 * cBoost, 0.24, 0.78),
+        haloColor: defaultHalo,
+      };
+    }
+    return {
+      indexColor: '#1f2937',
+      intermediateColor: '#4b5563',
+      indexAlpha: clamp(0.84 * cBoost, 0.45, 0.96),
+      intermediateAlpha: clamp(0.48 * cBoost, 0.24, 0.78),
+      haloColor: defaultHalo,
+    };
+  }
+
   if (style === 'jog_elevation') {
     return {
-      indexColor: '#5c3114',
+      indexColor: '#5a2f12',
       intermediateColor: '#824d26',
-      indexAlpha: 0.76,
-      intermediateAlpha: 0.44,
+      indexAlpha: clamp(0.8 * cBoost, 0.45, 0.96),
+      intermediateAlpha: clamp(0.46 * cBoost, 0.24, 0.78),
+      haloColor: defaultHalo,
     };
   }
-  const lum = parseHexLuminance(surfaceColorHex);
-  if (lum !== null && lum < 0.34) {
+
+  if (isDarkSurface) {
     // Dark land surface (e.g. Dusty Prime #4a4a4a or Naval Blueprint #1d3c5e): warm bronze-tan topo lines
     return {
-      indexColor: '#d9ab7e',
-      intermediateColor: '#b98b5e',
-      indexAlpha: 0.72,
-      intermediateAlpha: 0.42,
+      indexColor: '#dfb384',
+      intermediateColor: '#bd8f62',
+      indexAlpha: clamp(0.76 * cBoost, 0.45, 0.95),
+      intermediateAlpha: clamp(0.44 * cBoost, 0.24, 0.76),
+      haloColor: defaultHalo,
     };
   }
+
   // Light / medium land surface: classic USGS/Army Field Manual topographic brown
   return {
     indexColor: '#5e3214',
     intermediateColor: '#87542c',
-    indexAlpha: 0.78,
-    intermediateAlpha: 0.48,
+    indexAlpha: clamp(0.8 * cBoost, 0.45, 0.96),
+    intermediateAlpha: clamp(0.48 * cBoost, 0.24, 0.78),
+    haloColor: defaultHalo,
   };
 }
 
@@ -1062,8 +1391,12 @@ export function buildProjectedTerrainLayer(
 
   const style = TERRAIN_STYLES[tr.style] ? tr.style : 'army_topo';
   const styleDef = TERRAIN_STYLES[style];
+  const tone = TERRAIN_TONES[tr.tone] ? tr.tone : 'charcoal';
   const intensity = clamp(Number(tr.intensity) || 0.72, 0.1, 1.0);
+  const contrast = clamp(Number(tr.contrast) || 1.0, 0.4, 2.2);
   const exaggeration = clamp(Number(tr.exaggeration) || 2.2, 0.5, 6.0);
+  const showContourLabels = tr.showContourLabels !== false;
+  const contourColor = typeof tr.contourColor === 'string' ? tr.contourColor : 'auto';
   const spanDeg = Math.max(Number(spec?.span?.lonDeg) || 10, Number(spec?.span?.latDeg) || 10);
   const maxGridDim = interactive ? 220 : Math.min(1050, Math.max(540, Math.round(Math.max(width, height) * 0.72)));
 
@@ -1100,13 +1433,18 @@ export function buildProjectedTerrainLayer(
   const renderKey = [
     projKey,
     style,
+    tone,
     intensity.toFixed(2),
+    contrast.toFixed(2),
     exaggeration.toFixed(2),
-    showContours && !interactive ? effectiveInterval : 'nc',
+    showContours && !interactive ? `${effectiveInterval}_${showContourLabels ? 'L' : 'NL'}` : 'nc',
   ].join('::');
 
   if (dem._renderCache && dem._renderCache.key === renderKey) {
-    return dem._renderCache.artifact;
+    return {
+      ...dem._renderCache.artifact,
+      contourColor,
+    };
   }
 
   let rasterCanvas = null;
@@ -1117,7 +1455,7 @@ export function buildProjectedTerrainLayer(
       grid.stepYM,
       grid.gw,
       grid.gh,
-      { style, intensity, exaggeration },
+      { style, intensity, contrast, exaggeration, tone },
     );
     if (typeof document !== 'undefined') {
       rasterCanvas = document.createElement('canvas');
@@ -1141,13 +1479,18 @@ export function buildProjectedTerrainLayer(
       height,
       effectiveInterval,
       grid.maxVisibleElev,
+      { includeLabels: showContourLabels },
     );
   }
 
   const artifact = {
     style,
+    tone,
     showContours,
+    showContourLabels,
+    contourColor,
     intensity,
+    contrast,
     exaggeration,
     effectiveInterval,
     maxVisibleElev: Math.round(grid.maxVisibleElev || dem.stats?.maxLandElev || 0),

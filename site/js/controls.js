@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=27';
+} from './schema.js?v=28';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,21 +14,23 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=27';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=27';
-import { formatArea } from './shadow.js?v=27';
+} from './presets.js?v=28';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=28';
+import { formatArea } from './shadow.js?v=28';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=27';
+} from './osm-coastline.js?v=28';
 import {
   TERRAIN_STYLES,
+  TERRAIN_TONES,
   isViewOutsideTerrainBounds,
+  resolveContourPalette,
   wantsTerrainContours,
-} from './terrain-relief.js?v=27';
+} from './terrain-relief.js?v=28';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -1490,6 +1492,10 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ terrainRelief: patch });
   });
 
+  $('terrain-relief-tone')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { tone: e.target.value } });
+  });
+
   ['btn-terrain-clip-land', 'btn-terrain-clip-highlighted'].forEach((id) => {
     $(id)?.addEventListener('click', (e) => {
       const clipMode = e.currentTarget?.dataset?.clip === 'highlighted' ? 'highlighted' : 'land';
@@ -1510,6 +1516,19 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ terrainRelief: { intensity: Number(e.target.value) } }, { commitHistory: true });
   });
 
+  $('terrain-relief-contrast')?.addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    const lbl = $('terrain-relief-contrast-val');
+    if (lbl) lbl.textContent = `${Math.round(v * 100)}%`;
+    boundCallbacks.onPatchSpec?.(
+      { terrainRelief: { contrast: v } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('terrain-relief-contrast')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { contrast: Number(e.target.value) } }, { commitHistory: true });
+  });
+
   $('terrain-relief-exag')?.addEventListener('input', (e) => {
     const v = Number(e.target.value);
     const lbl = $('terrain-relief-exag-val');
@@ -1527,10 +1546,27 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ terrainRelief: { showContours: Boolean(e.target.checked) } });
   });
 
+  $('terrain-show-contour-labels')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { showContourLabels: Boolean(e.target.checked) } });
+  });
+
   $('terrain-contour-interval')?.addEventListener('change', (e) => {
     const raw = e.target.value;
     const contourInterval = raw === 'auto' ? 'auto' : Number(raw);
     boundCallbacks.onPatchSpec?.({ terrainRelief: { contourInterval } });
+  });
+
+  $('terrain-contour-color')?.addEventListener('input', (e) => {
+    boundCallbacks.onPatchSpec?.(
+      { terrainRelief: { contourColor: e.target.value } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('terrain-contour-color')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { contourColor: e.target.value } }, { commitHistory: true });
+  });
+  $('btn-terrain-contour-color-auto')?.addEventListener('click', () => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { contourColor: 'auto' } });
   });
 
   $('btn-fetch-terrain-relief')?.addEventListener('click', () => {
@@ -2225,8 +2261,10 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   const tr = spec.terrainRelief || {};
   const trStyle = TERRAIN_STYLES[tr.style] ? tr.style : 'army_topo';
   const trStyleDef = TERRAIN_STYLES[trStyle];
+  const trTone = TERRAIN_TONES[tr.tone] ? tr.tone : 'charcoal';
   const trClipMode = tr.clipMode === 'highlighted' ? 'highlighted' : 'land';
   const trIntensity = Number.isFinite(Number(tr.intensity)) ? Number(tr.intensity) : 0.72;
+  const trContrast = Number.isFinite(Number(tr.contrast)) ? Number(tr.contrast) : 1.0;
   const trExag = Number.isFinite(Number(tr.exaggeration)) ? Number(tr.exaggeration) : 2.2;
   const trLoaded = Boolean(uiState.terrainLoaded);
   const trEnabled = Boolean(tr.enabled);
@@ -2235,6 +2273,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   const trStats = uiState.terrainStats || null;
 
   if ($('terrain-relief-style')) $('terrain-relief-style').value = trStyle;
+  if ($('terrain-relief-tone')) $('terrain-relief-tone').value = trTone;
   const btnClipLand = $('btn-terrain-clip-land');
   const btnClipHl = $('btn-terrain-clip-highlighted');
   if (btnClipLand) {
@@ -2251,6 +2290,10 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('terrain-relief-intensity-val')) {
     $('terrain-relief-intensity-val').textContent = `${Math.round(trIntensity * 100)}%`;
   }
+  if ($('terrain-relief-contrast')) $('terrain-relief-contrast').value = String(trContrast);
+  if ($('terrain-relief-contrast-val')) {
+    $('terrain-relief-contrast-val').textContent = `${Math.round(trContrast * 100)}%`;
+  }
   if ($('terrain-relief-exag')) $('terrain-relief-exag').value = String(trExag);
   if ($('terrain-relief-exag-val')) {
     $('terrain-relief-exag-val').textContent = `${trExag.toFixed(1)}×`;
@@ -2261,8 +2304,34 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     showContoursEl.checked = trShowContours;
     showContoursEl.disabled = trStyle === 'topo_contours';
   }
+  const showLabelsEl = $('terrain-show-contour-labels');
+  if (showLabelsEl) {
+    showLabelsEl.checked = tr.showContourLabels !== false;
+  }
   if ($('terrain-contour-interval')) {
     $('terrain-contour-interval').value = String(tr.contourInterval ?? 'auto');
+  }
+  const ciColorInput = $('terrain-contour-color');
+  const ciAutoBtn = $('btn-terrain-contour-color-auto');
+  const isAutoContourColor = !tr.contourColor || tr.contourColor === 'auto';
+  if (ciColorInput) {
+    const surfaceForPreview =
+      trClipMode === 'highlighted'
+        ? (spec.highlightedCountries?.[0]?.fill || spec.colors?.highlightFill || spec.colors?.land)
+        : spec.colors?.land;
+    const autoResolved = resolveContourPalette(surfaceForPreview, trStyle, {
+      contourColor: 'auto',
+      tone: trTone,
+      contrast: trContrast,
+    });
+    const displayHex = isAutoContourColor ? autoResolved.indexColor : tr.contourColor;
+    if (/^#[0-9a-f]{6}$/i.test(displayHex)) {
+      ciColorInput.value = displayHex;
+    }
+  }
+  if (ciAutoBtn) {
+    ciAutoBtn.classList.toggle('active', isAutoContourColor);
+    ciAutoBtn.setAttribute('aria-pressed', String(isAutoContourColor));
   }
   const ciWrap = $('terrain-contour-interval-wrap');
   if (ciWrap) {

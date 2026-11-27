@@ -202,6 +202,8 @@ export const TERRAIN_RELIEF_CLIP_MODES = ['land', 'highlighted'];
 
 export const TERRAIN_CONTOUR_INTERVALS = ['auto', 20, 50, 100, 200, 250, 500, 1000];
 
+export const TERRAIN_RELIEF_TONES = ['charcoal', 'sepia', 'olive', 'bw_print'];
+
 export function createDefaultMapSpec() {
   return {
     version: SCHEMA_VERSION,
@@ -300,8 +302,12 @@ export function createDefaultMapSpec() {
       style: 'army_topo',
       clipMode: 'land',
       intensity: 0.72,
+      contrast: 1.0,
       exaggeration: 2.2,
+      tone: 'charcoal',
       showContours: false,
+      showContourLabels: true,
+      contourColor: 'auto',
       contourInterval: 'auto',
       bounds: null,
     },
@@ -537,10 +543,20 @@ export function normalizeMapSpec(partial) {
         ? terrainRaw.clipMode
         : def.terrainRelief.clipMode,
       intensity: clamp(terrainRaw.intensity, 0.15, 1.0, def.terrainRelief.intensity),
+      contrast: clamp(terrainRaw.contrast, 0.4, 2.2, def.terrainRelief.contrast),
       exaggeration: clamp(terrainRaw.exaggeration, 0.5, 6.0, def.terrainRelief.exaggeration),
+      tone: TERRAIN_RELIEF_TONES.includes(terrainRaw.tone) ? terrainRaw.tone : def.terrainRelief.tone,
       showContours: typeof terrainRaw.showContours === 'boolean'
         ? terrainRaw.showContours
         : terrainRaw.style === 'topo_contours',
+      showContourLabels: typeof terrainRaw.showContourLabels === 'boolean'
+        ? terrainRaw.showContourLabels
+        : def.terrainRelief.showContourLabels,
+      contourColor:
+        typeof terrainRaw.contourColor === 'string' &&
+        (terrainRaw.contourColor === 'auto' || /^#[0-9a-f]{6}$/i.test(terrainRaw.contourColor.trim()))
+          ? terrainRaw.contourColor.trim()
+          : def.terrainRelief.contourColor,
       contourInterval: normalizedContourInterval,
       bounds: normalizedTerrainBounds,
     },

@@ -701,12 +701,17 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         html = INDEX_HTML_PATH.read_text(encoding="utf-8")
         for elem_id in (
             "terrain-relief-style",
+            "terrain-relief-tone",
             "btn-terrain-clip-land",
             "btn-terrain-clip-highlighted",
             "terrain-relief-intensity",
+            "terrain-relief-contrast",
             "terrain-relief-exag",
             "terrain-show-contours",
+            "terrain-show-contour-labels",
             "terrain-contour-interval",
+            "terrain-contour-color",
+            "btn-terrain-contour-color-auto",
             "btn-fetch-terrain-relief",
             "terrain-relief-status",
             "btn-toggle-terrain-relief",
