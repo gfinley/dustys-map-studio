@@ -9,6 +9,7 @@ import {
   contourSegmentsToSvgPath,
   decodeTerrariumElevation,
   extractContourSegments,
+  extractRelativeSummits,
   isViewOutsideTerrainBounds,
   planTerrainTiles,
   renderTerrainRasterPixels,
@@ -150,6 +151,10 @@ test('Marching Squares extracts index/intermediate contours and right-side-up el
   assert.ok(contours.indexSegments.length >= 16, 'expected index contour segments');
   assert.ok(contours.intermediateSegments.length >= 32, 'expected intermediate contour segments');
   assert.ok(contours.labels.length >= 2, `expected elevation labels along index contours, got ${contours.labels.length}`);
+  assert.ok(
+    contours.labels.some((l) => l.level === contours.topLevel && l.isTopLevel),
+    `expected uppermost contour level (${contours.topLevel}m) to be labeled`,
+  );
 
   for (const lbl of contours.labels) {
     assert.match(lbl.text, /^\d+m$/);
@@ -163,6 +168,29 @@ test('Marching Squares extracts index/intermediate contours and right-side-up el
 
   const svgD = contourSegmentsToSvgPath(contours.indexSegments);
   assert.ok(svgD.startsWith('M') && svgD.includes('L'));
+});
+
+test('extractRelativeSummits detects prominent peaks and respects minimum peak spacing', () => {
+  const gw = 80;
+  const gh = 80;
+  const elev = new Float32Array(gw * gh);
+  for (let y = 0; y < gh; y += 1) {
+    for (let x = 0; x < gw; x += 1) {
+      const p1 = Math.max(0, 2150 - Math.hypot(x - 24, y - 28) * 95);
+      const p2 = Math.max(0, 1680 - Math.hypot(x - 56, y - 52) * 90);
+      elev[y * gw + x] = Math.max(80, p1, p2);
+    }
+  }
+  const smoothed = smoothElevationGrid(elev, gw, gh);
+  const summits = extractRelativeSummits(smoothed, gw, gh, 800, 800, {
+    rawElevGrid: elev,
+    intervalMeters: 200,
+    maxElevHint: 2150,
+  });
+  assert.equal(summits.length, 2, `expected 2 distinct relative summits, got ${summits.length}`);
+  assert.ok(summits[0].elev >= 2100 && summits[0].elev <= 2160, `primary summit elev=${summits[0].elev}`);
+  assert.ok(summits[1].elev >= 1640 && summits[1].elev <= 1700, `secondary summit elev=${summits[1].elev}`);
+  assert.match(summits[0].text, /^2,\d{3}m$/);
 });
 
 test('Auto contour interval, contrast/tone palettes, custom contour color, and stale-view bounds checks', () => {

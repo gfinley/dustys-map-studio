@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=29';
+} from './schema.js?v=30';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,23 +14,23 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=29';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=29';
-import { formatArea } from './shadow.js?v=29';
+} from './presets.js?v=30';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=30';
+import { formatArea } from './shadow.js?v=30';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=29';
+} from './osm-coastline.js?v=30';
 import {
   TERRAIN_STYLES,
   TERRAIN_TONES,
   isViewOutsideTerrainBounds,
   resolveContourPalette,
   wantsTerrainContours,
-} from './terrain-relief.js?v=29';
+} from './terrain-relief.js?v=30';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -1569,6 +1569,10 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ terrainRelief: { contourColor: 'auto' } });
   });
 
+  $('terrain-show-peak-summits')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { showPeakSummits: Boolean(e.target.checked) } });
+  });
+
   $('terrain-show-altitude-scale')?.addEventListener('change', (e) => {
     boundCallbacks.onPatchSpec?.({ terrainRelief: { showAltitudeScale: Boolean(e.target.checked) } });
   });
@@ -2343,6 +2347,9 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   const ciWrap = $('terrain-contour-interval-wrap');
   if (ciWrap) {
     ciWrap.hidden = !trShowContours;
+  }
+  if ($('terrain-show-peak-summits')) {
+    $('terrain-show-peak-summits').checked = tr.showPeakSummits !== false;
   }
   if ($('terrain-show-altitude-scale')) {
     $('terrain-show-altitude-scale').checked = tr.showAltitudeScale !== false;

@@ -13,19 +13,19 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=29';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=29';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=29';
+} from './ornaments.js?v=30';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=30';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=30';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=29';
+} from './data-loader.js?v=30';
 import {
   buildProjectedTerrainLayer,
   contourSegmentsToSvgPath,
   resolveContourPalette,
-} from './terrain-relief.js?v=29';
+} from './terrain-relief.js?v=30';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -1004,6 +1004,56 @@ function drawTerrainReliefCanvas(
     }
   }
 
+  if (Array.isArray(artifact.summits) && artifact.summits.length > 0) {
+    const summitPalette = resolveContourPalette(surfaceColor, artifact.style, {
+      contourColor: artifact.contourColor,
+      tone: artifact.tone,
+      contrast: artifact.contrast,
+    });
+    const textScale = Math.max(scaleFactor, Math.max(width, height * 0.78) / 900);
+    const triR = Math.max(3.2, 4.0 * textScale);
+    const fontSize = Math.max(10.5, 11.4 * textScale);
+    const haloW = Math.max(2.6, 3.6 * textScale);
+
+    ctx.save();
+    ctx.font = `800 ${fontSize.toFixed(1)}px ${FONT_FAMILY}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    for (let i = 0; i < artifact.summits.length; i += 1) {
+      const pk = artifact.summits[i];
+      const px = pk.x;
+      const py = pk.y;
+
+      // Crisp military summit triangle (▲) with halo
+      ctx.beginPath();
+      ctx.moveTo(px, py - triR);
+      ctx.lineTo(px + triR * 0.92, py + triR * 0.72);
+      ctx.lineTo(px - triR * 0.92, py + triR * 0.72);
+      ctx.closePath();
+      ctx.strokeStyle = summitPalette.haloColor;
+      ctx.lineWidth = Math.max(2.0, 2.6 * textScale);
+      ctx.globalAlpha = 0.92;
+      ctx.stroke();
+      ctx.fillStyle = summitPalette.indexColor;
+      ctx.globalAlpha = 0.96;
+      ctx.fill();
+
+      // Spot elevation text above the summit triangle
+      const textY = py - triR - 1.8 * textScale;
+      ctx.lineWidth = haloW;
+      ctx.strokeStyle = summitPalette.haloColor;
+      ctx.globalAlpha = 0.92;
+      ctx.strokeText(pk.text, px, textY);
+      ctx.fillStyle = summitPalette.indexColor;
+      ctx.globalAlpha = 0.96;
+      ctx.fillText(pk.text, px, textY);
+    }
+    ctx.restore();
+  }
+
   ctx.restore();
 
   // Re-stroke highlighted country outlines cleanly above the relief shading
@@ -1152,6 +1202,33 @@ function appendTerrainReliefSvg(defs, mapParts, svgPath, projection, spec, datas
           `<text transform="translate(${lbl.x.toFixed(1)},${lbl.y.toFixed(1)}) rotate(${deg})" text-anchor="middle" dominant-baseline="central" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize}" font-weight="700" fill="${escapeXml(palette.indexColor)}" fill-opacity="${labelOp}" stroke="${escapeXml(palette.haloColor)}" stroke-opacity="0.92" stroke-width="${haloW}" stroke-linejoin="round" paint-order="stroke">${escapeXml(lbl.text)}</text>`,
         );
       }
+    }
+  }
+
+  if (Array.isArray(artifact.summits) && artifact.summits.length > 0) {
+    const summitPalette = resolveContourPalette(surfaceColor, artifact.style, {
+      contourColor: artifact.contourColor,
+      tone: artifact.tone,
+      contrast: artifact.contrast,
+    });
+    const textScale = Math.max(scaleFactor, Math.max(widthPx, heightPx * 0.78) / 900);
+    const triR = Math.max(3.2, 4.0 * textScale);
+    const fontSize = Math.max(10.5, 11.4 * textScale).toFixed(1);
+    const haloW = Math.max(2.6, 3.6 * textScale).toFixed(2);
+    const triStrokeW = Math.max(2.0, 2.6 * textScale).toFixed(2);
+
+    for (let i = 0; i < artifact.summits.length; i += 1) {
+      const pk = artifact.summits[i];
+      const px = pk.x;
+      const py = pk.y;
+      const ptsStr = `${px.toFixed(1)},${(py - triR).toFixed(1)} ${(px + triR * 0.92).toFixed(1)},${(py + triR * 0.72).toFixed(1)} ${(px - triR * 0.92).toFixed(1)},${(py + triR * 0.72).toFixed(1)}`;
+      const textY = (py - triR - 1.8 * textScale).toFixed(1);
+      mapParts.push(
+        `<polygon points="${ptsStr}" fill="${escapeXml(summitPalette.indexColor)}" fill-opacity="0.96" stroke="${escapeXml(summitPalette.haloColor)}" stroke-opacity="0.92" stroke-width="${triStrokeW}" stroke-linejoin="round" paint-order="stroke" />`,
+      );
+      mapParts.push(
+        `<text x="${px.toFixed(1)}" y="${textY}" text-anchor="middle" font-family="${escapeXml(FONT_FAMILY)}" font-size="${fontSize}" font-weight="800" fill="${escapeXml(summitPalette.indexColor)}" fill-opacity="0.96" stroke="${escapeXml(summitPalette.haloColor)}" stroke-opacity="0.92" stroke-width="${haloW}" stroke-linejoin="round" paint-order="stroke">${escapeXml(pk.text)}</text>`,
+      );
     }
   }
 

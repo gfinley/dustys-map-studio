@@ -307,6 +307,7 @@ export function createDefaultMapSpec() {
       tone: 'charcoal',
       showContours: false,
       showContourLabels: true,
+      showPeakSummits: true,
       contourColor: 'auto',
       contourInterval: 'auto',
       showAltitudeScale: true,
@@ -554,6 +555,9 @@ export function normalizeMapSpec(partial) {
       showContourLabels: typeof terrainRaw.showContourLabels === 'boolean'
         ? terrainRaw.showContourLabels
         : def.terrainRelief.showContourLabels,
+      showPeakSummits: typeof terrainRaw.showPeakSummits === 'boolean'
+        ? terrainRaw.showPeakSummits
+        : def.terrainRelief.showPeakSummits,
       contourColor:
         typeof terrainRaw.contourColor === 'string' &&
         (terrainRaw.contourColor === 'auto' || /^#[0-9a-f]{6}$/i.test(terrainRaw.contourColor.trim()))

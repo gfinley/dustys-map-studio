@@ -1006,43 +1006,68 @@ function samplePointAtArcLength(pts, cumLen, dist) {
 
 /**
  * Place tangent-aligned, right-side-up elevation labels along stitched index contours
- * with automatic collision avoidance and edge margins.
+ * and guarantee the uppermost contour level is labeled, with collision avoidance
+ * against other contour labels and relative summit markers.
  */
-function placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) {
+function placeIndexContourLabels(
+  indexByLevel,
+  targetWidth,
+  targetHeight,
+  { topLevel = null, avoidPoints = [] } = {},
+) {
   const labels = [];
   if (!indexByLevel || indexByLevel.size === 0) return labels;
 
   const textScale = Math.max(0.55, Math.max(targetWidth, targetHeight * 0.78) / 900);
   const edgeMargin = 20 * textScale;
   const minPolyLen = 28 * textScale;
+  const topMinPolyLen = 8 * textScale;
   const labelSpacing = 140 * textScale;
   const minCollisionDistSq = (52 * textScale) ** 2;
+  const avoidDistSq = (32 * textScale) ** 2;
   const tangentHalfWindow = 8 * textScale;
   const maxLabels = 85;
 
-  // Process levels from higher peaks down so prominent summits & ridges get clean labels first
+  const collidesWithAny = (x, y, checkAvoid = true) => {
+    for (let ci = 0; ci < labels.length; ci += 1) {
+      const ox = labels[ci].x - x;
+      const oy = labels[ci].y - y;
+      if (ox * ox + oy * oy < minCollisionDistSq) return true;
+    }
+    if (checkAvoid && Array.isArray(avoidPoints)) {
+      for (let ai = 0; ai < avoidPoints.length; ai += 1) {
+        const ox = avoidPoints[ai].x - x;
+        const oy = avoidPoints[ai].y - y;
+        if (ox * ox + oy * oy < avoidDistSq) return true;
+      }
+    }
+    return false;
+  };
+
+  // Process levels from higher peaks down so the uppermost contour & high ridges get labeled first
   const sortedLevels = Array.from(indexByLevel.keys()).sort((a, b) => b - a);
 
   for (let li = 0; li < sortedLevels.length && labels.length < maxLabels; li += 1) {
     const level = sortedLevels[li];
+    const isTopLevel = topLevel !== null && level === topLevel;
     const flatSegs = indexByLevel.get(level);
-    if (!flatSegs || flatSegs.length < 8) continue;
+    if (!flatSegs || flatSegs.length < 4) continue;
 
     const polylines = stitchContourPolylines(flatSegs);
-    // Prefer longer, smoother contours first
     polylines.sort((a, b) => b.length - a.length);
     const labelText = `${level}m`;
+    const placedBeforeLevel = labels.length;
 
     for (let pi = 0; pi < polylines.length && labels.length < maxLabels; pi += 1) {
       const pts = polylines[pi];
-      if (pts.length < 3) continue;
+      if (pts.length < 2) continue;
 
       const cumLen = new Float64Array(pts.length);
       for (let k = 1; k < pts.length; k += 1) {
         cumLen[k] = cumLen[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
       }
       const totalLen = cumLen[pts.length - 1];
-      if (totalLen < minPolyLen) continue;
+      if (totalLen < (isTopLevel ? topMinPolyLen : minPolyLen)) continue;
 
       const stations = [];
       if (totalLen < labelSpacing * 1.15) {
@@ -1067,26 +1092,21 @@ function placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) {
           continue;
         }
 
-        const pBefore = samplePointAtArcLength(pts, cumLen, Math.max(0, s - tangentHalfWindow));
-        const pAfter = samplePointAtArcLength(pts, cumLen, Math.min(totalLen, s + tangentHalfWindow));
+        const halfWin = isTopLevel ? Math.min(tangentHalfWindow, totalLen * 0.25) : tangentHalfWindow;
+        const pBefore = samplePointAtArcLength(pts, cumLen, Math.max(0, s - halfWin));
+        const pAfter = samplePointAtArcLength(pts, cumLen, Math.min(totalLen, s + halfWin));
         const dx = pAfter[0] - pBefore[0];
         const dy = pAfter[1] - pBefore[1];
         const chord = Math.hypot(dx, dy);
-        // Skip extreme hairpins where the chord collapses relative to the arc window
-        if (chord < tangentHalfWindow * 0.55) continue;
+        if (!isTopLevel && chord < tangentHalfWindow * 0.55) continue;
 
-        let collides = false;
-        for (let ci = 0; ci < labels.length; ci += 1) {
-          const ox = labels[ci].x - x;
-          const oy = labels[ci].y - y;
-          if (ox * ox + oy * oy < minCollisionDistSq) {
-            collides = true;
-            break;
-          }
+        if (collidesWithAny(x, y, true)) continue;
+
+        let angleRad = chord > 1e-3 ? Math.atan2(dy, dx) : 0;
+        if (isTopLevel && chord < halfWin * 0.6) {
+          // Tight summit ring: render crisp horizontal label on the ring
+          angleRad = 0;
         }
-        if (collides) continue;
-
-        let angleRad = Math.atan2(dy, dx);
         // Always keep contour elevation numbers right-side up for rapid map reading
         if (angleRad > Math.PI * 0.5) angleRad -= Math.PI;
         else if (angleRad <= -Math.PI * 0.5) angleRad += Math.PI;
@@ -1097,6 +1117,38 @@ function placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) {
           angleRad,
           text: labelText,
           level,
+          isTopLevel,
+        });
+      }
+    }
+
+    // Guarantee at least one label on the uppermost contour line even on small summit loops
+    if (isTopLevel && labels.length === placedBeforeLevel && polylines.length > 0) {
+      let bestPt = null;
+      for (let pi = 0; pi < polylines.length && !bestPt; pi += 1) {
+        const pts = polylines[pi];
+        // Pick the southernmost point of the top contour loop so it sits below any summit ▲ marker
+        let southPt = pts[0];
+        for (let k = 1; k < pts.length; k += 1) {
+          if (pts[k][1] > southPt[1]) southPt = pts[k];
+        }
+        if (
+          southPt[0] >= edgeMargin * 0.6 &&
+          southPt[0] <= targetWidth - edgeMargin * 0.6 &&
+          southPt[1] >= edgeMargin * 0.6 &&
+          southPt[1] <= targetHeight - edgeMargin * 0.6
+        ) {
+          bestPt = southPt;
+        }
+      }
+      if (bestPt) {
+        labels.push({
+          x: bestPt[0],
+          y: bestPt[1] + 5 * textScale,
+          angleRad: 0,
+          text: labelText,
+          level,
+          isTopLevel: true,
         });
       }
     }
@@ -1107,9 +1159,9 @@ function placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) {
 
 /**
  * Extract crisp vector contour segments (heavier index + intermediate) and optional
- * tangent-aligned elevation labels along index contours via Marching Squares.
+ * tangent-aligned elevation labels along index contours and the uppermost contour line.
  *
- * Returns `{ indexSegments, intermediateSegments, labels, levels, interval, indexInterval }`.
+ * Returns `{ indexSegments, intermediateSegments, labels, levels, interval, indexInterval, topLevel }`.
  */
 export function extractContourSegments(
   elevGrid,
@@ -1119,7 +1171,7 @@ export function extractContourSegments(
   targetHeight,
   intervalMeters,
   maxElevHint = 0,
-  { includeLabels = true } = {},
+  { includeLabels = true, avoidPoints = [] } = {},
 ) {
   const indexSegments = [];
   const intermediateSegments = [];
@@ -1133,7 +1185,15 @@ export function extractContourSegments(
     }
   }
   if (maxE < interval) {
-    return { indexSegments, intermediateSegments, labels: [], levels: [], interval, indexInterval: interval * 5 };
+    return {
+      indexSegments,
+      intermediateSegments,
+      labels: [],
+      levels: [],
+      interval,
+      indexInterval: interval * 5,
+      topLevel: null,
+    };
   }
 
   const maxLevels = 48;
@@ -1142,7 +1202,15 @@ export function extractContourSegments(
     levels.push(level);
   }
   if (levels.length === 0) {
-    return { indexSegments, intermediateSegments, labels: [], levels, interval, indexInterval: interval * 5 };
+    return {
+      indexSegments,
+      intermediateSegments,
+      labels: [],
+      levels,
+      interval,
+      indexInterval: interval * 5,
+      topLevel: null,
+    };
   }
 
   const sx = targetWidth / gw;
@@ -1154,6 +1222,8 @@ export function extractContourSegments(
   }
 
   const indexByLevel = includeLabels ? new Map() : null;
+  let topDrawnLevel = null;
+  let topDrawnSegments = null;
 
   const interp = (a, b, level) => {
     const denom = b - a;
@@ -1255,13 +1325,194 @@ export function extractContourSegments(
       }
     }
 
-    if (includeLabels && isIndex && target.length > levelStartIdx) {
-      indexByLevel.set(level, target.slice(levelStartIdx));
+    if (target.length > levelStartIdx) {
+      topDrawnLevel = level;
+      if (includeLabels) {
+        const segs = target.slice(levelStartIdx);
+        topDrawnSegments = segs;
+        if (isIndex) {
+          indexByLevel.set(level, segs);
+        }
+      }
     }
   }
 
-  const labels = includeLabels ? placeIndexContourLabels(indexByLevel, targetWidth, targetHeight) : [];
-  return { indexSegments, intermediateSegments, labels, levels, interval, indexInterval: indexMod };
+  // Always include the uppermost drawn contour level in the labeling map
+  if (includeLabels && topDrawnLevel !== null && topDrawnSegments && !indexByLevel.has(topDrawnLevel)) {
+    indexByLevel.set(topDrawnLevel, topDrawnSegments);
+  }
+
+  const labels = includeLabels
+    ? placeIndexContourLabels(indexByLevel, targetWidth, targetHeight, {
+        topLevel: topDrawnLevel,
+        avoidPoints,
+      })
+    : [];
+  return {
+    indexSegments,
+    intermediateSegments,
+    labels,
+    levels,
+    interval,
+    indexInterval: indexMod,
+    topLevel: topDrawnLevel,
+  };
+}
+
+/**
+ * Detect prominent relative summits (local topographic maxima) across the projected
+ * elevation grid for military spot-elevation peak markers (e.g. `▲ 2,295m`).
+ */
+export function extractRelativeSummits(
+  elevGrid,
+  gw,
+  gh,
+  targetWidth,
+  targetHeight,
+  {
+    rawElevGrid = null,
+    maxPeaks = 16,
+    minElevMeters = 0,
+    minProminenceMeters = 0,
+    intervalMeters = 100,
+    maxElevHint = 0,
+  } = {},
+) {
+  if (!elevGrid || gw < 9 || gh < 9) return [];
+
+  let maxE = Number(maxElevHint) || 0;
+  if (maxE <= 0) {
+    for (let i = 0; i < elevGrid.length; i += 1) {
+      const v = elevGrid[i];
+      if (Number.isFinite(v) && v > maxE) maxE = v;
+    }
+  }
+  if (maxE < 50) return [];
+
+  const textScale = Math.max(0.55, Math.max(targetWidth, targetHeight * 0.78) / 900);
+  const sx = targetWidth / gw;
+  const sy = targetHeight / gh;
+  const edgeMargin = 26 * textScale;
+  const minPeakDistSq = (70 * textScale) ** 2;
+
+  const winR = clamp(Math.round(Math.min(gw, gh) * 0.026), 3, 12);
+  const ringR = Math.max(winR + 2, Math.round(winR * 2.4));
+  const effMinElev = minElevMeters > 0 ? minElevMeters : Math.max(60, maxE * 0.24);
+  const effMinProm = minProminenceMeters > 0
+    ? minProminenceMeters
+    : Math.max(35, Math.min(intervalMeters * 0.75, maxE * 0.12));
+
+  const ringDirs = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+    [0.7071, 0.7071],
+    [-0.7071, 0.7071],
+    [0.7071, -0.7071],
+    [-0.7071, -0.7071],
+  ];
+
+  const candidates = [];
+
+  for (let y = winR; y < gh - winR; y += 1) {
+    const py = (y + 0.5) * sy;
+    if (py < edgeMargin || py > targetHeight - edgeMargin) continue;
+    const row = y * gw;
+
+    for (let x = winR; x < gw - winR; x += 1) {
+      const val = elevGrid[row + x];
+      if (!Number.isFinite(val) || val < effMinElev) continue;
+
+      const px = (x + 0.5) * sx;
+      if (px < edgeMargin || px > targetWidth - edgeMargin) continue;
+
+      // Fast 4-neighbor reject before full window scan
+      if (
+        elevGrid[row + x - 1] > val ||
+        elevGrid[row + x + 1] > val ||
+        elevGrid[row - gw + x] > val ||
+        elevGrid[row + gw + x] > val
+      ) {
+        continue;
+      }
+
+      let isLocalMax = true;
+      for (let dy = -winR; dy <= winR && isLocalMax; dy += 1) {
+        const nRow = (y + dy) * gw;
+        for (let dx = -winR; dx <= winR; dx += 1) {
+          if (dx === 0 && dy === 0) continue;
+          const nv = elevGrid[nRow + x + dx];
+          if (!Number.isFinite(nv)) continue;
+          if (nv > val || (nv === val && (dy < 0 || (dy === 0 && dx < 0)))) {
+            isLocalMax = false;
+            break;
+          }
+        }
+      }
+      if (!isLocalMax) continue;
+
+      // Measure local topographic relief against surrounding ring
+      let ringMin = Infinity;
+      let validRing = 0;
+      for (let d = 0; d < ringDirs.length; d += 1) {
+        const rx = clamp(Math.round(x + ringDirs[d][0] * ringR), 0, gw - 1);
+        const ry = clamp(Math.round(y + ringDirs[d][1] * ringR), 0, gh - 1);
+        const rv = elevGrid[ry * gw + rx];
+        if (Number.isFinite(rv)) {
+          const clampedRv = Math.max(0, rv);
+          if (clampedRv < ringMin) ringMin = clampedRv;
+          validRing += 1;
+        }
+      }
+      if (validRing < 4) continue;
+      const prominence = val - ringMin;
+      if (prominence < effMinProm) continue;
+
+      // Sample true peak elevation from raw (unsmoothed) grid within 3x3 if available
+      let trueElev = val;
+      if (rawElevGrid) {
+        for (let dy = -1; dy <= 1; dy += 1) {
+          const rRow = (y + dy) * gw;
+          for (let dx = -1; dx <= 1; dx += 1) {
+            const rv = rawElevGrid[rRow + x + dx];
+            if (Number.isFinite(rv) && rv > trueElev) trueElev = rv;
+          }
+        }
+      }
+
+      candidates.push({
+        x: px,
+        y: py,
+        elev: Math.round(trueElev),
+        prominence: Math.round(prominence),
+      });
+    }
+  }
+
+  // Sort highest summits first (tie-break by prominence)
+  candidates.sort((a, b) => (b.elev - a.elev) || (b.prominence - a.prominence));
+
+  const summits = [];
+  for (let i = 0; i < candidates.length && summits.length < maxPeaks; i += 1) {
+    const cand = candidates[i];
+    let tooClose = false;
+    for (let j = 0; j < summits.length; j += 1) {
+      const dx = summits[j].x - cand.x;
+      const dy = summits[j].y - cand.y;
+      if (dx * dx + dy * dy < minPeakDistSq) {
+        tooClose = true;
+        break;
+      }
+    }
+    if (tooClose) continue;
+    summits.push({
+      ...cand,
+      text: `${cand.elev.toLocaleString('en-US')}m`,
+    });
+  }
+
+  return summits;
 }
 
 /**
@@ -1471,7 +1722,7 @@ export function buildProjectedElevationGrid(
     }
   }
 
-  return { gw, gh, elev, stepXM, stepYM, validLandCount, maxVisibleElev };
+  return { gw, gh, elev, elevRaw, stepXM, stepYM, validLandCount, maxVisibleElev };
 }
 
 /**
@@ -1495,6 +1746,7 @@ export function buildProjectedTerrainLayer(
   const contrast = clamp(Number(tr.contrast) || 1.0, 0.4, 2.2);
   const exaggeration = clamp(Number(tr.exaggeration) || 2.2, 0.5, 6.0);
   const showContourLabels = tr.showContourLabels !== false;
+  const showPeakSummits = tr.showPeakSummits !== false;
   const contourColor = typeof tr.contourColor === 'string' ? tr.contourColor : 'auto';
   const spanDeg = Math.max(Number(spec?.span?.lonDeg) || 10, Number(spec?.span?.latDeg) || 10);
   const maxGridDim = interactive ? 220 : Math.min(1050, Math.max(540, Math.round(Math.max(width, height) * 0.72)));
@@ -1537,6 +1789,7 @@ export function buildProjectedTerrainLayer(
     contrast.toFixed(2),
     exaggeration.toFixed(2),
     showContours && !interactive ? `${effectiveInterval}_${showContourLabels ? 'L' : 'NL'}` : 'nc',
+    showPeakSummits && !interactive ? 'PK' : 'NPK',
   ].join('::');
 
   if (dem._renderCache && dem._renderCache.key === renderKey) {
@@ -1568,6 +1821,15 @@ export function buildProjectedTerrainLayer(
     }
   }
 
+  let summits = [];
+  if (showPeakSummits && !interactive) {
+    summits = extractRelativeSummits(grid.elev, grid.gw, grid.gh, width, height, {
+      rawElevGrid: grid.elevRaw,
+      intervalMeters: effectiveInterval,
+      maxElevHint: grid.maxVisibleElev,
+    });
+  }
+
   let contours = null;
   if (showContours && !interactive) {
     contours = extractContourSegments(
@@ -1578,7 +1840,7 @@ export function buildProjectedTerrainLayer(
       height,
       effectiveInterval,
       grid.maxVisibleElev,
-      { includeLabels: showContourLabels },
+      { includeLabels: showContourLabels, avoidPoints: summits },
     );
   }
 
@@ -1587,6 +1849,7 @@ export function buildProjectedTerrainLayer(
     tone,
     showContours,
     showContourLabels,
+    showPeakSummits,
     contourColor,
     intensity,
     contrast,
@@ -1595,6 +1858,7 @@ export function buildProjectedTerrainLayer(
     maxVisibleElev: Math.round(grid.maxVisibleElev || dem.stats?.maxLandElev || 0),
     rasterCanvas,
     contours,
+    summits,
     width,
     height,
   };

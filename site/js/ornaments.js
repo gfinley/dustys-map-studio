@@ -9,7 +9,7 @@ import {
   computeAltitudeScaleInfo,
   resolveContourPalette,
   sampleJogElevationColor,
-} from './terrain-relief.js?v=29';
+} from './terrain-relief.js?v=30';
 
 const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
