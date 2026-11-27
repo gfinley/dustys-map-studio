@@ -616,9 +616,12 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
         empty_cities_matches = re.findall(r"\bcities:\s*\[\s*\],", presets_js)
         self.assertGreaterEqual(len(empty_cities_matches), 12)
-        self.assertIsNone(
-            re.search(r"\bcities:\s*\[\s*\{", presets_js),
-            "Found non-empty default cities array in site/js/presets.js",
+        non_empty_cities_matches = re.findall(r"\bcities:\s*\[\s*\{", presets_js)
+        # Only the explicitly curated `leyte_one` preset ships with named town pins
+        self.assertEqual(
+            len(non_empty_cities_matches),
+            1,
+            "Unexpected non-empty default cities array in site/js/presets.js",
         )
 
     def test_on_demand_osm_hd_coastlines_contract(self) -> None:
@@ -810,6 +813,70 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
                 0,
                 f"Node town search tests failed:\n{proc.stdout}\n{proc.stderr}",
             )
+
+    def test_leyte_one_region_preset(self) -> None:
+        """Leyte one region preset exists in presets.js with OSM HD coastlines, 20m topo relief, and 4 Leyte pins."""
+        import json
+        import shutil
+        import subprocess
+
+        presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
+        self.assertIn("id: 'leyte_one'", presets_js)
+        self.assertIn("label: 'Leyte one'", presets_js)
+
+        if shutil.which("node"):
+            script = (
+                "import { REGION_PRESETS } from './site/js/presets.js';"
+                "const p = REGION_PRESETS.find((x) => x.id === 'leyte_one');"
+                "if (!p) throw new Error('leyte_one missing');"
+                "console.log(JSON.stringify(p));"
+            )
+            proc = subprocess.run(
+                ["node", "--input-type=module", "-e", script],
+                cwd=str(ROOT_DIR),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                proc.returncode,
+                0,
+                f"Failed to import leyte_one from presets.js:\n{proc.stdout}\n{proc.stderr}",
+            )
+            preset = json.loads(proc.stdout)
+            self.assertEqual(preset["label"], "Leyte one")
+            spec = preset["spec"]
+            self.assertEqual(spec["title"], "Philippines")
+            self.assertEqual(spec["theme"], "classic_atlas")
+            self.assertEqual(spec["projection"], "mercator")
+            self.assertEqual(spec["detailLevel"], "10m")
+            self.assertAlmostEqual(spec["center"]["lat"], 10.713)
+            self.assertAlmostEqual(spec["center"]["lon"], 125.062)
+            self.assertAlmostEqual(spec["span"]["lonDeg"], 1.2935)
+            self.assertAlmostEqual(spec["span"]["latDeg"], 1.8411)
+            self.assertEqual(spec["page"]["preset"], "book_landscape")
+            self.assertFalse(spec["layers"]["showLand"])
+            self.assertEqual([c["name"] for c in spec["cities"]], ["Dulag", "Ormoc", "Carigara", "Burauen"])
+            self.assertEqual(len(spec["customGeoJsonLayers"]), 1)
+            self.assertEqual(
+                spec["customGeoJsonLayers"][0]["url"],
+                "osm-coastline://9.4242,123.0670,12.0018,127.0570?s=0",
+            )
+            self.assertEqual(spec["customGeoJsonLayers"][0]["color"], "#f3d58d")
+            self.assertEqual(spec["customGeoJsonLayers"][0]["strokeColor"], "none")
+            self.assertTrue(spec["terrainRelief"]["enabled"])
+            self.assertEqual(spec["terrainRelief"]["style"], "topo_contours")
+            self.assertEqual(spec["terrainRelief"]["contourInterval"], 20)
+            self.assertTrue(spec["terrainRelief"]["showContours"])
+            self.assertTrue(spec["terrainRelief"]["showContourLabels"])
+            self.assertTrue(spec["terrainRelief"]["showPeakSummits"])
+            self.assertTrue(spec["terrainRelief"]["showAltitudeScale"])
+            self.assertEqual(spec["terrainRelief"]["bounds"]["zoom"], 9)
+
+            # Must validate cleanly against the Python backend MapSpec too
+            parsed = MapSpec.model_validate(spec)
+            self.assertEqual(parsed.title, "Philippines")
+            self.assertEqual([c.name for c in parsed.cities], ["Dulag", "Ormoc", "Carigara", "Burauen"])
 
 
 if __name__ == "__main__":
