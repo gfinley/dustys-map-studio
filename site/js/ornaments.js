@@ -8,8 +8,8 @@ import { geoSatellite } from 'https://cdn.jsdelivr.net/npm/d3-geo-projection@4/+
 import {
   computeAltitudeScaleInfo,
   resolveContourPalette,
-  sampleJogElevationColor,
-} from './terrain-relief.js?v=30';
+  sampleAltitudeRampColor,
+} from './terrain-relief.js?v=31';
 
 const EARTH_RADIUS_KM = 6371.0088;
 const KM_PER_MILE = 1.609344;
@@ -831,20 +831,6 @@ export function drawScaleBar(ctx, spec, projection, width, height, scaleFactor) 
   ctx.restore();
 }
 
-function getTopoRampStopsForTone(tone) {
-  switch (tone) {
-    case 'sepia':
-      return ['#f5eee2', '#e1cfb5', '#c5a47e', '#9e754f', '#6d4728'];
-    case 'olive':
-      return ['#edf1eb', '#d1dcd0', '#aabca9', '#7d957f', '#4e6752'];
-    case 'bw_print':
-      return ['#f7f7f7', '#dbdbdb', '#b5b5b5', '#828282', '#474747'];
-    case 'charcoal':
-    default:
-      return ['#f2efe9', '#dbd5ca', '#bdb5a7', '#948b7d', '#625a4e'];
-  }
-}
-
 function formatAltitudeTick(val) {
   return Math.round(val).toLocaleString('en-US');
 }
@@ -888,22 +874,25 @@ export function drawAltitudeScale(ctx, spec, datasets, projection, width, height
   ctx.textAlign = 'right';
   ctx.fillText(`▲ ${formatAltitudeTick(info.maxElev)} m`, barX + barW, headerY);
 
-  // Altitude scale bar fill
+  // Altitude scale bar fill: 1:1 exact match with rendered altitude shading,
+  // or a clean neutral graduated ruler for slope-only / contour-only styles
   if (info.hasHypsometric) {
-    const slices = 36;
+    const slices = 48;
     const sliceW = barW / slices;
     for (let i = 0; i < slices; i += 1) {
       const e = ((i + 0.5) / slices) * info.scaleMax;
-      ctx.fillStyle = sampleJogElevationColor(e, { tone: info.tone, contrast: info.contrast });
+      ctx.fillStyle = sampleAltitudeRampColor(e, info.scaleMax, {
+        style: info.style,
+        tone: info.tone,
+        contrast: info.contrast,
+      });
       ctx.fillRect(barX + i * sliceW, barY, sliceW + 0.5, barH);
     }
   } else {
-    const stops = getTopoRampStopsForTone(info.tone);
-    const bandCount = Math.max(3, Math.min(8, Math.round(info.scaleMax / info.tickStep)));
+    const bandCount = Math.max(2, Math.min(8, Math.round(info.scaleMax / info.tickStep)));
     const bandW = barW / bandCount;
     for (let i = 0; i < bandCount; i += 1) {
-      const stopIdx = Math.min(stops.length - 1, Math.round((i / Math.max(1, bandCount - 1)) * (stops.length - 1)));
-      ctx.fillStyle = stops[stopIdx];
+      ctx.fillStyle = i % 2 === 0 ? '#f6f4ef' : '#e5e2da';
       ctx.fillRect(barX + i * bandW, barY, bandW + 0.5, barH);
     }
   }
@@ -1653,23 +1642,26 @@ export function buildOrnamentsSvg(spec, projection, datasets, width, height, sca
     );
 
     if (info.hasHypsometric) {
-      const slices = 32;
+      const slices = 48;
       const sliceW = barW / slices;
       for (let i = 0; i < slices; i += 1) {
         const e = ((i + 0.5) / slices) * info.scaleMax;
-        const fill = sampleJogElevationColor(e, { tone: info.tone, contrast: info.contrast });
+        const fill = sampleAltitudeRampColor(e, info.scaleMax, {
+          style: info.style,
+          tone: info.tone,
+          contrast: info.contrast,
+        });
         parts.push(
           `<rect x="${(barX + i * sliceW).toFixed(2)}" y="${barY.toFixed(2)}" width="${(sliceW + 0.4).toFixed(2)}" height="${barH.toFixed(2)}" fill="${escapeXml(fill)}" />`,
         );
       }
     } else {
-      const stops = getTopoRampStopsForTone(info.tone);
-      const bandCount = Math.max(3, Math.min(8, Math.round(info.scaleMax / info.tickStep)));
+      const bandCount = Math.max(2, Math.min(8, Math.round(info.scaleMax / info.tickStep)));
       const bandW = barW / bandCount;
       for (let i = 0; i < bandCount; i += 1) {
-        const stopIdx = Math.min(stops.length - 1, Math.round((i / Math.max(1, bandCount - 1)) * (stops.length - 1)));
+        const fill = i % 2 === 0 ? '#f6f4ef' : '#e5e2da';
         parts.push(
-          `<rect x="${(barX + i * bandW).toFixed(2)}" y="${barY.toFixed(2)}" width="${(bandW + 0.4).toFixed(2)}" height="${barH.toFixed(2)}" fill="${escapeXml(stops[stopIdx])}" />`,
+          `<rect x="${(barX + i * bandW).toFixed(2)}" y="${barY.toFixed(2)}" width="${(bandW + 0.4).toFixed(2)}" height="${barH.toFixed(2)}" fill="${fill}" />`,
         );
       }
     }

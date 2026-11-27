@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=30';
+} from './schema.js?v=31';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,23 +14,23 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=30';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=30';
-import { formatArea } from './shadow.js?v=30';
+} from './presets.js?v=31';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=31';
+import { formatArea } from './shadow.js?v=31';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=30';
+} from './osm-coastline.js?v=31';
 import {
   TERRAIN_STYLES,
   TERRAIN_TONES,
   isViewOutsideTerrainBounds,
   resolveContourPalette,
   wantsTerrainContours,
-} from './terrain-relief.js?v=30';
+} from './terrain-relief.js?v=31';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},

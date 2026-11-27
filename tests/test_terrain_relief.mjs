@@ -15,6 +15,8 @@ import {
   renderTerrainRasterPixels,
   resolveContourPalette,
   resolveEffectiveContourInterval,
+  sampleAltitudeRampColor,
+  sampleAltitudeRampRgb,
   sampleDemElevation,
   sampleJogElevationColor,
   smoothElevationGrid,
@@ -77,18 +79,20 @@ test('sampleDemElevation bilinearly interpolates across antimeridian mosaic', ()
   assert.ok(Number.isNaN(sampleDemElevation(dem, 10.0, 52.0)));
 });
 
-test('Army hillshade lights NW slopes, shadows SE slopes, and keeps flat plains & ocean clean', () => {
-  const gw = 32;
-  const gh = 32;
+test('Army Topo & JOG apply 1:1 altitude shading + NW relief while Staff Hillshade keeps flat plains transparent', () => {
+  const gw = 40;
+  const gh = 40;
   const elev = new Float32Array(gw * gh);
   const stepX = new Float32Array(gw * gh).fill(200);
   const stepY = new Float32Array(gw * gh).fill(200);
 
-  // Synthetic conical mountain centered at (16, 16), peak 2000m, surrounded by flat 100m plain & 0m ocean border
+  // Synthetic terrain: 0m ocean border, 100m lowland plain, 1200m flat high plateau, and 2000m conical peak
   for (let y = 0; y < gh; y += 1) {
     for (let x = 0; x < gw; x += 1) {
       if (x < 2 || y < 2) {
         elev[y * gw + x] = 0; // sea level
+      } else if (x >= 28 && x <= 36 && y >= 4 && y <= 12) {
+        elev[y * gw + x] = 1200; // flat elevated plateau
       } else {
         const dist = Math.hypot(x - 16, y - 16);
         elev[y * gw + x] = dist < 10 ? 100 + (10 - dist) * 190 : 100;
@@ -96,36 +100,66 @@ test('Army hillshade lights NW slopes, shadows SE slopes, and keeps flat plains 
     }
   }
 
-  const rgba = renderTerrainRasterPixels(elev, stepX, stepY, gw, gh, {
+  // 1. Army Topo (default): applies tone-matched altitude shading + NW hillshade
+  const topoRgba = renderTerrainRasterPixels(elev, stepX, stepY, gw, gh, {
     style: 'army_topo',
+    tone: 'sepia',
+    intensity: 0.8,
+    contrast: 1.0,
+    exaggeration: 2.0,
+    scaleMax: 2000,
+  });
+
+  // Ocean pixel (0, 0) stays fully transparent
+  assert.equal(topoRgba[3], 0);
+
+  // Flat lowland (34, 34 @ 100m) vs flat plateau (32, 8 @ 1200m): both shaded, plateau noticeably darker
+  const lowIdx = (34 * gw + 34) * 4;
+  const platIdx = (8 * gw + 32) * 4;
+  assert.ok(topoRgba[lowIdx + 3] > 150, `expected opaque-ish lowland altitude tint, got alpha=${topoRgba[lowIdx + 3]}`);
+  assert.ok(topoRgba[platIdx + 3] > 150, `expected opaque-ish plateau altitude tint, got alpha=${topoRgba[platIdx + 3]}`);
+  assert.ok(
+    topoRgba[lowIdx] > topoRgba[platIdx] + 35,
+    `expected 100m lowland (${topoRgba[lowIdx]}) to be much lighter than 1200m plateau (${topoRgba[platIdx]})`,
+  );
+
+  // Flat plateau pixel matches sampleAltitudeRampRgb(1200, 2000) within 1 LUT step
+  const expectedPlat = sampleAltitudeRampRgb(1200, 2000, { style: 'army_topo', tone: 'sepia', contrast: 1.0 });
+  assert.ok(Math.abs(topoRgba[platIdx] - expectedPlat[0]) <= 3);
+  assert.ok(Math.abs(topoRgba[platIdx + 1] - expectedPlat[1]) <= 3);
+  assert.ok(Math.abs(topoRgba[platIdx + 2] - expectedPlat[2]) <= 3);
+
+  // NW slope (12, 12) is brighter than SE slope (20, 20) at the same elevation
+  const nwIdx = (12 * gw + 12) * 4;
+  const seIdx = (20 * gw + 20) * 4;
+  assert.ok(
+    topoRgba[nwIdx] > topoRgba[seIdx] + 30,
+    `expected NW slope (${topoRgba[nwIdx]}) brighter than SE slope (${topoRgba[seIdx]})`,
+  );
+
+  // 2. Staff Hillshade: pure slope shading — flat plains stay transparent
+  const hsRgba = renderTerrainRasterPixels(elev, stepX, stepY, gw, gh, {
+    style: 'staff_hillshade',
     intensity: 0.8,
     exaggeration: 2.0,
   });
+  assert.equal(hsRgba[3], 0);
+  assert.equal(hsRgba[lowIdx + 3], 0, 'Staff Hillshade flat plain must stay transparent');
+  assert.ok(hsRgba[nwIdx] > 200 && hsRgba[nwIdx + 3] > 20, `expected NW sunlit highlight, got rgba=${hsRgba.slice(nwIdx, nwIdx + 4)}`);
+  assert.ok(hsRgba[seIdx] < 50 && hsRgba[seIdx + 3] > 20, `expected SE shadow, got rgba=${hsRgba.slice(seIdx, seIdx + 4)}`);
 
-  // Ocean pixel (0, 0) must stay fully transparent
-  assert.equal(rgba[3], 0);
-
-  // Flat plain pixel (29, 29) must stay transparent (alpha 0)
-  const flatIdx = (29 * gw + 29) * 4;
-  assert.equal(rgba[flatIdx + 3], 0);
-
-  // NW slope pixel (12, 12) faces upper-left light -> warm ivory highlight (R > 200, alpha > 0)
-  const nwIdx = (12 * gw + 12) * 4;
-  assert.ok(rgba[nwIdx] > 200 && rgba[nwIdx + 3] > 20, `expected NW sunlit highlight, got rgba=${rgba.slice(nwIdx, nwIdx + 4)}`);
-
-  // SE slope pixel (20, 20) faces away from NW light -> charcoal shadow (R < 50, alpha > 0)
-  const seIdx = (20 * gw + 20) * 4;
-  assert.ok(rgba[seIdx] < 50 && rgba[seIdx + 3] > 20, `expected SE shadow, got rgba=${rgba.slice(seIdx, seIdx + 4)}`);
-
-  // JOG operational hypsometric style renders opaque-ish elevation tint on land, transparent on sea
+  // 3. JOG Operational: distinct color elevation shading across lowland vs plateau, matching sampleAltitudeRampRgb
   const jogRgba = renderTerrainRasterPixels(elev, stepX, stepY, gw, gh, {
     style: 'jog_elevation',
     intensity: 0.75,
     exaggeration: 2.0,
+    scaleMax: 2000,
   });
   assert.equal(jogRgba[3], 0);
-  const peakIdx = (16 * gw + 16) * 4;
-  assert.ok(jogRgba[peakIdx + 3] > 120);
+  assert.ok(jogRgba[platIdx + 3] > 150);
+  // Lowland (100m) is greenish (G > R), high plateau (1200m) shifts warm ochre/tan (R > G)
+  assert.ok(jogRgba[lowIdx + 1] > jogRgba[lowIdx], `expected green lowland in JOG, got rgb=${jogRgba.slice(lowIdx, lowIdx + 3)}`);
+  assert.ok(jogRgba[platIdx] > jogRgba[platIdx + 1], `expected warm ochre/tan plateau in JOG, got rgb=${jogRgba.slice(platIdx, platIdx + 3)}`);
 });
 
 test('Marching Squares extracts index/intermediate contours and right-side-up elevation labels', () => {
@@ -199,11 +233,13 @@ test('Auto contour interval, contrast/tone palettes, custom contour color, and s
   assert.equal(resolveEffectiveContourInterval(100, 2000, 3.0), 100);
   assert.ok(resolveEffectiveContourInterval(20, 6000, 5.0) >= 100, 'should cap pathological contour floods');
 
-  const lightPalette = resolveContourPalette('#ebe6da', 'army_topo');
-  const darkPalette = resolveContourPalette('#1d3c5e', 'army_topo');
+  const lightPalette = resolveContourPalette('#ebe6da', 'staff_hillshade');
+  const darkPalette = resolveContourPalette('#1d3c5e', 'staff_hillshade');
+  const topoDarkBase = resolveContourPalette('#1d3c5e', 'army_topo', { tone: 'charcoal' });
   const bwPalette = resolveContourPalette('#ebe6da', 'army_topo', { tone: 'bw_print', contrast: 1.8 });
   const customPalette = resolveContourPalette('#ebe6da', 'army_topo', { contourColor: '#8b0000' });
   assert.notEqual(lightPalette.indexColor, darkPalette.indexColor);
+  assert.equal(topoDarkBase.indexColor, '#5a2f12', 'hypsometric army_topo uses crisp dark topo ink over light altitude shading');
   assert.notEqual(bwPalette.indexColor, lightPalette.indexColor);
   assert.equal(customPalette.indexColor, '#8b0000');
   assert.ok(bwPalette.indexAlpha > lightPalette.indexAlpha, 'higher contrast should raise contour crispness');
@@ -265,25 +301,31 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
   assert.equal(decoded.terrainRelief.bounds.zoom, 8);
 });
 
-test('computeAltitudeScaleInfo builds clean altitude ticks, index interval, and JOG ramp colors', () => {
-  const spec = normalizeMapSpec({
-    ...createDefaultMapSpec(),
-    span: { lonDeg: 10, latDeg: 7 },
-    terrainRelief: {
-      enabled: true,
-      style: 'jog_elevation',
-      showContours: true,
-      showAltitudeScale: true,
-      altitudeScalePosition: 'bottom-right',
-    },
-  });
+test('computeAltitudeScaleInfo builds clean altitude ticks, index interval, and matched ramp colors', () => {
+  const baseDef = createDefaultMapSpec();
   const dem = { stats: { maxLandElev: 2295, p98LandElev: 2100 } };
-  const info = computeAltitudeScaleInfo(spec, dem);
-  assert.ok(info);
-  assert.equal(info.maxElev, 2295);
-  assert.ok(info.scaleMax >= 2295);
-  assert.equal(info.ticks[0], 0);
-  assert.equal(info.ticks[info.ticks.length - 1], info.scaleMax);
-  assert.ok(info.ticks.length >= 3 && info.ticks.length <= 6);
+
+  const topoSpec = normalizeMapSpec({
+    ...baseDef,
+    span: { lonDeg: 10, latDeg: 7 },
+    terrainRelief: { enabled: true, style: 'army_topo', showContours: true, showAltitudeScale: true },
+  });
+  const topoInfo = computeAltitudeScaleInfo(topoSpec, dem);
+  assert.ok(topoInfo);
+  assert.equal(topoInfo.hasHypsometric, true);
+  assert.equal(topoInfo.maxElev, 2295);
+  assert.ok(topoInfo.scaleMax >= 2295);
+  assert.equal(topoInfo.ticks[0], 0);
+  assert.equal(topoInfo.ticks[topoInfo.ticks.length - 1], topoInfo.scaleMax);
+  assert.ok(topoInfo.ticks.length >= 3 && topoInfo.ticks.length <= 6);
+
+  const hsSpec = normalizeMapSpec({
+    ...baseDef,
+    terrainRelief: { enabled: true, style: 'staff_hillshade', showAltitudeScale: true },
+  });
+  const hsInfo = computeAltitudeScaleInfo(hsSpec, dem);
+  assert.equal(hsInfo.hasHypsometric, false);
+
+  assert.match(sampleAltitudeRampColor(1200, 2500, { style: 'army_topo', tone: 'olive', contrast: 1.2 }), /^rgb\(\d+, \d+, \d+\)$/);
   assert.match(sampleJogElevationColor(1200, { tone: 'sepia', contrast: 1.4 }), /^rgb\(\d+, \d+, \d+\)$/);
 });

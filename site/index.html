@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=30" />
+  <link rel="stylesheet" href="./styles/main.css?v=31" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -421,15 +421,15 @@
                 <h2>Terrain Relief (Current View)</h2>
                 <span class="helper-pill">Army Topo</span>
               </div>
-              <p class="helper-text">Fetch on-demand elevation for the framed view with NW shaded relief and optional military-standard brown topographic contour lines.</p>
+              <p class="helper-text">Fetch on-demand elevation for the framed view with altitude shading, NW shaded relief, peak summits, and optional topographic contour lines.</p>
               <div class="field-stack">
                 <div class="field-grid-2 compact-row">
                   <div class="field">
                     <label for="terrain-relief-style">Relief Style</label>
                     <select id="terrain-relief-style" aria-label="Military terrain relief style">
                       <option value="army_topo" selected>Army Topo</option>
-                      <option value="jog_elevation">JOG Operational</option>
-                      <option value="staff_hillshade">Staff Hillshade</option>
+                      <option value="jog_elevation">JOG Color</option>
+                      <option value="staff_hillshade">Hillshade Only</option>
                       <option value="topo_contours">Contours Only</option>
                     </select>
                   </div>
@@ -1200,6 +1200,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=30"></script>
+  <script type="module" src="./js/app.js?v=31"></script>
 </body>
 </html>

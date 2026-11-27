@@ -13,7 +13,7 @@ import {
   isOsmCoastlineUrl,
   parseOsmCoastlineUrl,
   polygonizeOverpassCoastlines,
-} from './osm-coastline.js?v=30';
+} from './osm-coastline.js?v=31';
 
 const CACHE_NAME = 'dusty-mapmaker-v4';
 try {

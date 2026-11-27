@@ -25,26 +25,29 @@ export const TERRAIN_DEFAULT_PAD_FRACTION = 0.15;
 export const TERRAIN_STYLES = {
   army_topo: {
     id: 'army_topo',
-    label: 'Army Topo (NW Shaded Relief)',
+    label: 'Army Topo (Altitude Shading + NW Relief)',
     shortLabel: 'Army Topo',
     hasHillshade: true,
-    hasHypsometric: false,
+    hasHypsometric: true,
+    hypsometricMode: 'topo_tone',
     contoursOnly: false,
   },
   staff_hillshade: {
     id: 'staff_hillshade',
-    label: 'Staff Hillshade (Briefing Relief)',
+    label: 'Staff Hillshade (NW Slopes Only)',
     shortLabel: 'Staff Hillshade',
     hasHillshade: true,
     hasHypsometric: false,
+    hypsometricMode: 'none',
     contoursOnly: false,
   },
   jog_elevation: {
     id: 'jog_elevation',
-    label: 'JOG Operational (Elevation Tint + Relief)',
+    label: 'JOG Operational (Color Altitude + Relief)',
     shortLabel: 'JOG Relief',
     hasHillshade: true,
     hasHypsometric: true,
+    hypsometricMode: 'jog',
     contoursOnly: false,
   },
   topo_contours: {
@@ -53,6 +56,7 @@ export const TERRAIN_STYLES = {
     shortLabel: 'Topo Contours',
     hasHillshade: false,
     hasHypsometric: false,
+    hypsometricMode: 'none',
     contoursOnly: true,
   },
 };
@@ -110,17 +114,48 @@ const STANDARD_CONTOUR_INTERVALS = [20, 50, 100, 200, 250, 500, 1000];
 const MAX_LAT_MERCATOR = 85.05112878;
 const MAX_TILE_MEMORY_CACHE = 240;
 
-// Muted NATO / DMA Joint Operations Graphic (JOG) hypsometric elevation ramp (meters -> RGB)
-const JOG_ELEVATION_STOPS = [
-  { elev: 0, r: 194, g: 209, b: 181 },
-  { elev: 150, r: 210, g: 218, b: 190 },
-  { elev: 400, r: 228, g: 222, b: 190 },
-  { elev: 800, r: 225, g: 202, b: 162 },
-  { elev: 1400, r: 210, g: 171, b: 130 },
-  { elev: 2200, r: 186, g: 137, b: 101 },
-  { elev: 3200, r: 168, g: 122, b: 98 },
-  { elev: 4500, r: 216, g: 208, b: 202 },
-  { elev: 6500, r: 242, g: 240, b: 238 },
+// Tone-matched Army topographic hypsometric ramps (normalized t in [0, 1] -> [r, g, b])
+const TOPO_ALTITUDE_RAMPS = {
+  charcoal: [
+    { t: 0.0, r: 232, g: 226, b: 214 },
+    { t: 0.25, r: 204, g: 196, b: 181 },
+    { t: 0.5, r: 168, g: 158, b: 142 },
+    { t: 0.75, r: 124, g: 114, b: 100 },
+    { t: 1.0, r: 74, g: 66, b: 56 },
+  ],
+  sepia: [
+    { t: 0.0, r: 246, g: 238, b: 222 },
+    { t: 0.25, r: 226, g: 204, b: 170 },
+    { t: 0.5, r: 198, g: 160, b: 116 },
+    { t: 0.75, r: 156, g: 108, b: 66 },
+    { t: 1.0, r: 100, g: 60, b: 30 },
+  ],
+  olive: [
+    { t: 0.0, r: 232, g: 239, b: 228 },
+    { t: 0.25, r: 198, g: 215, b: 193 },
+    { t: 0.5, r: 152, g: 178, b: 149 },
+    { t: 0.75, r: 104, g: 134, b: 105 },
+    { t: 1.0, r: 60, g: 86, b: 65 },
+  ],
+  bw_print: [
+    { t: 0.0, r: 246, g: 246, b: 246 },
+    { t: 0.25, r: 216, g: 216, b: 216 },
+    { t: 0.5, r: 174, g: 174, b: 174 },
+    { t: 0.75, r: 122, g: 122, b: 122 },
+    { t: 1.0, r: 62, g: 62, b: 62 },
+  ],
+};
+
+// NATO / DMA Joint Operations Graphic (JOG) hypsometric elevation ramp (normalized t in [0, 1] -> RGB)
+const JOG_ALTITUDE_STOPS = [
+  { t: 0.0, r: 154, g: 194, b: 146 },
+  { t: 0.18, r: 196, g: 214, b: 158 },
+  { t: 0.36, r: 232, g: 224, b: 168 },
+  { t: 0.54, r: 228, g: 190, b: 130 },
+  { t: 0.7, r: 204, g: 144, b: 92 },
+  { t: 0.85, r: 168, g: 102, b: 66 },
+  { t: 0.94, r: 196, g: 176, b: 166 },
+  { t: 1.0, r: 240, g: 238, b: 236 },
 ];
 
 // In-memory LRU cache of decoded Float32Array(256*256) Terrarium elevation tiles
@@ -634,21 +669,20 @@ export function smoothElevationGrid(elev, gw, gh) {
   return out;
 }
 
-function interpolateJogColor(elevMeters) {
-  const e = Math.max(0, elevMeters);
-  const stops = JOG_ELEVATION_STOPS;
-  if (e <= stops[0].elev) {
+function interpolateRampStops(stops, t) {
+  const clamped = clamp(t, 0, 1);
+  if (clamped <= stops[0].t) {
     return [stops[0].r, stops[0].g, stops[0].b];
   }
   for (let i = 1; i < stops.length; i += 1) {
-    if (e <= stops[i].elev) {
+    if (clamped <= stops[i].t) {
       const prev = stops[i - 1];
       const next = stops[i];
-      const t = (e - prev.elev) / Math.max(1, next.elev - prev.elev);
+      const frac = (clamped - prev.t) / Math.max(1e-6, next.t - prev.t);
       return [
-        Math.round(prev.r + (next.r - prev.r) * t),
-        Math.round(prev.g + (next.g - prev.g) * t),
-        Math.round(prev.b + (next.b - prev.b) * t),
+        Math.round(prev.r + (next.r - prev.r) * frac),
+        Math.round(prev.g + (next.g - prev.g) * frac),
+        Math.round(prev.b + (next.b - prev.b) * frac),
       ];
     }
   }
@@ -657,29 +691,120 @@ function interpolateJogColor(elevMeters) {
 }
 
 /**
+ * Sample an RGB triplet `[r, g, b]` from the active altitude shading ramp for
+ * `elevMeters` within `[0, scaleMax]`, applying relief style, tone, and contrast.
+ * Shared 1:1 between rendered map pixels and the on-map Altitude Scale bar.
+ */
+export function sampleAltitudeRampRgb(
+  elevMeters,
+  scaleMax = 3000,
+  { style = 'army_topo', tone = 'charcoal', contrast = 1.0 } = {},
+) {
+  const styleDef = TERRAIN_STYLES[style] || TERRAIN_STYLES.army_topo;
+  const toneDef = TERRAIN_TONES[tone] || TERRAIN_TONES.charcoal;
+  const clampedContrast = clamp(Number(contrast) || 1.0, 0.4, 2.2);
+  const effMax = Math.max(100, Number(scaleMax) || 3000);
+  const u = clamp(Math.max(0, Number(elevMeters) || 0) / effMax, 0, 1);
+  // Perceptual curve gives extra visual separation across operational lowland/upland elevations
+  const curved = Math.pow(u, 0.72);
+
+  let r;
+  let g;
+  let b;
+  if (styleDef.hypsometricMode === 'jog') {
+    // Low/moderate theaters reach warm ochre/sienna without fake alpine snowcaps;
+    // true high-mountain theaters (>= 4,200 m) unlock the full glacial crest ramp.
+    const maxReach = clamp(0.66 + 0.34 * Math.min(1, effMax / 4200), 0.66, 1.0);
+    [r, g, b] = interpolateRampStops(JOG_ALTITUDE_STOPS, curved * maxReach);
+    if (toneDef.desaturateJog) {
+      const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+      r = gray;
+      g = gray;
+      b = gray;
+    } else {
+      const [jr, jg, jb] = toneDef.jogTintShift || [1, 1, 1];
+      r = clamp(Math.round(r * jr), 0, 255);
+      g = clamp(Math.round(g * jg), 0, 255);
+      b = clamp(Math.round(b * jb), 0, 255);
+    }
+  } else {
+    const stops = TOPO_ALTITUDE_RAMPS[tone] || TOPO_ALTITUDE_RAMPS.charcoal;
+    [r, g, b] = interpolateRampStops(stops, curved);
+  }
+
+  const colorContrast = 0.62 + 0.38 * clampedContrast;
+  return [
+    clamp(Math.round(128 + (r - 128) * colorContrast), 0, 255),
+    clamp(Math.round(128 + (g - 128) * colorContrast), 0, 255),
+    clamp(Math.round(128 + (b - 128) * colorContrast), 0, 255),
+  ];
+}
+
+/**
+ * Sample a CSS `rgb(r, g, b)` color from the active altitude shading ramp
+ * matching rendered terrain pixels 1:1.
+ */
+export function sampleAltitudeRampColor(
+  elevMeters,
+  scaleMax = 3000,
+  { style = 'army_topo', tone = 'charcoal', contrast = 1.0 } = {},
+) {
+  const [r, g, b] = sampleAltitudeRampRgb(elevMeters, scaleMax, { style, tone, contrast });
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
  * Sample a CSS rgb() color from the DMA/NGA JOG hypsometric elevation ramp with
  * tone and contrast applied (matching rendered terrain pixels).
  */
-export function sampleJogElevationColor(elevMeters, { tone = 'charcoal', contrast = 1.0 } = {}) {
-  const toneDef = TERRAIN_TONES[tone] || TERRAIN_TONES.charcoal;
-  const clampedContrast = clamp(Number(contrast) || 1.0, 0.4, 2.2);
-  let [r, g, b] = interpolateJogColor(elevMeters);
-  if (toneDef.desaturateJog) {
-    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-    r = gray;
-    g = gray;
-    b = gray;
-  } else {
-    const [jr, jg, jb] = toneDef.jogTintShift || [1, 1, 1];
-    r = clamp(Math.round(r * jr), 0, 255);
-    g = clamp(Math.round(g * jg), 0, 255);
-    b = clamp(Math.round(b * jb), 0, 255);
+export function sampleJogElevationColor(
+  elevMeters,
+  { tone = 'charcoal', contrast = 1.0, scaleMax = 4200 } = {},
+) {
+  return sampleAltitudeRampColor(elevMeters, scaleMax, {
+    style: 'jog_elevation',
+    tone,
+    contrast,
+  });
+}
+
+/**
+ * Compute clean altitude scale ceiling, tick step, and labeled tick marks shared
+ * identically by both raster altitude shading and the Altitude Scale ornament.
+ */
+export function computeAltitudeScaleBounds(maxElevMeters, intervalMeters = 100) {
+  const maxElev = Math.max(100, Math.round(Number(maxElevMeters) || 0));
+  const interval = Math.max(10, Math.round(Number(intervalMeters) || 100));
+
+  let indexInterval = interval * 5;
+  if (maxElev < indexInterval) {
+    indexInterval = maxElev >= interval * 2 ? interval * 2 : interval;
   }
-  const colorContrast = 0.65 + 0.35 * clampedContrast;
-  const cR = clamp(Math.round(128 + (r - 128) * colorContrast), 0, 255);
-  const cG = clamp(Math.round(128 + (g - 128) * colorContrast), 0, 255);
-  const cB = clamp(Math.round(128 + (b - 128) * colorContrast), 0, 255);
-  return `rgb(${cR}, ${cG}, ${cB})`;
+
+  // Choose clean tick step producing 2–4 labeled divisions covering maxElev without label overlap
+  const tickCandidates = [50, 100, 200, 250, 500, 1000, 1500, 2000, 2500];
+  let tickStep = indexInterval;
+  if (Math.ceil(maxElev / tickStep) > 4 || maxElev / tickStep < 1.8) {
+    tickStep = tickCandidates[tickCandidates.length - 1];
+    for (let i = 0; i < tickCandidates.length; i += 1) {
+      const cand = tickCandidates[i];
+      if (Math.ceil(maxElev / cand) <= 4) {
+        tickStep = cand;
+        break;
+      }
+    }
+  }
+
+  const scaleMax = Math.max(tickStep * 2, Math.ceil(maxElev / tickStep) * tickStep);
+  const ticks = [];
+  for (let v = 0; v <= scaleMax; v += tickStep) {
+    ticks.push(v);
+  }
+  if (ticks[ticks.length - 1] !== scaleMax) {
+    ticks.push(scaleMax);
+  }
+
+  return { maxElev, interval, indexInterval, tickStep, scaleMax, ticks };
 }
 
 /**
@@ -710,33 +835,7 @@ export function computeAltitudeScaleInfo(spec, dem) {
     spanDeg,
   );
 
-  let indexInterval = interval * 5;
-  if (maxElev < indexInterval) {
-    indexInterval = maxElev >= interval * 2 ? interval * 2 : interval;
-  }
-
-  // Choose clean tick step producing 3–5 labeled divisions covering maxElev
-  const tickCandidates = [50, 100, 200, 250, 500, 1000, 1500, 2000];
-  let tickStep = indexInterval;
-  if (maxElev / tickStep > 5 || maxElev / tickStep < 2) {
-    tickStep = tickCandidates[tickCandidates.length - 1];
-    for (let i = 0; i < tickCandidates.length; i += 1) {
-      const cand = tickCandidates[i];
-      if (Math.ceil(maxElev / cand) <= 5) {
-        tickStep = cand;
-        break;
-      }
-    }
-  }
-
-  const scaleMax = Math.max(tickStep * 2, Math.ceil(maxElev / tickStep) * tickStep);
-  const ticks = [];
-  for (let v = 0; v <= scaleMax; v += tickStep) {
-    ticks.push(v);
-  }
-  if (ticks[ticks.length - 1] !== scaleMax) {
-    ticks.push(scaleMax);
-  }
+  const bounds = computeAltitudeScaleBounds(maxElev, interval);
 
   return {
     style,
@@ -745,12 +844,12 @@ export function computeAltitudeScaleInfo(spec, dem) {
     contourColor: typeof tr.contourColor === 'string' ? tr.contourColor : 'auto',
     hasHypsometric: Boolean(styleDef.hasHypsometric),
     showContours,
-    maxElev,
-    interval,
-    indexInterval,
-    tickStep,
-    scaleMax,
-    ticks,
+    maxElev: bounds.maxElev,
+    interval: bounds.interval,
+    indexInterval: bounds.indexInterval,
+    tickStep: bounds.tickStep,
+    scaleMax: cachedArtifact?.scaleMax || bounds.scaleMax,
+    ticks: bounds.ticks,
     position: tr.altitudeScalePosition || 'bottom-right',
   };
 }
@@ -763,8 +862,8 @@ function localGeoDistanceMeters(lon1, lat1, lon2, lat2) {
 }
 
 /**
- * Render multidirectional NW Army hillshade (and optional DMA/NGA JOG elevation tint)
- * into an RGBA Uint8ClampedArray of size `gw * gh * 4`.
+ * Render multidirectional NW Army hillshade and tone-matched / JOG hypsometric
+ * altitude shading into an RGBA Uint8ClampedArray of size `gw * gh * 4`.
  */
 export function renderTerrainRasterPixels(
   elevGrid,
@@ -778,6 +877,7 @@ export function renderTerrainRasterPixels(
     contrast = 1.0,
     exaggeration = 2.2,
     tone = 'charcoal',
+    scaleMax = 0,
   } = {},
 ) {
   const styleDef = TERRAIN_STYLES[style] || TERRAIN_STYLES.army_topo;
@@ -790,6 +890,16 @@ export function renderTerrainRasterPixels(
   const clampedIntensity = clamp(Number(intensity) || 0.72, 0.1, 1.0);
   const clampedContrast = clamp(Number(contrast) || 1.0, 0.4, 2.2);
   const clampedExag = clamp(Number(exaggeration) || 2.2, 0.5, 6.0);
+
+  let effScaleMax = Number(scaleMax) || 0;
+  if (styleDef.hasHypsometric && effScaleMax <= 0) {
+    let gridMax = 0;
+    for (let i = 0; i < elevGrid.length; i += 1) {
+      const v = elevGrid[i];
+      if (Number.isFinite(v) && v > gridMax) gridMax = v;
+    }
+    effScaleMax = computeAltitudeScaleBounds(Math.max(100, gridMax), 100).scaleMax;
+  }
 
   // Multidirectional illumination vectors in screen coordinates (+X east, +Y south, +Z up)
   // 70% classic NW (315 deg, 45 deg alt) + 15% W (270 deg, 42 deg alt) + 15% N (360 deg, 42 deg alt)
@@ -804,9 +914,31 @@ export function renderTerrainRasterPixels(
 
   const [shR, shG, shB] = toneDef.shadowRgb;
   const [hiR, hiG, hiB] = toneDef.highlightRgb;
-  const [jogR, jogG, jogB] = toneDef.jogTintShift || [1, 1, 1];
   const hillshadeRange = 0.46 / Math.pow(clampedContrast, 0.85);
   const hillshadeGamma = clamp(0.88 / Math.pow(clampedContrast, 0.35), 0.52, 1.35);
+  const hypsoAlpha = clamp(Math.round(255 * (0.30 + clampedIntensity * 0.64)), 0, 255);
+  const hypsoShadeStrength = styleDef.hypsometricMode === 'topo_tone' ? 1.55 : 1.45;
+
+  // Precompute 256-entry RGB LUT matching sampleAltitudeRampRgb 1:1 for fast pixel shading
+  let lutR = null;
+  let lutG = null;
+  let lutB = null;
+  if (styleDef.hasHypsometric) {
+    lutR = new Uint8Array(256);
+    lutG = new Uint8Array(256);
+    lutB = new Uint8Array(256);
+    for (let i = 0; i < 256; i += 1) {
+      const sampleE = (i / 255) * effScaleMax;
+      const [rr, gg, bb] = sampleAltitudeRampRgb(sampleE, effScaleMax, {
+        style,
+        tone,
+        contrast: clampedContrast,
+      });
+      lutR[i] = rr;
+      lutG[i] = gg;
+      lutB[i] = bb;
+    }
+  }
 
   for (let y = 0; y < gh; y += 1) {
     const yPrev = Math.max(0, y - 1);
@@ -859,27 +991,12 @@ export function renderTerrainRasterPixels(
       const outIdx = idx * 4;
 
       if (styleDef.hasHypsometric) {
-        let [baseR, baseG, baseB] = interpolateJogColor(eC);
-        if (toneDef.desaturateJog) {
-          const gray = Math.round(0.299 * baseR + 0.587 * baseG + 0.114 * baseB);
-          baseR = gray;
-          baseG = gray;
-          baseB = gray;
-        } else {
-          baseR = clamp(Math.round(baseR * jogR), 0, 255);
-          baseG = clamp(Math.round(baseG * jogG), 0, 255);
-          baseB = clamp(Math.round(baseB * jogB), 0, 255);
-        }
-        // Apply color contrast around mid-tone + hillshade modulation
-        const colorContrast = 0.65 + 0.35 * clampedContrast;
-        const cR = clamp(128 + (baseR - 128) * colorContrast, 0, 255);
-        const cG = clamp(128 + (baseG - 128) * colorContrast, 0, 255);
-        const cB = clamp(128 + (baseB - 128) * colorContrast, 0, 255);
-        const shadeGain = clamp(1 + delta * 1.45 * clampedContrast, 0.32, 1.42);
-        rgba[outIdx] = clamp(Math.round(cR * shadeGain), 0, 255);
-        rgba[outIdx + 1] = clamp(Math.round(cG * shadeGain), 0, 255);
-        rgba[outIdx + 2] = clamp(Math.round(cB * shadeGain), 0, 255);
-        rgba[outIdx + 3] = clamp(Math.round(255 * (0.28 + clampedIntensity * 0.62)), 0, 255);
+        const lutIdx = clamp(Math.round((Math.max(0, eC) / effScaleMax) * 255), 0, 255);
+        const shadeGain = clamp(1 + delta * hypsoShadeStrength * clampedContrast, 0.34, 1.38);
+        rgba[outIdx] = clamp(Math.round(lutR[lutIdx] * shadeGain), 0, 255);
+        rgba[outIdx + 1] = clamp(Math.round(lutG[lutIdx] * shadeGain), 0, 255);
+        rgba[outIdx + 2] = clamp(Math.round(lutB[lutIdx] * shadeGain), 0, 255);
+        rgba[outIdx + 3] = hypsoAlpha;
       } else {
         // Two-tone transparent hillshade: flat plains stay 100% clean across all Dusty themes
         const absD = Math.abs(delta);
@@ -1524,21 +1641,29 @@ export function resolveContourPalette(
   style = 'army_topo',
   { contourColor = 'auto', tone = 'charcoal', contrast = 1.0 } = {},
 ) {
+  const styleDef = TERRAIN_STYLES[style] || TERRAIN_STYLES.army_topo;
+  const hasHypsoFill = Boolean(styleDef.hasHypsometric);
   const cBoost = clamp(0.72 + 0.28 * (Number(contrast) || 1.0), 0.65, 1.25);
   const surfaceLum = parseHexLuminance(surfaceColorHex);
-  const isDarkSurface = style !== 'jog_elevation' && surfaceLum !== null && surfaceLum < 0.34;
-  const defaultHalo =
-    style === 'jog_elevation'
-      ? '#ebe3d2'
-      : (typeof surfaceColorHex === 'string' && /^#[0-9a-f]{6}$/i.test(surfaceColorHex.trim())
-          ? surfaceColorHex.trim()
-          : (isDarkSurface ? '#3f4246' : '#f4f0e6'));
+  const isDarkSurface = !hasHypsoFill && surfaceLum !== null && surfaceLum < 0.34;
+  const toneHaloMap = {
+    charcoal: '#ece7dd',
+    sepia: '#f2e9d8',
+    olive: '#e4ece0',
+    bw_print: '#f0f0f0',
+  };
+  const defaultHalo = hasHypsoFill
+    ? (style === 'jog_elevation' ? '#ebe3d2' : (toneHaloMap[tone] || '#ece7dd'))
+    : (typeof surfaceColorHex === 'string' && /^#[0-9a-f]{6}$/i.test(surfaceColorHex.trim())
+        ? surfaceColorHex.trim()
+        : (isDarkSurface ? '#3f4246' : '#f4f0e6'));
 
   if (typeof contourColor === 'string' && /^#[0-9a-f]{6}$/i.test(contourColor.trim())) {
     const custom = contourColor.trim();
     const customLum = parseHexLuminance(custom);
+    const effectiveLum = hasHypsoFill ? 0.68 : surfaceLum;
     const haloColor =
-      surfaceLum !== null && customLum !== null && Math.abs(surfaceLum - customLum) < 0.22
+      effectiveLum !== null && customLum !== null && Math.abs(effectiveLum - customLum) < 0.22
         ? (customLum < 0.45 ? '#f5f2eb' : '#1e242b')
         : defaultHalo;
     return {
@@ -1569,12 +1694,12 @@ export function resolveContourPalette(
     };
   }
 
-  if (style === 'jog_elevation') {
+  if (hasHypsoFill) {
     return {
       indexColor: '#5a2f12',
       intermediateColor: '#824d26',
-      indexAlpha: clamp(0.8 * cBoost, 0.45, 0.96),
-      intermediateAlpha: clamp(0.46 * cBoost, 0.24, 0.78),
+      indexAlpha: clamp(0.82 * cBoost, 0.45, 0.96),
+      intermediateAlpha: clamp(0.48 * cBoost, 0.24, 0.78),
       haloColor: defaultHalo,
     };
   }
@@ -1775,11 +1900,14 @@ export function buildProjectedTerrainLayer(
   if (!grid || grid.validLandCount === 0) return null;
 
   const showContours = wantsTerrainContours(tr);
+  const maxVisibleElev = Math.round(grid.maxVisibleElev || dem.stats?.maxLandElev || 0);
   const effectiveInterval = resolveEffectiveContourInterval(
     tr.contourInterval,
-    Math.max(dem.stats?.p98LandElev || 0, grid.maxVisibleElev || 0),
+    Math.max(dem.stats?.p98LandElev || 0, maxVisibleElev),
     spanDeg,
   );
+  const scaleBounds = computeAltitudeScaleBounds(maxVisibleElev, effectiveInterval);
+  const scaleMax = scaleBounds.scaleMax;
 
   const renderKey = [
     projKey,
@@ -1788,6 +1916,7 @@ export function buildProjectedTerrainLayer(
     intensity.toFixed(2),
     contrast.toFixed(2),
     exaggeration.toFixed(2),
+    `sm${scaleMax}`,
     showContours && !interactive ? `${effectiveInterval}_${showContourLabels ? 'L' : 'NL'}` : 'nc',
     showPeakSummits && !interactive ? 'PK' : 'NPK',
   ].join('::');
@@ -1807,7 +1936,7 @@ export function buildProjectedTerrainLayer(
       grid.stepYM,
       grid.gw,
       grid.gh,
-      { style, intensity, contrast, exaggeration, tone },
+      { style, intensity, contrast, exaggeration, tone, scaleMax },
     );
     if (typeof document !== 'undefined') {
       rasterCanvas = document.createElement('canvas');
@@ -1855,7 +1984,8 @@ export function buildProjectedTerrainLayer(
     contrast,
     exaggeration,
     effectiveInterval,
-    maxVisibleElev: Math.round(grid.maxVisibleElev || dem.stats?.maxLandElev || 0),
+    maxVisibleElev,
+    scaleMax,
     rasterCanvas,
     contours,
     summits,
