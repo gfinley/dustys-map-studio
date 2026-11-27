@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=32';
+} from './schema.js?v=33';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,9 +14,9 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=32';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=32';
-import { formatArea } from './shadow.js?v=32';
+} from './presets.js?v=33';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=33';
+import { formatArea } from './shadow.js?v=33';
 import {
   CACHED_HD_COASTLINE_PACKS,
   OSM_COASTLINE_MAX_SPAN_DEG,
@@ -26,14 +26,14 @@ import {
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=32';
+} from './osm-coastline.js?v=33';
 import {
   TERRAIN_STYLES,
   TERRAIN_TONES,
   isViewOutsideTerrainBounds,
   resolveContourPalette,
   wantsTerrainContours,
-} from './terrain-relief.js?v=32';
+} from './terrain-relief.js?v=33';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -84,6 +84,7 @@ let boundCallbacks = {};
 let fullCountryCatalog = [];
 let fullAdmin1Catalog = [];
 let activeShadowSourceType = 'country';
+let lastTownSearchState = null;
 
 function $(id) {
   return document.getElementById(id);
@@ -298,6 +299,154 @@ export function renderSearchResults(results, { onFrame, onPin } = {}) {
 
     actions.append(frameBtn, pinBtn);
     row.append(title, sub, actions);
+    box.appendChild(row);
+  }
+}
+
+function isTownAlreadyPinned(item, cities) {
+  if (!item || !Array.isArray(cities) || !cities.length) return false;
+  const targetName = String(item.name || '').trim().toLowerCase();
+  const targetLat = Number(item.lat);
+  const targetLon = Number(item.lon);
+  return cities.some(
+    (c) =>
+      String(c.name || '').trim().toLowerCase() === targetName &&
+      Math.abs(Number(c.lat) - targetLat) < 0.05 &&
+      Math.abs(Number(c.lon) - targetLon) < 0.05,
+  );
+}
+
+function formatDistanceHint(distanceKm, units = 'km') {
+  if (!Number.isFinite(distanceKm)) return '';
+  if (units === 'mi') {
+    const miles = Math.round(distanceKm * 0.621371);
+    return miles < 1 ? '<1 mi away' : `${miles.toLocaleString()} mi away`;
+  }
+  const km = Math.round(distanceKm);
+  return km < 1 ? '<1 km away' : `${km.toLocaleString()} km away`;
+}
+
+export function clearTownSearchResults() {
+  lastTownSearchState = null;
+  const box = $('town-search-results');
+  if (!box) return;
+  box.innerHTML = '';
+  box.hidden = true;
+}
+
+export function renderTownSearchResults(
+  results,
+  { existingCities = [], units = 'km', query = '', onAddPin, onFrame, onClear } = {},
+) {
+  const box = $('town-search-results');
+  if (!box) return;
+  lastTownSearchState = {
+    results: Array.isArray(results) ? results : [],
+    units,
+    query,
+    onAddPin,
+    onFrame,
+    onClear,
+  };
+  box.innerHTML = '';
+  box.hidden = false;
+
+  const list = Array.isArray(results) ? results : [];
+  const inViewCount = list.filter((item) => item.inView).length;
+
+  const bar = document.createElement('div');
+  bar.className = 'search-results-bar';
+  const summary = document.createElement('span');
+  if (!list.length) {
+    summary.textContent = query ? `No towns found for "${query}"` : 'No matching towns found';
+  } else if (inViewCount > 0) {
+    summary.textContent = `${inViewCount} in view · ${list.length} ${list.length === 1 ? 'match' : 'matches'}`;
+  } else {
+    summary.textContent = `${list.length} ${list.length === 1 ? 'match' : 'matches'} (nearest to view)`;
+  }
+
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.className = 'btn-mini-ghost';
+  clearBtn.textContent = 'Clear';
+  clearBtn.addEventListener('click', () => {
+    clearTownSearchResults();
+    onClear?.();
+  });
+
+  bar.append(summary, clearBtn);
+  box.appendChild(bar);
+
+  if (!list.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'No towns found. Try a nearby town, city, or village name.';
+    box.appendChild(empty);
+    return;
+  }
+
+  for (const item of list) {
+    const row = document.createElement('div');
+    row.className = `search-result-item${item.inView ? ' is-in-view' : ''}`;
+
+    const header = document.createElement('div');
+    header.className = 'search-result-header';
+
+    const title = document.createElement('div');
+    title.className = 'search-result-title';
+    title.textContent = item.name;
+
+    const badges = document.createElement('div');
+    badges.className = 'search-result-badges';
+    if (item.inView) {
+      const inViewBadge = document.createElement('span');
+      inViewBadge.className = 'search-badge search-badge-in-view';
+      inViewBadge.textContent = 'In View';
+      badges.appendChild(inViewBadge);
+    }
+    if (item.typeLabel) {
+      const typeBadge = document.createElement('span');
+      typeBadge.className = 'search-badge search-badge-type';
+      typeBadge.textContent = item.typeLabel;
+      badges.appendChild(typeBadge);
+    }
+    header.append(title, badges);
+
+    const sub = document.createElement('div');
+    sub.className = 'search-result-sub';
+    const contextText = item.context || item.displayName || '';
+    const coordText = `${Number(item.lat).toFixed(2)}°, ${Number(item.lon).toFixed(2)}°`;
+    const distHint = !item.inView && Number.isFinite(item.distanceKm)
+      ? ` · ${formatDistanceHint(item.distanceKm, units)}`
+      : '';
+    sub.textContent = contextText
+      ? `${contextText} (${coordText})${distHint}`
+      : `${coordText}${distHint}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'search-result-actions';
+
+    const pinned = isTownAlreadyPinned(item, existingCities);
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = pinned
+      ? 'btn btn-secondary btn-sm btn-pinned-state'
+      : 'btn btn-primary btn-sm';
+    addBtn.textContent = pinned ? 'Pinned' : '+ Add Pin';
+    addBtn.disabled = pinned;
+    addBtn.addEventListener('click', () => onAddPin?.(item));
+
+    const frameBtn = document.createElement('button');
+    frameBtn.type = 'button';
+    frameBtn.className = 'btn btn-secondary btn-sm';
+    frameBtn.textContent = item.inView ? 'Center' : 'Frame';
+    frameBtn.title = item.inView
+      ? 'Center map on this town'
+      : 'Pan and frame map around this town';
+    frameBtn.addEventListener('click', () => onFrame?.(item));
+
+    actions.append(addBtn, frameBtn);
+    row.append(header, sub, actions);
     box.appendChild(row);
   }
 }
@@ -590,15 +739,23 @@ export function renderCountryHighlightsList(spec, callbacks = boundCallbacks) {
 }
 
 export function renderCitiesList(spec, callbacks = boundCallbacks) {
+  const cities = spec.cities || [];
+  if (lastTownSearchState) {
+    renderTownSearchResults(lastTownSearchState.results, {
+      ...lastTownSearchState,
+      existingCities: cities,
+      units: spec?.ornaments?.scaleBar?.units === 'mi' ? 'mi' : 'km',
+    });
+  }
+
   const listEl = $('cities-list');
   if (!listEl) return;
   listEl.innerHTML = '';
 
-  const cities = spec.cities || [];
   if (!cities.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.textContent = 'No city pins placed yet. Drop one on the map or auto-add major cities.';
+    empty.textContent = 'No city pins placed yet. Search a town above, drop one on the map, or auto-add major cities.';
     listEl.appendChild(empty);
     return;
   }
@@ -1719,6 +1876,17 @@ export function renderControls(callbacks) {
     const opt = select?.selectedOptions?.[0];
     if (!opt || !opt.value) return;
     boundCallbacks.onAddCountry?.(opt.value, opt.dataset.name || opt.textContent);
+  });
+
+  $('town-search-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = $('town-search-input')?.value || '';
+    boundCallbacks.onSearchTowns?.(q);
+  });
+  $('town-search-input')?.addEventListener('input', (e) => {
+    if (!String(e.target.value || '').trim()) {
+      clearTownSearchResults();
+    }
   });
 
   $('btn-mode-pin')?.addEventListener('click', () => {

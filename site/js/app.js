@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=32';
+} from './schema.js?v=33';
 import {
   ensureDatasets,
   fetchCachedCoastlinePack,
@@ -23,7 +23,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=32';
+} from './data-loader.js?v=33';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -32,7 +32,7 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=32';
+} from './cartography.js?v=33';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
@@ -40,12 +40,12 @@ import {
   getCachedCoastlinePackById,
   isCachedCoastlinePackUrl,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=32';
+} from './osm-coastline.js?v=33';
 import {
   TERRAIN_STYLES,
   fetchTerrainDemForBounds,
   isViewOutsideTerrainBounds,
-} from './terrain-relief.js?v=32';
+} from './terrain-relief.js?v=33';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -54,32 +54,34 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=32';
+} from './exporter.js?v=33';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=32';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=32';
+} from './presets.js?v=33';
+import { pickTopCitiesInExtent, searchPlaces, searchTowns } from './search.js?v=33';
 import {
+  clearTownSearchResults,
   closeMobileDrawers,
   populateCountryCatalog,
   populateShadowRegionCatalog,
   renderControls,
   renderSearchResults,
+  renderTownSearchResults,
   setLoadingProgress,
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=32';
+} from './controls.js?v=33';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=32';
+} from './shadow.js?v=33';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -90,7 +92,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=32';
+} from './timeline.js?v=33';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -204,6 +206,7 @@ const state = {
   terrainFetchSeq: 0,
   loadRequestToken: 0,
   searchAbortController: null,
+  townSearchAbortController: null,
   wheelCommitTimer: null,
   rafRenderPending: false,
   isInteracting: false,
@@ -1795,6 +1798,50 @@ function handlePinMapClick(x, y) {
   showToast(`Dropped "${defaultName}" (${lat.toFixed(2)}°, ${lon.toFixed(2)}°). Rename in Countries & Pins.`, 'success', 2800);
 }
 
+function addCityPinFromPlace(item) {
+  if (!item || !Number.isFinite(Number(item.lat)) || !Number.isFinite(Number(item.lon))) {
+    return false;
+  }
+  const cleanName = String(item.name || '').replace(/\s+/g, ' ').trim() || 'Pin';
+  const lat = Number(Number(item.lat).toFixed(4));
+  const lon = Number(Number(item.lon).toFixed(4));
+  const exists = (state.spec.cities || []).some(
+    (c) =>
+      String(c.name || '').trim().toLowerCase() === cleanName.toLowerCase() &&
+      Math.abs(Number(c.lat) - lat) < 0.05 &&
+      Math.abs(Number(c.lon) - lon) < 0.05,
+  );
+  if (exists) {
+    showToast(`${cleanName} is already pinned.`, 'info', 2200);
+    return false;
+  }
+  const isCapitalStyle = Boolean(
+    item.isCapital ||
+      String(item.type || '').toLowerCase().includes('capital') ||
+      String(item.type || '').toLowerCase().includes('country'),
+  );
+  const nextCities = [
+    ...(state.spec.cities || []),
+    {
+      id: `${sanitizeFilename(cleanName, 'pin').toLowerCase()}_${Date.now()}`,
+      name: cleanName,
+      lat,
+      lon,
+      style: isCapitalStyle ? 'capital' : 'dot',
+      dx: 6,
+      dy: -5,
+      scale: 1.0,
+    },
+  ];
+  patchSpec({ cities: nextCities });
+  if (item.inView === false) {
+    showToast(`Added pin: ${cleanName} (outside current view)`, 'success', 2600);
+  } else {
+    showToast(`Added pin: ${cleanName}`, 'success', 2200);
+  }
+  return true;
+}
+
 const FEATURE_ENUM_LABELS = {
   major_military_airbase: 'Major Military Airbase',
   military_airfield: 'Military Airfield',
@@ -2666,37 +2713,77 @@ function buildCallbacks() {
             showToast(`Framed on ${item.name}`, 'success', 2200);
           },
           onPin: (item) => {
-            const exists = (state.spec.cities || []).some(
-              (c) =>
-                c.name.toLowerCase() === item.name.toLowerCase() &&
-                Math.abs(c.lat - item.lat) < 0.05 &&
-                Math.abs(c.lon - item.lon) < 0.05,
-            );
-            if (exists) {
-              showToast(`${item.name} is already pinned.`, 'info', 2200);
-              return;
-            }
-            const nextCities = [
-              ...(state.spec.cities || []),
-              {
-                id: `${sanitizeFilename(item.name, 'pin').toLowerCase()}_${Date.now()}`,
-                name: item.name,
-                lat: item.lat,
-                lon: item.lon,
-                style: item.type?.includes('country') ? 'capital' : 'dot',
-                dx: 6,
-                dy: -5,
-                scale: 1.0,
-              },
-            ];
-            patchSpec({ cities: nextCities });
-            showToast(`Added pin: ${item.name}`, 'success', 2200);
+            addCityPinFromPlace(item);
           },
         });
       } catch (err) {
         setLoadingProgress(false);
         if (err?.name !== 'AbortError') {
           showToast(`Search failed: ${err.message}`, 'error', 4000);
+        }
+      }
+    },
+
+    onSearchTowns: async (query) => {
+      const trimmed = String(query || '').trim();
+      if (!trimmed) {
+        clearTownSearchResults();
+        return;
+      }
+      state.townSearchAbortController?.abort();
+      state.townSearchAbortController = new AbortController();
+
+      try {
+        setLoadingProgress(true, `Searching towns for "${trimmed}"...`);
+        const visibleBounds = computeCurrentVisibleBounds(state.spec);
+        const populatedPlaces =
+          state.datasets?.populatedPlaces || state.fastDatasets?.populatedPlaces || null;
+        const results = await searchTowns(trimmed, {
+          viewBounds: visibleBounds,
+          center: state.spec.center,
+          span: state.spec.span,
+          populatedPlaces,
+          limit: 8,
+          signal: state.townSearchAbortController.signal,
+        });
+        setLoadingProgress(false);
+
+        const units = state.spec?.ornaments?.scaleBar?.units === 'mi' ? 'mi' : 'km';
+        renderTownSearchResults(results, {
+          existingCities: state.spec.cities || [],
+          units,
+          query: trimmed,
+          onAddPin: (item) => {
+            addCityPinFromPlace(item);
+          },
+          onFrame: (item) => {
+            if (item.inView) {
+              patchSpec({
+                center: { lat: item.lat, lon: item.lon },
+              });
+              closeMobileDrawers();
+              showToast(`Centered on ${item.name}`, 'success', 2200);
+            } else {
+              patchSpec({
+                center: { lat: item.lat, lon: item.lon },
+                span: {
+                  lonDeg: Math.min(state.spec.span?.lonDeg || item.spanLonDeg, Math.max(item.spanLonDeg, 1.8)),
+                  latDeg: Math.min(state.spec.span?.latDeg || item.spanLatDeg, Math.max(item.spanLatDeg, 1.3)),
+                },
+              });
+              closeMobileDrawers();
+              showToast(`Framed on ${item.name}`, 'success', 2200);
+            }
+          },
+          onClear: () => {
+            const input = document.getElementById('town-search-input');
+            if (input) input.value = '';
+          },
+        });
+      } catch (err) {
+        setLoadingProgress(false);
+        if (err?.name !== 'AbortError') {
+          showToast(`Town search failed: ${err.message}`, 'error', 4000);
         }
       }
     },

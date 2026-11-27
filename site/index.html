@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=32" />
+  <link rel="stylesheet" href="./styles/main.css?v=33" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -681,7 +681,20 @@
             <div class="panel-card">
               <div class="card-header">
                 <h2>Cities &amp; Map Pins</h2>
+                <span class="helper-pill">View-Biased</span>
               </div>
+              <p class="helper-text">Search any town, village, or city to pin — results prioritize places in your visible map area.</p>
+              <form id="town-search-form" class="input-row">
+                <input
+                  id="town-search-input"
+                  type="search"
+                  placeholder="Search town or city (e.g. Springfield, Nome, Balanga)..."
+                  autocomplete="off"
+                  aria-label="Search town or city name to add as pin"
+                />
+                <button id="btn-town-search" class="btn btn-primary btn-sm" type="submit">Search</button>
+              </form>
+              <div id="town-search-results" class="search-results town-search-results" hidden></div>
               <div class="btn-stack-2">
                 <button id="btn-mode-pin" class="btn btn-mode" type="button" aria-pressed="false">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1207,6 +1220,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=32"></script>
+  <script type="module" src="./js/app.js?v=33"></script>
 </body>
 </html>

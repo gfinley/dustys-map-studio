@@ -675,6 +675,69 @@ select {
   gap: 6px;
 }
 
+.town-search-results {
+  max-height: 270px;
+}
+
+.search-results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 2px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.search-result-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.search-result-badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.search-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+.search-badge-in-view {
+  background: rgba(52, 211, 153, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  color: #6ee7b7;
+}
+
+.search-badge-type {
+  background: rgba(148, 163, 184, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  color: var(--text-secondary);
+}
+
+.search-result-item.is-in-view {
+  border-color: rgba(52, 211, 153, 0.34);
+}
+
+.btn-pinned-state {
+  opacity: 0.72;
+  cursor: default;
+}
+
 /* Theme Swatches */
 .theme-grid {
   display: grid;

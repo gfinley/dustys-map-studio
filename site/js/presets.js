@@ -1,4 +1,4 @@
-import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=32';
+import { COLOR_THEMES, createDefaultMapSpec, normalizeMapSpec } from './schema.js?v=33';
 
 export const AIRFIELD_1941_LAYERS = [
   {

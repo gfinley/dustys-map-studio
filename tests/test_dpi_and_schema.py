@@ -768,6 +768,49 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
                 f"Node terrain relief tests failed:\n{proc.stdout}\n{proc.stderr}",
             )
 
+    def test_view_biased_town_search_contract(self) -> None:
+        """Cities & Map Pins card has visible-area-biased town search wired across HTML, JS, and Node tests."""
+        import shutil
+        import subprocess
+
+        search_js = (SITE_DIR / "js" / "search.js").read_text(encoding="utf-8")
+        for sym in (
+            "export function normalizeViewBounds",
+            "export function isPointInViewBounds",
+            "export function searchLocalPopulatedPlaces",
+            "export function rankTownResults",
+            "export async function searchTowns",
+        ):
+            self.assertIn(sym, search_js)
+
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        cities_card_idx = html.index("<h2>Cities &amp; Map Pins</h2>")
+        next_card_idx = html.index("<h2>Custom GeoJSON Overlays</h2>")
+        cities_card_html = html[cities_card_idx:next_card_idx]
+        for elem_id in ("town-search-form", "town-search-input", "btn-town-search", "town-search-results"):
+            self.assertIn(f'id="{elem_id}"', cities_card_html)
+
+        controls_js = (SITE_DIR / "js" / "controls.js").read_text(encoding="utf-8")
+        for sym in ("export function renderTownSearchResults", "export function clearTownSearchResults", "onSearchTowns"):
+            self.assertIn(sym, controls_js)
+
+        app_js = (SITE_DIR / "js" / "app.js").read_text(encoding="utf-8")
+        for sym in ("searchTowns", "renderTownSearchResults", "onSearchTowns", "addCityPinFromPlace"):
+            self.assertIn(sym, app_js)
+
+        if shutil.which("node"):
+            proc = subprocess.run(
+                ["node", "--test", str(ROOT_DIR / "tests" / "test_town_search.mjs")],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                proc.returncode,
+                0,
+                f"Node town search tests failed:\n{proc.stdout}\n{proc.stderr}",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

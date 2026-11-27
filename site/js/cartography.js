@@ -13,19 +13,19 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=32';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=32';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=32';
+} from './ornaments.js?v=33';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=33';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=33';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=32';
+} from './data-loader.js?v=33';
 import {
   buildProjectedTerrainLayer,
   contourSegmentsToSvgPath,
   resolveContourPalette,
-} from './terrain-relief.js?v=32';
+} from './terrain-relief.js?v=33';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
