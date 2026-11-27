@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=34';
+} from './schema.js?v=35';
 import {
   ensureDatasets,
   fetchCachedCoastlinePack,
@@ -23,7 +23,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=34';
+} from './data-loader.js?v=35';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -32,7 +32,7 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=34';
+} from './cartography.js?v=35';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
@@ -40,12 +40,12 @@ import {
   getCachedCoastlinePackById,
   isCachedCoastlinePackUrl,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=34';
+} from './osm-coastline.js?v=35';
 import {
   TERRAIN_STYLES,
   fetchTerrainDemForBounds,
   isViewOutsideTerrainBounds,
-} from './terrain-relief.js?v=34';
+} from './terrain-relief.js?v=35';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -54,15 +54,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=34';
+} from './exporter.js?v=35';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=34';
-import { pickTopCitiesInExtent, searchPlaces, searchTowns } from './search.js?v=34';
+} from './presets.js?v=35';
+import { pickTopCitiesInExtent, searchPlaces, searchTowns } from './search.js?v=35';
 import {
   clearTownSearchResults,
   closeMobileDrawers,
@@ -75,13 +75,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=34';
+} from './controls.js?v=35';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=34';
+} from './shadow.js?v=35';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -92,7 +92,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=34';
+} from './timeline.js?v=35';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -3297,8 +3297,10 @@ function buildCallbacks() {
       }
       const visibleBounds = computeCurrentVisibleBounds(spec);
       const bbox = computePaddedCoastlineBBox(visibleBounds);
+      const matchedPack =
+        findMatchingCachedCoastlinePack(visibleBounds) || findMatchingCachedCoastlinePack(bbox);
 
-      if (bbox.tooWide) {
+      if (bbox.tooWide && !matchedPack) {
         showToast(
           `Zoom in to ≤ ${OSM_COASTLINE_MAX_SPAN_DEG}° first (current view is ${bbox.maxRawSpan.toFixed(1)}°). For full countries, use geoBoundaries below.`,
           'warn',

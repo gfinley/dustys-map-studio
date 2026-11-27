@@ -16,7 +16,7 @@ import {
   parseOsmCoastlineUrl,
   polygonizeOverpassCoastlines,
   simplifyGeoJsonCoastline,
-} from './osm-coastline.js?v=34';
+} from './osm-coastline.js?v=35';
 
 const CACHE_NAME = 'dusty-mapmaker-v4';
 try {
@@ -1256,19 +1256,17 @@ export async function fetchOsmCoastlineForBounds(
         }
       : computePaddedCoastlineBBox(bboxInput);
 
-  if (bbox.tooWide) {
-    throw new Error('Framed area is too wide for live OSM coastline download. Zoom in to 3° or less.');
-  }
-
   const simp = Math.max(0, Math.round(Number(simplifyMeters) || 0));
 
-  // Instant site-cache hit for bundled hyper-accurate island packs (e.g. Attu, Corregidor)
-  if (!forceRefresh) {
-    const matchedPack =
-      findMatchingCachedCoastlinePack(visibleBounds) || findMatchingCachedCoastlinePack(bbox);
-    if (matchedPack) {
-      return fetchCachedCoastlinePack(matchedPack, { simplifyMeters: simp, onStatus });
-    }
+  // Instant site-cache hit for bundled hyper-accurate island packs (e.g. Attu, Corregidor, Luzon, Leyte)
+  const matchedPack =
+    findMatchingCachedCoastlinePack(visibleBounds) || findMatchingCachedCoastlinePack(bbox);
+  if (matchedPack) {
+    return fetchCachedCoastlinePack(matchedPack, { simplifyMeters: simp, onStatus });
+  }
+
+  if (bbox.tooWide) {
+    throw new Error('Framed area is too wide for live OSM coastline download. Zoom in to 3° or less.');
   }
 
   const osmUrl = encodeOsmCoastlineUrl(bbox, { simplifyMeters: simp });

@@ -1,4 +1,4 @@
-import { sanitizeFilename } from './schema.js?v=34';
+import { sanitizeFilename } from './schema.js?v=35';
 
 const EARTH_RADIUS_KM = 6371.0088;
 

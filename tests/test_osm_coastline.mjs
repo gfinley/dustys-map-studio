@@ -297,24 +297,44 @@ test('URL codec, padded bbox calculation, and out-of-bounds view check round-tri
   );
 });
 
-test('Site-cached Attu & Corregidor HD coastline packs exist, validate, match view bounds, and simplify cleanly', () => {
-  assert.ok(CACHED_HD_COASTLINE_PACKS.length >= 2);
+test('Site-cached Attu, Corregidor, Luzon & Leyte HD coastline packs exist, validate, match view bounds, and simplify cleanly', () => {
+  assert.ok(CACHED_HD_COASTLINE_PACKS.length >= 4);
 
   // Auto-match inside Attu & Near Islands (including pure ocean margin around Attu)
   const attuMatch = findMatchingCachedCoastlinePack([172.35, 173.45, 52.65, 53.15]);
   assert.equal(attuMatch?.id, 'attu_near_islands');
   assert.equal(isCachedCoastlinePackUrl(attuMatch.url), true);
 
-  // Auto-match inside Corregidor & Manila Bay Mouth
+  // Auto-match inside Corregidor & Manila Bay Mouth prefers tightest pack over Luzon
   const corrMatch = findMatchingCachedCoastlinePack([120.46, 120.72, 14.25, 14.50]);
   assert.equal(corrMatch?.id, 'corregidor_manila_bay');
   assert.equal(isCachedCoastlinePackUrl(corrMatch.url), true);
 
+  // Broader Central Luzon & full Luzon views match Luzon pack
+  const centralLuzonMatch = findMatchingCachedCoastlinePack([119.5, 122.0, 13.5, 15.5]);
+  assert.equal(centralLuzonMatch?.id, 'luzon_surrounding');
+  assert.equal(isCachedCoastlinePackUrl(centralLuzonMatch.url), true);
+
+  const fullLuzonMatch = findMatchingCachedCoastlinePack([119.4, 124.5, 12.2, 19.2]);
+  assert.equal(fullLuzonMatch?.id, 'luzon_surrounding');
+
+  // Leyte & Leyte Gulf / Samar views match Leyte pack
+  const leyteMatch = findMatchingCachedCoastlinePack([124.2, 125.4, 9.9, 11.7]);
+  assert.equal(leyteMatch?.id, 'leyte_surrounding');
+  assert.equal(isCachedCoastlinePackUrl(leyteMatch.url), true);
+
+  const leyteGulfMatch = findMatchingCachedCoastlinePack([124.0, 126.1, 9.7, 12.4]);
+  assert.equal(leyteGulfMatch?.id, 'leyte_surrounding');
+
+  // Leyte one preset osm-coastline:// URL also hits the instant site-cached Leyte pack
+  const leyteOneParsed = parseOsmCoastlineUrl('osm-coastline://9.4242,123.0670,12.0018,127.0570?s=0');
+  assert.equal(findMatchingCachedCoastlinePack(leyteOneParsed)?.id, 'leyte_surrounding');
+
   // Outside views return null so Overpass handles other regions
   assert.equal(findMatchingCachedCoastlinePack([25, 36, 45, 52]), null);
-  assert.equal(findMatchingCachedCoastlinePack([119.5, 122.0, 13.5, 15.5]), null);
+  assert.equal(findMatchingCachedCoastlinePack([122.0, 126.0, 5.5, 8.5]), null);
 
-  // Validate both static GeoJSON files on disk
+  // Validate all static GeoJSON files on disk
   for (const pack of CACHED_HD_COASTLINE_PACKS) {
     const absPath = path.resolve(__dirname, '..', 'site', pack.url.replace(/^\.\//, ''));
     assert.ok(fs.existsSync(absPath), `Missing cached pack file: ${absPath}`);
@@ -330,7 +350,7 @@ test('Site-cached Attu & Corregidor HD coastline packs exist, validate, match vi
     assert.ok(full.stats.islandCount >= 50, `${pack.id} should include surrounding islands & islets`);
   }
 
-  // Spot-check key islands by point-in-polygon inside Corregidor & Attu packs
+  // Spot-check key islands by point-in-polygon inside Corregidor, Attu, Luzon & Leyte packs
   const corrGeo = JSON.parse(
     fs.readFileSync(path.resolve(__dirname, '..', 'site/data/hd_coastlines/corregidor_manila_bay.geojson'), 'utf8'),
   );
@@ -371,5 +391,67 @@ test('Site-cached Attu & Corregidor HD coastline packs exist, validate, match vi
   assert.ok(
     attuIslands.some((f) => pointInPolygon([174.11, 52.72], f.geometry.coordinates)),
     'Shemya Island polygon present',
+  );
+
+  const luzonGeo = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '..', 'site/data/hd_coastlines/luzon_surrounding.geojson'), 'utf8'),
+  );
+  const luzonIslands = luzonGeo.features.filter((f) => f.properties?.kind === 'island');
+  assert.ok(
+    luzonIslands.some((f) => pointInPolygon([121.00, 15.80], f.geometry.coordinates)),
+    'Luzon main island polygon present',
+  );
+  assert.ok(
+    luzonIslands.some((f) => pointInPolygon([121.05, 13.00], f.geometry.coordinates)),
+    'Mindoro Island polygon present',
+  );
+  assert.ok(
+    luzonIslands.some((f) => pointInPolygon([124.22, 13.80], f.geometry.coordinates)),
+    'Catanduanes Island polygon present',
+  );
+  assert.ok(
+    luzonIslands.some((f) => pointInPolygon([121.98, 13.40], f.geometry.coordinates)),
+    'Marinduque Island polygon present',
+  );
+  assert.ok(
+    luzonIslands.some((f) => pointInPolygon([121.94, 14.85], f.geometry.coordinates)),
+    'Polillo Island polygon present',
+  );
+  assert.ok(
+    luzonIslands.some((f) => pointInPolygon([120.580, 14.386], f.geometry.coordinates)),
+    'Corregidor Island polygon present inside Luzon pack',
+  );
+
+  const leyteGeo = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '..', 'site/data/hd_coastlines/leyte_surrounding.geojson'), 'utf8'),
+  );
+  const leyteIslands = leyteGeo.features.filter((f) => f.properties?.kind === 'island');
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([124.85, 10.85], f.geometry.coordinates)),
+    'Leyte main island polygon present',
+  );
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([125.10, 11.75], f.geometry.coordinates)),
+    'Samar Island polygon present',
+  );
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([124.48, 11.58], f.geometry.coordinates)),
+    'Biliran Island polygon present',
+  );
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([124.20, 9.85], f.geometry.coordinates)),
+    'Bohol Island polygon present',
+  );
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([125.58, 10.15], f.geometry.coordinates)),
+    'Dinagat Island polygon present',
+  );
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([125.21, 10.04], f.geometry.coordinates)),
+    'Panaon Island polygon present',
+  );
+  assert.ok(
+    leyteIslands.some((f) => pointInPolygon([125.73, 10.74], f.geometry.coordinates)),
+    'Homonhon Island polygon present',
   );
 });

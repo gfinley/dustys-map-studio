@@ -1064,6 +1064,42 @@ export const CACHED_HD_COASTLINE_PACKS = [
     hostCountryName: 'Philippines',
     scaleUnits: 'km',
   },
+  {
+    id: 'luzon_surrounding',
+    name: 'Luzon & Surrounding Islands',
+    shortLabel: 'Luzon',
+    description:
+      'Full Luzon Island plus Babuyan Islands, Mindoro, Marinduque, Catanduanes, Polillo, Burias, Ticao, Lubang, Corregidor, and surrounding Visayan/Samar margins (1–5m OSM).',
+    url: './data/hd_coastlines/luzon_surrounding.geojson',
+    bbox: { south: 12.10, west: 119.30, north: 19.65, east: 124.75 },
+    // Pure South China Sea west of Zambales/Pangasinan/Lubang down to 118.40°E (east of Scarborough Shoal)
+    coverageBBox: { south: 12.10, west: 118.40, north: 19.65, east: 124.75 },
+    defaultView: {
+      center: { lat: 15.65, lon: 121.85 },
+      span: { lonDeg: 4.8, latDeg: 6.8 },
+    },
+    hostCountryId: '608',
+    hostCountryName: 'Philippines',
+    scaleUnits: 'km',
+  },
+  {
+    id: 'leyte_surrounding',
+    name: 'Leyte, Samar & Leyte Gulf',
+    shortLabel: 'Leyte',
+    description:
+      'Full Leyte Island, Samar, Biliran, Panaon, Limasawa, Homonhon, Suluan, Dinagat, Siargao, Bohol, Cebu, Camotes Islands, and Surigao Strait (1–5m OSM).',
+    url: './data/hd_coastlines/leyte_surrounding.geojson',
+    bbox: { south: 9.35, west: 123.00, north: 12.65, east: 126.25 },
+    // Pure Philippine Sea east of Samar/Suluan/Siargao
+    coverageBBox: { south: 9.35, west: 123.00, north: 12.65, east: 127.50 },
+    defaultView: {
+      center: { lat: 10.90, lon: 124.95 },
+      span: { lonDeg: 1.80, latDeg: 2.20 },
+    },
+    hostCountryId: '608',
+    hostCountryName: 'Philippines',
+    scaleUnits: 'km',
+  },
 ];
 
 export function getCachedCoastlinePackById(packId) {
@@ -1080,7 +1116,7 @@ export function isCachedCoastlinePackUrl(url) {
 }
 
 /**
- * Return the site-cached HD coastline pack that completely covers `boundsOrBBox`
+ * Return the tightest site-cached HD coastline pack that completely covers `boundsOrBBox`
  * (`[minLon, maxLon, minLat, maxLat]` or `{ south, west, north, east }`), or `null`.
  */
 export function findMatchingCachedCoastlinePack(boundsOrBBox) {
@@ -1111,6 +1147,9 @@ export function findMatchingCachedCoastlinePack(boundsOrBBox) {
   }
 
   const tol = 0.002;
+  let bestPack = null;
+  let bestArea = Infinity;
+
   for (let i = 0; i < CACHED_HD_COASTLINE_PACKS.length; i += 1) {
     const pack = CACHED_HD_COASTLINE_PACKS[i];
     const cov = pack.coverageBBox || pack.bbox;
@@ -1122,10 +1161,16 @@ export function findMatchingCachedCoastlinePack(boundsOrBBox) {
     if (uE < uW) uE += 360;
 
     if (uW >= cov.west - tol && uE <= cov.east + tol) {
-      return pack;
+      const covSpanLon = cov.west > cov.east ? (180 - cov.west) + (cov.east + 180) : cov.east - cov.west;
+      const covSpanLat = cov.north - cov.south;
+      const area = covSpanLon * covSpanLat;
+      if (area < bestArea) {
+        bestArea = area;
+        bestPack = pack;
+      }
     }
   }
-  return null;
+  return bestPack;
 }
 
 /**

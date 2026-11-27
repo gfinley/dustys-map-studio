@@ -13,19 +13,19 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=34';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=34';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=34';
+} from './ornaments.js?v=35';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=35';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=35';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=34';
+} from './data-loader.js?v=35';
 import {
   buildProjectedTerrainLayer,
   contourSegmentsToSvgPath,
   resolveContourPalette,
-} from './terrain-relief.js?v=34';
+} from './terrain-relief.js?v=35';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -493,7 +493,7 @@ function classifyGeometry(geom, out) {
   }
 }
 
-function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, roleFilter = null) {
+function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, roleFilter = null, viewBounds = null, skipCull = false) {
   const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
   if (overlays.length === 0) return;
 
@@ -520,7 +520,11 @@ function drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, roleFilter =
 
     const groups = { polygons: [], lines: [], points: [] };
     for (let j = 0; j < features.length; j += 1) {
-      classifyGeometry(features[j].geometry, groups);
+      const feat = features[j];
+      if (viewBounds && feat._bbox && !bboxMayIntersectView(feat._bbox, viewBounds, skipCull)) {
+        continue;
+      }
+      classifyGeometry(feat.geometry, groups);
     }
 
     if (groups.polygons.length > 0) {
@@ -1414,7 +1418,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // 3a. Primary Land GeoJSON layers (e.g. OSM Ultra-Detail replacing default land)
   if (Array.isArray(spec?.customGeoJsonLayers) && spec.customGeoJsonLayers.some((l) => l?.role === 'land')) {
     projection.precision(basePrecision);
-    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, 'land');
+    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, 'land', viewBounds, skipCull);
     projection.precision(0);
   }
 
@@ -1555,7 +1559,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   // 8. Custom GeoJSON overlays
   if (Array.isArray(spec?.customGeoJsonLayers) && spec.customGeoJsonLayers.length > 0) {
     projection.precision(basePrecision);
-    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, 'overlay');
+    drawCustomLayersCanvas(ctx, projection, spec, scaleFactor, 'overlay', viewBounds, skipCull);
     projection.precision(0);
   }
 
