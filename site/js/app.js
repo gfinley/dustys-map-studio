@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=36';
+} from './schema.js?v=37';
 import {
   ensureDatasets,
   fetchCachedCoastlinePack,
@@ -23,7 +23,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=36';
+} from './data-loader.js?v=37';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -32,7 +32,7 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=36';
+} from './cartography.js?v=37';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
@@ -40,12 +40,12 @@ import {
   getCachedCoastlinePackById,
   isCachedCoastlinePackUrl,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=36';
+} from './osm-coastline.js?v=37';
 import {
   TERRAIN_STYLES,
   fetchTerrainDemForBounds,
   isViewOutsideTerrainBounds,
-} from './terrain-relief.js?v=36';
+} from './terrain-relief.js?v=37';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -54,15 +54,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=36';
+} from './exporter.js?v=37';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=36';
-import { pickTopCitiesInExtent, searchPlaces, searchTowns } from './search.js?v=36';
+} from './presets.js?v=37';
+import { pickTopCitiesInExtent, searchPlaces, searchTowns } from './search.js?v=37';
 import {
   clearTownSearchResults,
   closeMobileDrawers,
@@ -75,13 +75,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=36';
+} from './controls.js?v=37';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=36';
+} from './shadow.js?v=37';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -92,7 +92,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=36';
+} from './timeline.js?v=37';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH

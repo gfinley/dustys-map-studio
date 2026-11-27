@@ -3,10 +3,10 @@
  * and optional Python Cartopy Pro backend client.
  */
 
-import { COLOR_THEMES, getPixelDimensions, sanitizeFilename } from './schema.js?v=36';
-import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=36';
-import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=36';
-import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=36';
+import { COLOR_THEMES, getPixelDimensions, sanitizeFilename } from './schema.js?v=37';
+import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=37';
+import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=37';
+import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=37';
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);

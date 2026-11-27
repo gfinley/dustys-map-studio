@@ -617,10 +617,10 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
         empty_cities_matches = re.findall(r"\bcities:\s*\[\s*\],", presets_js)
         self.assertGreaterEqual(len(empty_cities_matches), 12)
         non_empty_cities_matches = re.findall(r"\bcities:\s*\[\s*\{", presets_js)
-        # Only the explicitly curated Leyte presets (`leyte_one`, `leyte_three`) ship with named town pins
+        # Only the explicitly curated Leyte presets (`leyte_one`, `leyte_two`, `leyte_three`) ship with named town pins
         self.assertEqual(
             len(non_empty_cities_matches),
-            2,
+            3,
             "Unexpected non-empty default cities array in site/js/presets.js",
         )
 
@@ -877,6 +877,66 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
             parsed = MapSpec.model_validate(spec)
             self.assertEqual(parsed.title, "Philippines")
             self.assertEqual([c.name for c in parsed.cities], ["Dulag", "Ormoc", "Carigara", "Burauen"])
+
+    def test_leyte_two_region_preset(self) -> None:
+        """Leyte Two region preset exists in presets.js between Leyte one and Leyte Three with mid-scale Leyte framing."""
+        import json
+        import shutil
+        import subprocess
+
+        presets_js = (SITE_DIR / "js" / "presets.js").read_text(encoding="utf-8")
+        self.assertIn("id: 'leyte_two'", presets_js)
+        self.assertIn("label: 'Leyte Two'", presets_js)
+        self.assertLess(presets_js.index("id: 'leyte_one'"), presets_js.index("id: 'leyte_two'"))
+        self.assertLess(presets_js.index("id: 'leyte_two'"), presets_js.index("id: 'leyte_three'"))
+
+        if shutil.which("node"):
+            script = (
+                "import { REGION_PRESETS } from './site/js/presets.js';"
+                "const p = REGION_PRESETS.find((x) => x.id === 'leyte_two');"
+                "if (!p) throw new Error('leyte_two missing');"
+                "console.log(JSON.stringify(p));"
+            )
+            proc = subprocess.run(
+                ["node", "--input-type=module", "-e", script],
+                cwd=str(ROOT_DIR),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                proc.returncode,
+                0,
+                f"Failed to import leyte_two from presets.js:\n{proc.stdout}\n{proc.stderr}",
+            )
+            preset = json.loads(proc.stdout)
+            self.assertEqual(preset["label"], "Leyte Two")
+            spec = preset["spec"]
+            self.assertEqual(spec["title"], "Philippines")
+            self.assertEqual(spec["theme"], "classic_atlas")
+            self.assertAlmostEqual(spec["center"]["lat"], 10.985)
+            self.assertAlmostEqual(spec["center"]["lon"], 124.83)
+            self.assertAlmostEqual(spec["span"]["lonDeg"], 0.228)
+            self.assertAlmostEqual(spec["span"]["latDeg"], 0.325)
+            self.assertTrue(spec["ornaments"]["locatorGlobe"]["enabled"])
+            self.assertTrue(spec["terrainRelief"]["enabled"])
+            self.assertEqual(spec["terrainRelief"]["contourInterval"], 20)
+            self.assertFalse(spec["terrainRelief"]["showAltitudeScale"])
+            expected_cities = [
+                "Dulag",
+                "Ormoc",
+                "Carigara",
+                "Burauen",
+                "Patong",
+                "Cataban",
+                "Catagbacan",
+                "Anonang",
+                "Takin",
+            ]
+            self.assertEqual([c["name"] for c in spec["cities"]], expected_cities)
+
+            parsed = MapSpec.model_validate(spec)
+            self.assertEqual([c.name for c in parsed.cities], expected_cities)
 
     def test_leyte_three_region_preset(self) -> None:
         """Leyte Three region preset exists in presets.js with close-in Leyte framing, 20m topo contours, and 9 pins."""
