@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=26" />
+  <link rel="stylesheet" href="./styles/main.css?v=27" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -421,15 +421,15 @@
                 <h2>Terrain Relief (Current View)</h2>
                 <span class="helper-pill">Army Topo</span>
               </div>
-              <p class="helper-text">Fetch on-demand elevation for the framed view with NW shaded relief &amp; military-standard brown topographic contours.</p>
+              <p class="helper-text">Fetch on-demand elevation for the framed view with NW shaded relief and optional military-standard brown topographic contour lines.</p>
               <div class="field-stack">
                 <div class="field">
                   <label for="terrain-relief-style">Relief Style</label>
                   <select id="terrain-relief-style" aria-label="Military terrain relief style">
-                    <option value="army_topo" selected>Army Topo (Shaded + Contours)</option>
-                    <option value="staff_hillshade">Staff Hillshade (Shaded Only)</option>
-                    <option value="topo_contours">Topo Contours Only (Vector)</option>
-                    <option value="jog_elevation">JOG Operational (Elevation + Relief)</option>
+                    <option value="army_topo" selected>Army Topo (NW Shaded Relief)</option>
+                    <option value="jog_elevation">JOG Operational (Elevation Tint + Relief)</option>
+                    <option value="staff_hillshade">Staff Hillshade (Briefing Relief)</option>
+                    <option value="topo_contours">Contour Lines Only (Pure Vector)</option>
                   </select>
                 </div>
 
@@ -452,7 +452,12 @@
                   </div>
                 </div>
 
-                <div class="field" id="terrain-contour-interval-wrap">
+                <label class="switch-label" for="terrain-show-contours">
+                  <input id="terrain-show-contours" type="checkbox" />
+                  <span>Show Topographic Contour Lines</span>
+                </label>
+
+                <div class="field" id="terrain-contour-interval-wrap" hidden>
                   <label for="terrain-contour-interval">Contour Interval (CI)</label>
                   <select id="terrain-contour-interval" aria-label="Topographic contour interval">
                     <option value="auto" selected>Auto (Smart Military Scale)</option>
@@ -1149,6 +1154,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=26"></script>
+  <script type="module" src="./js/app.js?v=27"></script>
 </body>
 </html>

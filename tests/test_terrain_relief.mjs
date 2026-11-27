@@ -15,6 +15,7 @@ import {
   resolveEffectiveContourInterval,
   sampleDemElevation,
   smoothElevationGrid,
+  wantsTerrainContours,
 } from '../site/js/terrain-relief.js';
 import {
   createDefaultMapSpec,
@@ -170,6 +171,12 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
   assert.equal(def.terrainRelief.enabled, false);
   assert.equal(def.terrainRelief.style, 'army_topo');
   assert.equal(def.terrainRelief.clipMode, 'land');
+  assert.equal(def.terrainRelief.showContours, false);
+  assert.equal(wantsTerrainContours(def.terrainRelief), false);
+
+  const contoursOnly = normalizeMapSpec({ ...def, terrainRelief: { style: 'topo_contours' } });
+  assert.equal(contoursOnly.terrainRelief.showContours, true);
+  assert.equal(wantsTerrainContours(contoursOnly.terrainRelief), true);
 
   const custom = normalizeMapSpec({
     ...def,
@@ -179,6 +186,7 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
       clipMode: 'highlighted',
       intensity: 0.85,
       exaggeration: 3.1,
+      showContours: true,
       contourInterval: 200,
       bounds: { south: 12.1, west: 119.2, north: 18.9, east: 122.8, zoom: 8 },
     },
@@ -190,6 +198,7 @@ test('MapSpec normalizes and URL-hash round-trips terrainRelief config cleanly',
   assert.equal(decoded.terrainRelief.enabled, true);
   assert.equal(decoded.terrainRelief.style, 'jog_elevation');
   assert.equal(decoded.terrainRelief.clipMode, 'highlighted');
+  assert.equal(decoded.terrainRelief.showContours, true);
   assert.equal(decoded.terrainRelief.contourInterval, 200);
   assert.equal(decoded.terrainRelief.bounds.zoom, 8);
 });

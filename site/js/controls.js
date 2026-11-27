@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=26';
+} from './schema.js?v=27';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,20 +14,21 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=26';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=26';
-import { formatArea } from './shadow.js?v=26';
+} from './presets.js?v=27';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=27';
+import { formatArea } from './shadow.js?v=27';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=26';
+} from './osm-coastline.js?v=27';
 import {
   TERRAIN_STYLES,
   isViewOutsideTerrainBounds,
-} from './terrain-relief.js?v=26';
+  wantsTerrainContours,
+} from './terrain-relief.js?v=27';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -1482,7 +1483,11 @@ export function renderControls(callbacks) {
 
   // On-Demand Military Terrain Relief controls
   $('terrain-relief-style')?.addEventListener('change', (e) => {
-    boundCallbacks.onPatchSpec?.({ terrainRelief: { style: e.target.value } });
+    const nextStyle = e.target.value;
+    const patch = nextStyle === 'topo_contours'
+      ? { style: nextStyle, showContours: true }
+      : { style: nextStyle };
+    boundCallbacks.onPatchSpec?.({ terrainRelief: patch });
   });
 
   ['btn-terrain-clip-land', 'btn-terrain-clip-highlighted'].forEach((id) => {
@@ -1516,6 +1521,10 @@ export function renderControls(callbacks) {
   });
   $('terrain-relief-exag')?.addEventListener('change', (e) => {
     boundCallbacks.onPatchSpec?.({ terrainRelief: { exaggeration: Number(e.target.value) } }, { commitHistory: true });
+  });
+
+  $('terrain-show-contours')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { showContours: Boolean(e.target.checked) } });
   });
 
   $('terrain-contour-interval')?.addEventListener('change', (e) => {
@@ -2246,12 +2255,18 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('terrain-relief-exag-val')) {
     $('terrain-relief-exag-val').textContent = `${trExag.toFixed(1)}×`;
   }
+  const trShowContours = wantsTerrainContours(tr);
+  const showContoursEl = $('terrain-show-contours');
+  if (showContoursEl) {
+    showContoursEl.checked = trShowContours;
+    showContoursEl.disabled = trStyle === 'topo_contours';
+  }
   if ($('terrain-contour-interval')) {
     $('terrain-contour-interval').value = String(tr.contourInterval ?? 'auto');
   }
   const ciWrap = $('terrain-contour-interval-wrap');
   if (ciWrap) {
-    ciWrap.hidden = !trStyleDef.hasContours;
+    ciWrap.hidden = !trShowContours;
   }
 
   const trFetchBtn = $('btn-fetch-terrain-relief');
@@ -2296,7 +2311,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
           trStatusText.textContent = 'Loading elevation tiles for framed view...';
         } else {
           const parts = [`${trStyleDef.shortLabel} active`];
-          if (trStyleDef.hasContours && trMeta?.effectiveInterval) {
+          if (trShowContours && trMeta?.effectiveInterval) {
             parts.push(`CI ${trMeta.effectiveInterval} m`);
           }
           const maxE = trMeta?.maxVisibleElev || trStats?.maxLandElev || 0;

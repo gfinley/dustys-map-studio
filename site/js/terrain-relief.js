@@ -25,41 +25,46 @@ export const TERRAIN_DEFAULT_PAD_FRACTION = 0.15;
 export const TERRAIN_STYLES = {
   army_topo: {
     id: 'army_topo',
-    label: 'Army Topo (Shaded + Contours)',
+    label: 'Army Topo (NW Shaded Relief)',
     shortLabel: 'Army Topo',
     hasHillshade: true,
     hasHypsometric: false,
-    hasContours: true,
+    contoursOnly: false,
   },
   staff_hillshade: {
     id: 'staff_hillshade',
-    label: 'Staff Hillshade (Shaded Only)',
+    label: 'Staff Hillshade (Briefing Relief)',
     shortLabel: 'Staff Hillshade',
     hasHillshade: true,
     hasHypsometric: false,
-    hasContours: false,
-  },
-  topo_contours: {
-    id: 'topo_contours',
-    label: 'Topo Contours Only (Vector)',
-    shortLabel: 'Topo Contours',
-    hasHillshade: false,
-    hasHypsometric: false,
-    hasContours: true,
+    contoursOnly: false,
   },
   jog_elevation: {
     id: 'jog_elevation',
-    label: 'JOG Operational (Elevation + Relief)',
+    label: 'JOG Operational (Elevation Tint + Relief)',
     shortLabel: 'JOG Relief',
     hasHillshade: true,
     hasHypsometric: true,
-    hasContours: true,
+    contoursOnly: false,
+  },
+  topo_contours: {
+    id: 'topo_contours',
+    label: 'Contour Lines Only (Pure Vector)',
+    shortLabel: 'Topo Contours',
+    hasHillshade: false,
+    hasHypsometric: false,
+    contoursOnly: true,
   },
 };
 
 export const TERRAIN_STYLE_IDS = Object.keys(TERRAIN_STYLES);
 export const TERRAIN_CLIP_MODES = ['land', 'highlighted'];
 export const TERRAIN_CONTOUR_INTERVALS = ['auto', 20, 50, 100, 200, 250, 500, 1000];
+
+export function wantsTerrainContours(terrainRelief) {
+  if (!terrainRelief) return false;
+  return terrainRelief.style === 'topo_contours' || Boolean(terrainRelief.showContours);
+}
 
 const STANDARD_CONTOUR_INTERVALS = [20, 50, 100, 200, 250, 500, 1000];
 const MAX_LAT_MERCATOR = 85.05112878;
@@ -1085,6 +1090,7 @@ export function buildProjectedTerrainLayer(
   const grid = dem._gridCache.grid;
   if (!grid || grid.validLandCount === 0) return null;
 
+  const showContours = wantsTerrainContours(tr);
   const effectiveInterval = resolveEffectiveContourInterval(
     tr.contourInterval,
     Math.max(dem.stats?.p98LandElev || 0, grid.maxVisibleElev || 0),
@@ -1096,7 +1102,7 @@ export function buildProjectedTerrainLayer(
     style,
     intensity.toFixed(2),
     exaggeration.toFixed(2),
-    styleDef.hasContours && !interactive ? effectiveInterval : 'nc',
+    showContours && !interactive ? effectiveInterval : 'nc',
   ].join('::');
 
   if (dem._renderCache && dem._renderCache.key === renderKey) {
@@ -1126,7 +1132,7 @@ export function buildProjectedTerrainLayer(
   }
 
   let contours = null;
-  if (styleDef.hasContours && !interactive) {
+  if (showContours && !interactive) {
     contours = extractContourSegments(
       grid.elev,
       grid.gw,
@@ -1140,6 +1146,7 @@ export function buildProjectedTerrainLayer(
 
   const artifact = {
     style,
+    showContours,
     intensity,
     exaggeration,
     effectiveInterval,

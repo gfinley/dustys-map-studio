@@ -705,6 +705,7 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
             "btn-terrain-clip-highlighted",
             "terrain-relief-intensity",
             "terrain-relief-exag",
+            "terrain-show-contours",
             "terrain-contour-interval",
             "btn-fetch-terrain-relief",
             "terrain-relief-status",

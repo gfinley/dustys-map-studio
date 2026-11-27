@@ -301,6 +301,7 @@ export function createDefaultMapSpec() {
       clipMode: 'land',
       intensity: 0.72,
       exaggeration: 2.2,
+      showContours: false,
       contourInterval: 'auto',
       bounds: null,
     },
@@ -537,6 +538,9 @@ export function normalizeMapSpec(partial) {
         : def.terrainRelief.clipMode,
       intensity: clamp(terrainRaw.intensity, 0.15, 1.0, def.terrainRelief.intensity),
       exaggeration: clamp(terrainRaw.exaggeration, 0.5, 6.0, def.terrainRelief.exaggeration),
+      showContours: typeof terrainRaw.showContours === 'boolean'
+        ? terrainRaw.showContours
+        : terrainRaw.style === 'topo_contours',
       contourInterval: normalizedContourInterval,
       bounds: normalizedTerrainBounds,
     },
