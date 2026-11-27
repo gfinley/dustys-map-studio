@@ -3,10 +3,10 @@
  * and optional Python Cartopy Pro backend client.
  */
 
-import { COLOR_THEMES, getPixelDimensions, sanitizeFilename } from './schema.js?v=25';
-import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=25';
-import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=25';
-import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=25';
+import { COLOR_THEMES, getPixelDimensions, sanitizeFilename } from './schema.js?v=26';
+import { renderMapToCanvas, renderMapToSvgString } from './cartography.js?v=26';
+import { injectPngDpi, injectJpegDpi } from './dpi-metadata.js?v=26';
+import { ensureDatasets, resolveAdmin1Scale, resolveResolution } from './data-loader.js?v=26';
 
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -68,7 +68,7 @@ async function resolveExportDatasets(spec, datasets) {
     return datasets;
   }
 
-  return ensureDatasets(neededRes, {
+  const loaded = await ensureDatasets(neededRes, {
     needMinorIslands,
     needLakes,
     needRivers,
@@ -80,6 +80,7 @@ async function resolveExportDatasets(spec, datasets) {
     fineHydrology: neededRes === 'ultra',
     admin1Scale,
   });
+  return datasets?.terrainRelief ? { ...loaded, terrainRelief: datasets.terrainRelief } : loaded;
 }
 
 function parseContentDispositionFilename(headerValue, fallback) {

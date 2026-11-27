@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=25';
+} from './schema.js?v=26';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,16 +14,20 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=25';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=25';
-import { formatArea } from './shadow.js?v=25';
+} from './presets.js?v=26';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=26';
+import { formatArea } from './shadow.js?v=26';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=25';
+} from './osm-coastline.js?v=26';
+import {
+  TERRAIN_STYLES,
+  isViewOutsideTerrainBounds,
+} from './terrain-relief.js?v=26';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -1476,6 +1480,74 @@ export function renderControls(callbacks) {
     boundCallbacks.onPatchSpec?.({ layers: { graticuleStepDeg: Number(e.target.value) || 10 } });
   });
 
+  // On-Demand Military Terrain Relief controls
+  $('terrain-relief-style')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { style: e.target.value } });
+  });
+
+  ['btn-terrain-clip-land', 'btn-terrain-clip-highlighted'].forEach((id) => {
+    $(id)?.addEventListener('click', (e) => {
+      const clipMode = e.currentTarget?.dataset?.clip === 'highlighted' ? 'highlighted' : 'land';
+      boundCallbacks.onPatchSpec?.({ terrainRelief: { clipMode } });
+    });
+  });
+
+  $('terrain-relief-intensity')?.addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    const lbl = $('terrain-relief-intensity-val');
+    if (lbl) lbl.textContent = `${Math.round(v * 100)}%`;
+    boundCallbacks.onPatchSpec?.(
+      { terrainRelief: { intensity: v } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('terrain-relief-intensity')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { intensity: Number(e.target.value) } }, { commitHistory: true });
+  });
+
+  $('terrain-relief-exag')?.addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    const lbl = $('terrain-relief-exag-val');
+    if (lbl) lbl.textContent = `${v.toFixed(1)}×`;
+    boundCallbacks.onPatchSpec?.(
+      { terrainRelief: { exaggeration: v } },
+      { commitHistory: false, skipDynamicLists: true },
+    );
+  });
+  $('terrain-relief-exag')?.addEventListener('change', (e) => {
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { exaggeration: Number(e.target.value) } }, { commitHistory: true });
+  });
+
+  $('terrain-contour-interval')?.addEventListener('change', (e) => {
+    const raw = e.target.value;
+    const contourInterval = raw === 'auto' ? 'auto' : Number(raw);
+    boundCallbacks.onPatchSpec?.({ terrainRelief: { contourInterval } });
+  });
+
+  $('btn-fetch-terrain-relief')?.addEventListener('click', () => {
+    boundCallbacks.onFetchTerrainRelief?.({ forceRefresh: false });
+  });
+
+  $('btn-toggle-terrain-relief')?.addEventListener('click', () => {
+    boundCallbacks.onToggleTerrainRelief?.();
+  });
+
+  $('btn-refresh-terrain-relief')?.addEventListener('click', () => {
+    boundCallbacks.onFetchTerrainRelief?.({ forceRefresh: true });
+  });
+
+  $('btn-remove-terrain-relief')?.addEventListener('click', () => {
+    boundCallbacks.onRemoveTerrainRelief?.();
+  });
+
+  $('btn-stage-toggle-terrain')?.addEventListener('click', () => {
+    boundCallbacks.onToggleTerrainRelief?.();
+  });
+
+  $('btn-stage-remove-terrain')?.addEventListener('click', () => {
+    boundCallbacks.onRemoveTerrainRelief?.();
+  });
+
   $('hd-coastline-color-mode')?.addEventListener('change', (e) => {
     boundCallbacks.onChangeHdCoastlineColorMode?.(e.target.value);
   });
@@ -2136,6 +2208,127 @@ export function syncControlsFromSpec(spec, uiState = {}) {
       }
       if (stageHdToggle) {
         stageHdToggle.setAttribute('aria-pressed', String(anyVisible));
+      }
+    }
+  }
+
+  // On-Demand Military Terrain Relief controls, status banner & stage pill
+  const tr = spec.terrainRelief || {};
+  const trStyle = TERRAIN_STYLES[tr.style] ? tr.style : 'army_topo';
+  const trStyleDef = TERRAIN_STYLES[trStyle];
+  const trClipMode = tr.clipMode === 'highlighted' ? 'highlighted' : 'land';
+  const trIntensity = Number.isFinite(Number(tr.intensity)) ? Number(tr.intensity) : 0.72;
+  const trExag = Number.isFinite(Number(tr.exaggeration)) ? Number(tr.exaggeration) : 2.2;
+  const trLoaded = Boolean(uiState.terrainLoaded);
+  const trEnabled = Boolean(tr.enabled);
+  const trBounds = uiState.terrainBounds || tr.bounds || null;
+  const trMeta = uiState.terrainMeta || null;
+  const trStats = uiState.terrainStats || null;
+
+  if ($('terrain-relief-style')) $('terrain-relief-style').value = trStyle;
+  const btnClipLand = $('btn-terrain-clip-land');
+  const btnClipHl = $('btn-terrain-clip-highlighted');
+  if (btnClipLand) {
+    const active = trClipMode === 'land';
+    btnClipLand.classList.toggle('active', active);
+    btnClipLand.setAttribute('aria-pressed', String(active));
+  }
+  if (btnClipHl) {
+    const active = trClipMode === 'highlighted';
+    btnClipHl.classList.toggle('active', active);
+    btnClipHl.setAttribute('aria-pressed', String(active));
+  }
+  if ($('terrain-relief-intensity')) $('terrain-relief-intensity').value = String(trIntensity);
+  if ($('terrain-relief-intensity-val')) {
+    $('terrain-relief-intensity-val').textContent = `${Math.round(trIntensity * 100)}%`;
+  }
+  if ($('terrain-relief-exag')) $('terrain-relief-exag').value = String(trExag);
+  if ($('terrain-relief-exag-val')) {
+    $('terrain-relief-exag-val').textContent = `${trExag.toFixed(1)}×`;
+  }
+  if ($('terrain-contour-interval')) {
+    $('terrain-contour-interval').value = String(tr.contourInterval ?? 'auto');
+  }
+  const ciWrap = $('terrain-contour-interval-wrap');
+  if (ciWrap) {
+    ciWrap.hidden = !trStyleDef.hasContours;
+  }
+
+  const trFetchBtn = $('btn-fetch-terrain-relief');
+  if (trFetchBtn) {
+    trFetchBtn.textContent = trLoaded
+      ? 'Refresh Terrain Relief (Current View)'
+      : 'Enable Terrain Relief (Current View)';
+  }
+
+  const trStatusEl = $('terrain-relief-status');
+  const trStatusText = $('terrain-relief-status-text');
+  const trToggleBtn = $('btn-toggle-terrain-relief');
+  const hasAnyTerrain = trLoaded || trEnabled || Boolean(trBounds);
+  const trViewBounds = uiState.terrainViewBounds || spec;
+  const trIsStale = trEnabled && trBounds ? isViewOutsideTerrainBounds(trViewBounds, trBounds) : false;
+  const trMissingHighlight =
+    trEnabled &&
+    trClipMode === 'highlighted' &&
+    (!Array.isArray(spec.highlightedCountries) || spec.highlightedCountries.length === 0);
+
+  if (trStatusEl) {
+    if (!hasAnyTerrain) {
+      trStatusEl.hidden = true;
+      trStatusEl.classList.remove('is-stale', 'is-paused');
+    } else {
+      trStatusEl.hidden = false;
+      trStatusEl.classList.toggle('is-paused', !trEnabled);
+      trStatusEl.classList.toggle('is-stale', trEnabled && (trIsStale || trMissingHighlight));
+      if (trToggleBtn) {
+        trToggleBtn.textContent = trEnabled ? 'Hide Relief' : 'Show Relief';
+        trToggleBtn.setAttribute('aria-pressed', String(trEnabled));
+        trToggleBtn.classList.toggle('active', !trEnabled);
+      }
+      if (trStatusText) {
+        if (!trEnabled) {
+          trStatusText.textContent = `${trStyleDef.shortLabel} hidden — click Show Relief to restore`;
+        } else if (trMissingHighlight) {
+          trStatusText.textContent = 'Highlighted Countries mask active — highlight a country in Regions & Pins';
+        } else if (trIsStale) {
+          trStatusText.textContent = 'View moved outside relief bounds — click Refresh View';
+        } else if (!trLoaded) {
+          trStatusText.textContent = 'Loading elevation tiles for framed view...';
+        } else {
+          const parts = [`${trStyleDef.shortLabel} active`];
+          if (trStyleDef.hasContours && trMeta?.effectiveInterval) {
+            parts.push(`CI ${trMeta.effectiveInterval} m`);
+          }
+          const maxE = trMeta?.maxVisibleElev || trStats?.maxLandElev || 0;
+          if (maxE > 0) {
+            parts.push(`Peak ${Math.round(maxE).toLocaleString()} m`);
+          }
+          if (trClipMode === 'highlighted') {
+            parts.push('Highlighted only');
+          }
+          trStatusText.textContent = parts.join(' · ');
+        }
+      }
+    }
+  }
+
+  const stageTerrainPill = $('terrain-stage-pill');
+  const stageTerrainToggle = $('btn-stage-toggle-terrain');
+  const stageTerrainLabel = $('stage-terrain-label');
+  if (stageTerrainPill) {
+    if (!hasAnyTerrain) {
+      stageTerrainPill.hidden = true;
+      stageTerrainPill.classList.remove('is-off');
+    } else {
+      stageTerrainPill.hidden = false;
+      stageTerrainPill.classList.toggle('is-off', !trEnabled);
+      if (stageTerrainLabel) {
+        stageTerrainLabel.textContent = trEnabled
+          ? `${trStyleDef.shortLabel}: On`
+          : 'Relief: Off';
+      }
+      if (stageTerrainToggle) {
+        stageTerrainToggle.setAttribute('aria-pressed', String(trEnabled));
       }
     }
   }

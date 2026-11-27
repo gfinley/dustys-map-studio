@@ -679,6 +679,86 @@ class TestSchemaAndStaticAssets(unittest.TestCase):
                 f"Node OSM coastline tests failed:\n{proc.stdout}\n{proc.stderr}",
             )
 
+    def test_on_demand_military_terrain_relief_contract(self) -> None:
+        """On-demand Military Terrain Relief engine, UI controls, renderer wiring, and Node tests pass."""
+        import shutil
+        import subprocess
+
+        terrain_js_path = SITE_DIR / "js" / "terrain-relief.js"
+        self.assertTrue(terrain_js_path.is_file())
+        terrain_js = terrain_js_path.read_text(encoding="utf-8")
+        for symbol in (
+            "export const TERRAIN_STYLES",
+            "export function decodeTerrariumElevation",
+            "export function planTerrainTiles",
+            "export function renderTerrainRasterPixels",
+            "export function extractContourSegments",
+            "export function buildProjectedTerrainLayer",
+            "export async function fetchTerrainDemForBounds",
+        ):
+            self.assertIn(symbol, terrain_js)
+
+        html = INDEX_HTML_PATH.read_text(encoding="utf-8")
+        for elem_id in (
+            "terrain-relief-style",
+            "btn-terrain-clip-land",
+            "btn-terrain-clip-highlighted",
+            "terrain-relief-intensity",
+            "terrain-relief-exag",
+            "terrain-contour-interval",
+            "btn-fetch-terrain-relief",
+            "terrain-relief-status",
+            "btn-toggle-terrain-relief",
+            "btn-refresh-terrain-relief",
+            "btn-remove-terrain-relief",
+            "terrain-stage-pill",
+        ):
+            self.assertIn(f'id="{elem_id}"', html)
+
+        cartography_js = (SITE_DIR / "js" / "cartography.js").read_text(encoding="utf-8")
+        for sym in ("drawTerrainReliefCanvas", "appendTerrainReliefSvg", "terrain-relief-clip"):
+            self.assertIn(sym, cartography_js)
+
+        app_js = (SITE_DIR / "js" / "app.js").read_text(encoding="utf-8")
+        for sym in (
+            "onFetchTerrainRelief",
+            "onToggleTerrainRelief",
+            "onRemoveTerrainRelief",
+            "hydrateTerrainReliefIfNeeded",
+        ):
+            self.assertIn(sym, app_js)
+
+        # Ensure Python MapSpec still parses browser-exported JSON containing terrainRelief cleanly
+        parsed = MapSpec.model_validate(
+            {
+                "version": 1,
+                "title": "Luzon Tactical Relief",
+                "terrainRelief": {
+                    "enabled": True,
+                    "style": "army_topo",
+                    "clipMode": "highlighted",
+                    "intensity": 0.75,
+                    "exaggeration": 2.4,
+                    "contourInterval": "auto",
+                    "bounds": {"south": 12.0, "west": 119.0, "north": 19.0, "east": 123.0, "zoom": 8},
+                },
+            }
+        )
+        self.assertEqual(parsed.title, "Luzon Tactical Relief")
+
+        if shutil.which("node"):
+            proc = subprocess.run(
+                ["node", "--test", str(ROOT_DIR / "tests" / "test_terrain_relief.mjs")],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                proc.returncode,
+                0,
+                f"Node terrain relief tests failed:\n{proc.stdout}\n{proc.stderr}",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

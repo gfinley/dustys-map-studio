@@ -7,7 +7,7 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=25';
+} from './schema.js?v=26';
 import {
   ensureDatasets,
   fetchCustomGeoJson,
@@ -22,7 +22,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=25';
+} from './data-loader.js?v=26';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -31,12 +31,17 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=25';
+} from './cartography.js?v=26';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=25';
+} from './osm-coastline.js?v=26';
+import {
+  TERRAIN_STYLES,
+  fetchTerrainDemForBounds,
+  isViewOutsideTerrainBounds,
+} from './terrain-relief.js?v=26';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -45,15 +50,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=25';
+} from './exporter.js?v=26';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=25';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=25';
+} from './presets.js?v=26';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=26';
 import {
   closeMobileDrawers,
   populateCountryCatalog,
@@ -64,13 +69,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=25';
+} from './controls.js?v=26';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=25';
+} from './shadow.js?v=26';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -81,7 +86,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=25';
+} from './timeline.js?v=26';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -190,6 +195,9 @@ const state = {
   hdCoastlineCustomColor: null,
   hdCoastlineReplacedHighlight: null,
   gbReplacedHighlights: [],
+  terrainData: null,
+  terrainMeta: null,
+  terrainFetchSeq: 0,
   loadRequestToken: 0,
   searchAbortController: null,
   wheelCommitTimer: null,
@@ -730,6 +738,11 @@ function syncAllUi({ skipDynamicLists = false } = {}) {
     hdCoastlineColorMode: state.hdCoastlineColorMode,
     hdCoastlineColor: hdColorInfo?.color || '#7a7d7a',
     hdHostCountryName: hdColorInfo?.hostCountry?.name || '',
+    terrainLoaded: Boolean(state.terrainData),
+    terrainBounds: state.terrainData?.bounds || state.spec?.terrainRelief?.bounds || null,
+    terrainStats: state.terrainData?.stats || null,
+    terrainMeta: state.terrainMeta,
+    terrainViewBounds: state.spec ? computeCurrentVisibleBounds(state.spec) : null,
     skipDynamicLists,
     shadowMetrics: skipDynamicLists ? null : computeShadowMetrics(),
   });
@@ -961,6 +974,7 @@ function drawReferencePeekOverlay(canvas, projection, datasets = state.datasets)
 
 function getActiveRenderDatasets() {
   const admin1Polygons = state.datasets?.admin1Polygons || state.admin1Polygons || null;
+  const terrainRelief = state.terrainData || null;
   if (state.isInteracting && state.fastDatasets) {
     const res = state.datasets?.resolution;
     const spanLon = Number(state.spec?.span?.lonDeg || 24);
@@ -977,14 +991,20 @@ function getActiveRenderDatasets() {
           ? state.fastDatasets.admin1Resolution
           : (state.datasets?.admin1Resolution || null),
         admin1Polygons,
+        terrainRelief,
         populatedPlaces: state.fastDatasets.populatedPlaces || state.datasets?.populatedPlaces || null,
       };
     }
   }
   if (!state.datasets) return null;
-  return admin1Polygons && !state.datasets.admin1Polygons
-    ? { ...state.datasets, admin1Polygons }
-    : state.datasets;
+  if ((admin1Polygons && !state.datasets.admin1Polygons) || terrainRelief) {
+    return {
+      ...state.datasets,
+      ...(admin1Polygons ? { admin1Polygons } : {}),
+      ...(terrainRelief ? { terrainRelief } : {}),
+    };
+  }
+  return state.datasets;
 }
 
 function renderNow() {
@@ -1014,6 +1034,18 @@ function renderNow() {
   });
   state.lastProjection = result?.projection || buildProjection(state.spec, canvas.width, canvas.height);
   state.renderedShadows = Array.isArray(result?.renderedShadows) ? result.renderedShadows : [];
+
+  const nextTerrainMeta = result?.terrainMeta || null;
+  const prevTerrainSig = state.terrainMeta
+    ? `${state.terrainMeta.effectiveInterval}|${state.terrainMeta.maxVisibleElev}|${state.terrainMeta.skippedReason || ''}`
+    : '';
+  const nextTerrainSig = nextTerrainMeta
+    ? `${nextTerrainMeta.effectiveInterval}|${nextTerrainMeta.maxVisibleElev}|${nextTerrainMeta.skippedReason || ''}`
+    : '';
+  state.terrainMeta = nextTerrainMeta;
+  if (!state.isInteracting && prevTerrainSig !== nextTerrainSig && state.spec?.terrainRelief?.enabled) {
+    syncAllUi({ skipDynamicLists: true });
+  }
 
   if (state.refPeek) {
     drawReferencePeekOverlay(canvas, state.lastProjection, activeDatasets);
@@ -2920,6 +2952,107 @@ function buildCallbacks() {
       patchSpec({ customGeoJsonLayers: nextLayers }, opts);
     },
 
+    onFetchTerrainRelief: async ({ forceRefresh = false } = {}) => {
+      const spec = state.spec;
+      if (!spec) return;
+      const visibleBounds = computeCurrentVisibleBounds(spec);
+      const seq = ++state.terrainFetchSeq;
+
+      try {
+        setLoadingProgress(true, 'Downloading elevation tiles for framed view...');
+        const dem = await fetchTerrainDemForBounds(visibleBounds, {
+          forceRefresh,
+          onStatus: (msg) => {
+            if (seq === state.terrainFetchSeq) {
+              setLoadingProgress(true, msg);
+            }
+          },
+        });
+        if (seq !== state.terrainFetchSeq) return;
+        setLoadingProgress(false);
+
+        state.terrainData = dem;
+        state.terrainMeta = null;
+        patchSpec({
+          terrainRelief: {
+            enabled: true,
+            bounds: dem.bounds,
+          },
+        });
+
+        const styleDef = TERRAIN_STYLES[state.spec?.terrainRelief?.style] || TERRAIN_STYLES.army_topo;
+        const maxE = dem.stats?.maxLandElev || 0;
+        const peakNote = maxE > 0 ? ` · Peak ${maxE.toLocaleString()} m` : '';
+        const clipNote =
+          state.spec?.terrainRelief?.clipMode === 'highlighted' &&
+          (!state.spec.highlightedCountries || state.spec.highlightedCountries.length === 0)
+            ? ' (highlight a country in Regions & Pins to show clipped relief)'
+            : '';
+        showToast(
+          `${styleDef.shortLabel} loaded (z${dem.zoom} · ${dem.tileCount} tiles${peakNote})${clipNote}`,
+          clipNote ? 'warn' : 'success',
+          4600,
+        );
+      } catch (err) {
+        if (seq === state.terrainFetchSeq) {
+          setLoadingProgress(false);
+          showToast(`Terrain Relief error: ${err.message}`, 'error', 5200);
+        }
+      }
+    },
+
+    onToggleTerrainRelief: async () => {
+      const tr = state.spec?.terrainRelief;
+      if (!tr) return;
+      if (!tr.enabled && !state.terrainData) {
+        const visibleBounds = computeCurrentVisibleBounds(state.spec);
+        const seq = ++state.terrainFetchSeq;
+        try {
+          setLoadingProgress(true, 'Downloading elevation tiles for framed view...');
+          const dem = await fetchTerrainDemForBounds(visibleBounds, {
+            onStatus: (msg) => {
+              if (seq === state.terrainFetchSeq) {
+                setLoadingProgress(true, msg);
+              }
+            },
+          });
+          if (seq !== state.terrainFetchSeq) return;
+          setLoadingProgress(false);
+          state.terrainData = dem;
+          state.terrainMeta = null;
+          patchSpec({ terrainRelief: { enabled: true, bounds: dem.bounds } });
+          showToast('Terrain relief enabled', 'success', 2600);
+        } catch (err) {
+          if (seq === state.terrainFetchSeq) {
+            setLoadingProgress(false);
+            showToast(`Terrain Relief error: ${err.message}`, 'error', 5200);
+          }
+        }
+        return;
+      }
+
+      const nextEnabled = !tr.enabled;
+      patchSpec({ terrainRelief: { enabled: nextEnabled } });
+      showToast(
+        nextEnabled ? 'Terrain relief shown' : 'Terrain relief hidden',
+        'info',
+        2200,
+      );
+    },
+
+    onRemoveTerrainRelief: () => {
+      state.terrainFetchSeq += 1;
+      state.terrainData = null;
+      state.terrainMeta = null;
+      patchSpec({
+        terrainRelief: {
+          enabled: false,
+          bounds: null,
+        },
+      });
+      showToast('Terrain relief removed', 'info', 2200);
+    },
+
     onFetchOsmCoastlines: async ({
       asPrimaryLand = true,
       simplifyMeters = 0,
@@ -4064,7 +4197,32 @@ function buildCallbacks() {
   };
 }
 
+async function hydrateTerrainReliefIfNeeded() {
+  const tr = state.spec?.terrainRelief;
+  if (!tr?.enabled) return;
+
+  const targetBounds = tr.bounds || computeCurrentVisibleBounds(state.spec);
+  if (state.terrainData && !isViewOutsideTerrainBounds(targetBounds, state.terrainData.bounds)) {
+    return;
+  }
+
+  const seq = ++state.terrainFetchSeq;
+  try {
+    const dem = await fetchTerrainDemForBounds(targetBounds, {
+      forcedZoom: Number.isInteger(tr.bounds?.zoom) ? tr.bounds.zoom : null,
+    });
+    if (seq !== state.terrainFetchSeq || !state.spec?.terrainRelief?.enabled) return;
+    state.terrainData = dem;
+    state.terrainMeta = null;
+    syncAllUi({ skipDynamicLists: true });
+    scheduleRender();
+  } catch {
+    // Leave spec intact if elevation tiles are temporarily unavailable offline
+  }
+}
+
 async function hydrateRemoteGeoJsonLayers() {
+  void hydrateTerrainReliefIfNeeded();
   const initialLayers = state.spec?.customGeoJsonLayers || [];
   const pending = initialLayers.filter((l) => l?.url && !l?.data && l?.visible !== false);
   if (pending.length === 0) return;

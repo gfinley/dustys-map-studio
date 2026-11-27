@@ -191,6 +191,17 @@ export const BASEMAP_PROVIDERS = [
   'OpenTopoMap',
 ];
 
+export const TERRAIN_RELIEF_STYLES = [
+  'army_topo',
+  'staff_hillshade',
+  'topo_contours',
+  'jog_elevation',
+];
+
+export const TERRAIN_RELIEF_CLIP_MODES = ['land', 'highlighted'];
+
+export const TERRAIN_CONTOUR_INTERVALS = ['auto', 20, 50, 100, 200, 250, 500, 1000];
+
 export function createDefaultMapSpec() {
   return {
     version: SCHEMA_VERSION,
@@ -284,6 +295,15 @@ export function createDefaultMapSpec() {
         position: 'bottom-right',
       },
     },
+    terrainRelief: {
+      enabled: false,
+      style: 'army_topo',
+      clipMode: 'land',
+      intensity: 0.72,
+      exaggeration: 2.2,
+      contourInterval: 'auto',
+      bounds: null,
+    },
     pro: {
       basemapProvider: 'none',
       basemapOpacity: 0.85,
@@ -326,7 +346,38 @@ export function normalizeMapSpec(partial) {
   const globeRaw = isPlainObject(ornRaw.locatorGlobe) ? ornRaw.locatorGlobe : {};
   const northRaw = isPlainObject(ornRaw.northArrow) ? ornRaw.northArrow : {};
   const legendRaw = isPlainObject(ornRaw.legend) ? ornRaw.legend : {};
+  const terrainRaw = isPlainObject(partial.terrainRelief) ? partial.terrainRelief : {};
   const proRaw = isPlainObject(partial.pro) ? partial.pro : {};
+
+  let normalizedTerrainBounds = null;
+  if (
+    isPlainObject(terrainRaw.bounds) &&
+    Number.isFinite(Number(terrainRaw.bounds.south)) &&
+    Number.isFinite(Number(terrainRaw.bounds.west)) &&
+    Number.isFinite(Number(terrainRaw.bounds.north)) &&
+    Number.isFinite(Number(terrainRaw.bounds.east))
+  ) {
+    normalizedTerrainBounds = {
+      south: clamp(terrainRaw.bounds.south, -85.05, 85.05, -85),
+      west: clamp(terrainRaw.bounds.west, -180, 180, -180),
+      north: clamp(terrainRaw.bounds.north, -85.05, 85.05, 85),
+      east: clamp(terrainRaw.bounds.east, -180, 180, 180),
+      ...(Number.isFinite(Number(terrainRaw.bounds.zoom))
+        ? { zoom: Math.round(clamp(terrainRaw.bounds.zoom, 1, 14, 7)) }
+        : {}),
+      ...(terrainRaw.bounds.fullWorldLon ? { fullWorldLon: true } : {}),
+    };
+  }
+
+  let normalizedContourInterval = def.terrainRelief.contourInterval;
+  if (terrainRaw.contourInterval === 'auto') {
+    normalizedContourInterval = 'auto';
+  } else {
+    const numCi = Number(terrainRaw.contourInterval);
+    if (TERRAIN_CONTOUR_INTERVALS.includes(numCi)) {
+      normalizedContourInterval = numCi;
+    }
+  }
 
   const projection = PROJECTIONS.includes(partial.projection) ? partial.projection : def.projection;
   const detailLevel = DETAIL_LEVELS.includes(partial.detailLevel) ? partial.detailLevel : def.detailLevel;
@@ -477,6 +528,17 @@ export function normalizeMapSpec(partial) {
         enabled: typeof legendRaw.enabled === 'boolean' ? legendRaw.enabled : def.ornaments.legend.enabled,
         position: CORNER_POSITIONS.includes(legendRaw.position) ? legendRaw.position : def.ornaments.legend.position,
       },
+    },
+    terrainRelief: {
+      enabled: typeof terrainRaw.enabled === 'boolean' ? terrainRaw.enabled : def.terrainRelief.enabled,
+      style: TERRAIN_RELIEF_STYLES.includes(terrainRaw.style) ? terrainRaw.style : def.terrainRelief.style,
+      clipMode: TERRAIN_RELIEF_CLIP_MODES.includes(terrainRaw.clipMode)
+        ? terrainRaw.clipMode
+        : def.terrainRelief.clipMode,
+      intensity: clamp(terrainRaw.intensity, 0.15, 1.0, def.terrainRelief.intensity),
+      exaggeration: clamp(terrainRaw.exaggeration, 0.5, 6.0, def.terrainRelief.exaggeration),
+      contourInterval: normalizedContourInterval,
+      bounds: normalizedTerrainBounds,
     },
     pro: {
       basemapProvider: BASEMAP_PROVIDERS.includes(proRaw.basemapProvider) ? proRaw.basemapProvider : def.pro.basemapProvider,

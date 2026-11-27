@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=25" />
+  <link rel="stylesheet" href="./styles/main.css?v=26" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -413,6 +413,74 @@
                   <input id="page-show-frame" type="checkbox" />
                   <span>Crisp Page Frame Border</span>
                 </label>
+              </div>
+            </div>
+
+            <div class="panel-card terrain-relief-card">
+              <div class="card-header">
+                <h2>Terrain Relief (Current View)</h2>
+                <span class="helper-pill">Army Topo</span>
+              </div>
+              <p class="helper-text">Fetch on-demand elevation for the framed view with NW shaded relief &amp; military-standard brown topographic contours.</p>
+              <div class="field-stack">
+                <div class="field">
+                  <label for="terrain-relief-style">Relief Style</label>
+                  <select id="terrain-relief-style" aria-label="Military terrain relief style">
+                    <option value="army_topo" selected>Army Topo (Shaded + Contours)</option>
+                    <option value="staff_hillshade">Staff Hillshade (Shaded Only)</option>
+                    <option value="topo_contours">Topo Contours Only (Vector)</option>
+                    <option value="jog_elevation">JOG Operational (Elevation + Relief)</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <span class="field-mini-label">Relief Area Mask</span>
+                  <div class="segmented-control" role="group" aria-label="Terrain relief area mask">
+                    <button id="btn-terrain-clip-land" class="seg-btn active" type="button" data-clip="land" aria-pressed="true">All Land in View</button>
+                    <button id="btn-terrain-clip-highlighted" class="seg-btn" type="button" data-clip="highlighted" aria-pressed="false">Highlighted Countries</button>
+                  </div>
+                </div>
+
+                <div class="field-grid-2 compact-row">
+                  <div class="field">
+                    <label for="terrain-relief-intensity">Strength: <strong id="terrain-relief-intensity-val">72%</strong></label>
+                    <input id="terrain-relief-intensity" type="range" min="0.15" max="1.0" step="0.05" value="0.72" />
+                  </div>
+                  <div class="field">
+                    <label for="terrain-relief-exag">Vertical: <strong id="terrain-relief-exag-val">2.2&times;</strong></label>
+                    <input id="terrain-relief-exag" type="range" min="0.5" max="6.0" step="0.1" value="2.2" />
+                  </div>
+                </div>
+
+                <div class="field" id="terrain-contour-interval-wrap">
+                  <label for="terrain-contour-interval">Contour Interval (CI)</label>
+                  <select id="terrain-contour-interval" aria-label="Topographic contour interval">
+                    <option value="auto" selected>Auto (Smart Military Scale)</option>
+                    <option value="20">20 m (Index 100 m)</option>
+                    <option value="50">50 m (Index 250 m)</option>
+                    <option value="100">100 m (Index 500 m)</option>
+                    <option value="200">200 m (Index 1,000 m)</option>
+                    <option value="250">250 m (Index 1,250 m)</option>
+                    <option value="500">500 m (Index 2,500 m)</option>
+                    <option value="1000">1,000 m (Index 5,000 m)</option>
+                  </select>
+                </div>
+
+                <button id="btn-fetch-terrain-relief" class="btn btn-primary btn-full" type="button">
+                  Enable Terrain Relief (Current View)
+                </button>
+
+                <div id="terrain-relief-status" class="primary-land-banner banner-stack" hidden>
+                  <div class="banner-status-row">
+                    <span class="banner-status-dot" aria-hidden="true"></span>
+                    <span id="terrain-relief-status-text">Terrain relief active</span>
+                  </div>
+                  <div class="banner-actions">
+                    <button id="btn-toggle-terrain-relief" class="btn-chip" type="button" aria-pressed="true" title="Toggle terrain relief visibility on or off">Hide Relief</button>
+                    <button id="btn-refresh-terrain-relief" class="btn-chip" type="button" title="Re-fetch elevation tiles for the current framed view">Refresh View</button>
+                    <button id="btn-remove-terrain-relief" class="btn-chip btn-chip-danger" type="button" title="Remove loaded terrain relief data">Remove</button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1028,6 +1096,14 @@
             <button id="btn-stage-remove-hd" class="btn-pill-remove" type="button" title="Remove super-accuracy map" aria-label="Remove super-accuracy map">&times;</button>
           </div>
 
+          <div id="terrain-stage-pill" class="stage-pill terrain-stage-pill" hidden>
+            <span class="terrain-stage-dot" aria-hidden="true"></span>
+            <button id="btn-stage-toggle-terrain" class="btn-stage-inline" type="button" aria-pressed="true" title="Toggle terrain relief on or off">
+              <span id="stage-terrain-label">Relief: On</span>
+            </button>
+            <button id="btn-stage-remove-terrain" class="btn-pill-remove" type="button" title="Remove terrain relief" aria-label="Remove terrain relief">&times;</button>
+          </div>
+
           <div id="interaction-mode-badge" class="stage-pill mode-pan">
             <span class="mode-dot"></span>
             <span id="interaction-mode-text">Mode: Pan &amp; Zoom</span>
@@ -1073,6 +1149,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=25"></script>
+  <script type="module" src="./js/app.js?v=26"></script>
 </body>
 </html>

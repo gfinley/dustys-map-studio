@@ -12,14 +12,19 @@ import {
   drawLegend,
   drawTitleBanner,
   buildOrnamentsSvg,
-} from './ornaments.js?v=25';
-import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=25';
-import { buildTransformedShadow, formatArea } from './shadow.js?v=25';
+} from './ornaments.js?v=26';
+import { getPixelDimensions, COLOR_THEMES } from './schema.js?v=26';
+import { buildTransformedShadow, formatArea } from './shadow.js?v=26';
 import {
   extractAlaskaOnlyFeature,
   isAlaskaOnlySelection,
   sanitizeGeoJsonWinding,
-} from './data-loader.js?v=25';
+} from './data-loader.js?v=26';
+import {
+  buildProjectedTerrainLayer,
+  contourSegmentsToSvgPath,
+  resolveContourPalette,
+} from './terrain-relief.js?v=26';
 
 const FONT_FAMILY = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MAX_HATCH_CACHE_ENTRIES = 64;
@@ -797,6 +802,328 @@ function drawCitiesCanvas(ctx, projection, spec, width, height, scaleFactor) {
   }
 }
 
+function collectPrimaryLandPolygonFeatures(spec) {
+  const overlays = Array.isArray(spec?.customGeoJsonLayers) ? spec.customGeoJsonLayers : [];
+  const polygons = [];
+  for (let i = 0; i < overlays.length; i += 1) {
+    const layer = overlays[i];
+    if (layer?.visible === false || layer?.role !== 'land' || !layer?.data) continue;
+    const features = collectGeoJsonFeatures(layer.data);
+    const groups = { polygons: [], lines: [], points: [] };
+    for (let j = 0; j < features.length; j += 1) {
+      classifyGeometry(features[j].geometry, groups);
+    }
+    for (let j = 0; j < groups.polygons.length; j += 1) {
+      polygons.push({ type: 'Feature', properties: {}, geometry: groups.polygons[j] });
+    }
+  }
+  return polygons;
+}
+
+function drawContourSegmentList(ctx, segments) {
+  if (!Array.isArray(segments) || segments.length < 4) return;
+  ctx.beginPath();
+  for (let i = 0; i + 3 < segments.length; i += 4) {
+    ctx.moveTo(segments[i], segments[i + 1]);
+    ctx.lineTo(segments[i + 2], segments[i + 3]);
+  }
+  ctx.stroke();
+}
+
+function drawTerrainReliefCanvas(
+  ctx,
+  path,
+  projection,
+  spec,
+  datasets,
+  viewBounds,
+  skipCull,
+  width,
+  height,
+  scaleFactor,
+  options = {},
+) {
+  const tr = spec?.terrainRelief;
+  const dem = datasets?.terrainRelief;
+  if (!tr?.enabled || !dem) return null;
+
+  const layers = spec?.layers || {};
+  const colors = spec?.colors || {};
+  const clipMode = tr.clipMode === 'highlighted' ? 'highlighted' : 'land';
+  const highlighted = Array.isArray(spec?.highlightedCountries) ? spec.highlightedCountries : [];
+
+  const highlightedFeatures = [];
+  if (highlighted.length > 0 && datasets?.countries) {
+    for (let i = 0; i < highlighted.length; i += 1) {
+      const feats = matchCountryFeatures(datasets.countries, highlighted[i]);
+      for (let j = 0; j < feats.length; j += 1) {
+        if (bboxMayIntersectView(feats[j]._bbox, viewBounds, skipCull)) {
+          highlightedFeatures.push(feats[j]);
+        }
+      }
+    }
+  }
+
+  if (clipMode === 'highlighted' && highlightedFeatures.length === 0) {
+    return {
+      skippedReason: highlighted.length === 0 ? 'no_highlighted_countries' : 'highlighted_out_of_view',
+    };
+  }
+
+  const artifact = buildProjectedTerrainLayer(dem, projection, spec, width, height, {
+    interactive: Boolean(options.interactive),
+    isFrontPoint: (lon, lat) => isFrontHemisphere(spec, lon, lat),
+  });
+  if (!artifact) return null;
+
+  const landParts =
+    Array.isArray(datasets?.landParts) && datasets.landParts.length > 0 ? datasets.landParts : null;
+  const primaryLandPolys = collectPrimaryLandPolygonFeatures(spec);
+  const useDefaultLand = layers.showLand !== false && Boolean(landParts || datasets?.land);
+
+  let surfaceColor = colors.land;
+  if (clipMode === 'highlighted') {
+    surfaceColor = highlighted[0]?.fill || colors.highlightFill || colors.land;
+  } else if (!useDefaultLand && primaryLandPolys.length > 0) {
+    const firstLandLayer = (spec?.customGeoJsonLayers || []).find(
+      (l) => l?.visible !== false && l?.role === 'land',
+    );
+    surfaceColor = firstLandLayer?.color || colors.land;
+  } else if (!useDefaultLand && highlighted.length > 0) {
+    surfaceColor = highlighted[0]?.fill || colors.highlightFill || colors.land;
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  let hasClip = false;
+
+  if (clipMode === 'highlighted') {
+    for (let i = 0; i < highlightedFeatures.length; i += 1) {
+      path(highlightedFeatures[i]);
+      hasClip = true;
+    }
+  } else {
+    if (useDefaultLand) {
+      drawCulledCollection(path, landParts, datasets?.land, viewBounds, skipCull);
+      hasClip = true;
+      if (layers.showMinorIslands !== false && datasets?.minorIslands) {
+        drawCulledCollection(
+          path,
+          Array.isArray(datasets.minorIslands.features) ? datasets.minorIslands.features : null,
+          datasets.minorIslands,
+          viewBounds,
+          skipCull,
+        );
+      }
+    }
+    if (primaryLandPolys.length > 0) {
+      path({ type: 'FeatureCollection', features: primaryLandPolys });
+      hasClip = true;
+    }
+    if (!hasClip && highlightedFeatures.length > 0) {
+      for (let i = 0; i < highlightedFeatures.length; i += 1) {
+        path(highlightedFeatures[i]);
+        hasClip = true;
+      }
+    }
+  }
+
+  if (!hasClip) {
+    ctx.restore();
+    return null;
+  }
+
+  ctx.clip();
+
+  if (artifact.rasterCanvas) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(artifact.rasterCanvas, 0, 0, width, height);
+    ctx.restore();
+  }
+
+  if (artifact.contours) {
+    const palette = resolveContourPalette(surfaceColor, artifact.style);
+    const alphaScale = 0.48 + 0.52 * artifact.intensity;
+
+    if (artifact.contours.intermediateSegments.length >= 4) {
+      ctx.save();
+      ctx.strokeStyle = palette.intermediateColor;
+      ctx.globalAlpha *= palette.intermediateAlpha * alphaScale;
+      ctx.lineWidth = Math.max(0.45, 0.72 * scaleFactor);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      drawContourSegmentList(ctx, artifact.contours.intermediateSegments);
+      ctx.restore();
+    }
+
+    if (artifact.contours.indexSegments.length >= 4) {
+      ctx.save();
+      ctx.strokeStyle = palette.indexColor;
+      ctx.globalAlpha *= palette.indexAlpha * alphaScale;
+      ctx.lineWidth = Math.max(0.85, 1.45 * scaleFactor);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      drawContourSegmentList(ctx, artifact.contours.indexSegments);
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+
+  // Re-stroke highlighted country outlines cleanly above the relief shading
+  if (highlighted.length > 0 && datasets?.countries) {
+    for (let i = 0; i < highlighted.length; i += 1) {
+      const hc = highlighted[i];
+      const stroke = hc.stroke || colors.highlightStroke || '#ffffff';
+      if (!stroke || isNoneColor(stroke)) continue;
+      const feats = matchCountryFeatures(datasets.countries, hc);
+      for (let j = 0; j < feats.length; j += 1) {
+        const feat = feats[j];
+        if (!bboxMayIntersectView(feat._bbox, viewBounds, skipCull)) continue;
+        ctx.save();
+        ctx.beginPath();
+        path(feat);
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = Math.max(0.5, (Number(layers.borderWidth) || 1.0) * 1.15 * scaleFactor);
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  }
+
+  return {
+    effectiveInterval: artifact.effectiveInterval,
+    maxVisibleElev: artifact.maxVisibleElev,
+    style: artifact.style,
+    clipMode,
+  };
+}
+
+function appendTerrainReliefSvg(defs, mapParts, svgPath, projection, spec, datasets, widthPx, heightPx, scaleFactor) {
+  const tr = spec?.terrainRelief;
+  const dem = datasets?.terrainRelief;
+  if (!tr?.enabled || !dem) return;
+
+  const layers = spec?.layers || {};
+  const colors = spec?.colors || {};
+  const clipMode = tr.clipMode === 'highlighted' ? 'highlighted' : 'land';
+  const highlighted = Array.isArray(spec?.highlightedCountries) ? spec.highlightedCountries : [];
+
+  const highlightedFeatures = [];
+  if (highlighted.length > 0 && datasets?.countries) {
+    for (let i = 0; i < highlighted.length; i += 1) {
+      const feats = matchCountryFeatures(datasets.countries, highlighted[i]);
+      for (let j = 0; j < feats.length; j += 1) {
+        highlightedFeatures.push(feats[j]);
+      }
+    }
+  }
+  if (clipMode === 'highlighted' && highlightedFeatures.length === 0) return;
+
+  const artifact = buildProjectedTerrainLayer(dem, projection, spec, widthPx, heightPx, {
+    interactive: false,
+    isFrontPoint: (lon, lat) => isFrontHemisphere(spec, lon, lat),
+  });
+  if (!artifact) return;
+
+  const primaryLandPolys = collectPrimaryLandPolygonFeatures(spec);
+  const useDefaultLand = layers.showLand !== false && Boolean(datasets?.land);
+  const clipPaths = [];
+
+  if (clipMode === 'highlighted') {
+    for (let i = 0; i < highlightedFeatures.length; i += 1) {
+      const d = svgPath(highlightedFeatures[i]) || '';
+      if (d) clipPaths.push(`<path d="${d}" />`);
+    }
+  } else {
+    if (useDefaultLand) {
+      const landD = svgPath(datasets.land) || '';
+      if (landD) clipPaths.push(`<path d="${landD}" />`);
+      if (layers.showMinorIslands !== false && datasets?.minorIslands) {
+        const minorD = svgPath(datasets.minorIslands) || '';
+        if (minorD) clipPaths.push(`<path d="${minorD}" />`);
+      }
+    }
+    if (primaryLandPolys.length > 0) {
+      const pD = svgPath({ type: 'FeatureCollection', features: primaryLandPolys }) || '';
+      if (pD) clipPaths.push(`<path d="${pD}" />`);
+    }
+    if (clipPaths.length === 0 && highlightedFeatures.length > 0) {
+      for (let i = 0; i < highlightedFeatures.length; i += 1) {
+        const d = svgPath(highlightedFeatures[i]) || '';
+        if (d) clipPaths.push(`<path d="${d}" />`);
+      }
+    }
+  }
+
+  if (clipPaths.length === 0) return;
+
+  defs.push(`<clipPath id="terrain-relief-clip">${clipPaths.join('')}</clipPath>`);
+
+  let surfaceColor = colors.land;
+  if (clipMode === 'highlighted') {
+    surfaceColor = highlighted[0]?.fill || colors.highlightFill || colors.land;
+  } else if (!useDefaultLand && highlighted.length > 0) {
+    surfaceColor = highlighted[0]?.fill || colors.highlightFill || colors.land;
+  }
+
+  mapParts.push('<g clip-path="url(#terrain-relief-clip)">');
+
+  if (artifact.rasterCanvas) {
+    try {
+      const dataUrl = artifact.rasterCanvas.toDataURL('image/png');
+      mapParts.push(
+        `<image href="${dataUrl}" x="0" y="0" width="${widthPx}" height="${heightPx}" preserveAspectRatio="none" />`,
+      );
+    } catch {
+      // Ignore if canvas serialization is unavailable
+    }
+  }
+
+  if (artifact.contours) {
+    const palette = resolveContourPalette(surfaceColor, artifact.style);
+    const alphaScale = 0.48 + 0.52 * artifact.intensity;
+    const interD = contourSegmentsToSvgPath(artifact.contours.intermediateSegments);
+    if (interD) {
+      const w = Math.max(0.45, 0.72 * scaleFactor).toFixed(2);
+      const op = (palette.intermediateAlpha * alphaScale).toFixed(3);
+      mapParts.push(
+        `<path d="${interD}" fill="none" stroke="${escapeXml(palette.intermediateColor)}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" />`,
+      );
+    }
+    const idxD = contourSegmentsToSvgPath(artifact.contours.indexSegments);
+    if (idxD) {
+      const w = Math.max(0.85, 1.45 * scaleFactor).toFixed(2);
+      const op = (palette.indexAlpha * alphaScale).toFixed(3);
+      mapParts.push(
+        `<path d="${idxD}" fill="none" stroke="${escapeXml(palette.indexColor)}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" />`,
+      );
+    }
+  }
+
+  mapParts.push('</g>');
+
+  // Re-stroke highlighted country outlines cleanly above the relief shading
+  if (highlighted.length > 0 && datasets?.countries) {
+    for (let i = 0; i < highlighted.length; i += 1) {
+      const hc = highlighted[i];
+      const stroke = hc.stroke || colors.highlightStroke || '#ffffff';
+      if (!stroke || isNoneColor(stroke)) continue;
+      const feats = matchCountryFeatures(datasets.countries, hc);
+      const strokeW = Math.max(0.5, (Number(layers.borderWidth) || 1.0) * 1.15 * scaleFactor).toFixed(2);
+      for (let j = 0; j < feats.length; j += 1) {
+        const d = svgPath(feats[j]) || '';
+        if (d) {
+          mapParts.push(`<path d="${d}" fill="none" stroke="${escapeXml(stroke)}" stroke-width="${strokeW}" stroke-linejoin="round" />`);
+        }
+      }
+    }
+  }
+}
+
 export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
   const width = options.width || canvas.width;
   const height = options.height || canvas.height;
@@ -1019,6 +1346,21 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     }
   }
 
+  // 4b. On-Demand Military Terrain Relief (clipped to land or highlighted countries)
+  const terrainMeta = drawTerrainReliefCanvas(
+    ctx,
+    path,
+    projection,
+    spec,
+    datasets,
+    viewBounds,
+    skipCull,
+    width,
+    height,
+    scaleFactor,
+    options,
+  );
+
   // 5. Lakes & Inland Seas
   if (layers.showLakes && (!waterIsNone || hasCoastStroke) && datasets?.lakes) {
     ctx.save();
@@ -1166,6 +1508,7 @@ export function renderMapToCanvas(canvas, spec, datasets, options = {}) {
     projection,
     bounds: viewBounds,
     renderedShadows,
+    terrainMeta,
   };
 }
 
@@ -1440,6 +1783,9 @@ export function renderMapToSvgString(spec, datasets) {
       }
     }
   }
+
+  // 4b. On-Demand Military Terrain Relief (clipped shaded raster + crisp vector contours)
+  appendTerrainReliefSvg(defs, mapParts, svgPath, projection, spec, datasets, widthPx, heightPx, scaleFactor);
 
   // 5. Lakes & Inland Seas
   if (layers.showLakes && (!waterIsNone || hasCoastStroke) && datasets?.lakes) {
