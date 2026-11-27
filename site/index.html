@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#141d2c" />
   <title>Dusty's Map Studio — AtlasForge</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2317202e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%234a5568' stroke='%2393c5fd' stroke-width='2.5'/%3E%3Cpath d='M16 32h32M32 12v40M20 21c6 4 18 4 24 0M20 43c6-4 18-4 24 0' fill='none' stroke='%23e2e8f0' stroke-width='1.8'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="./styles/main.css?v=31" />
+  <link rel="stylesheet" href="./styles/main.css?v=32" />
 </head>
 <body>
   <div id="studio-shell" class="studio-shell">
@@ -538,10 +538,17 @@
             <div class="panel-card hd-coastline-card">
               <div class="card-header">
                 <h2>HD Coastlines (Current View)</h2>
-                <span class="helper-pill">OSM Live</span>
+                <span class="helper-pill">Cached + OSM</span>
               </div>
-              <p class="helper-text">Download meter-accurate OpenStreetMap shorelines &amp; islands (e.g., Corregidor, harbors, straits) on demand for the framed area.</p>
+              <p class="helper-text">Meter-accurate OpenStreetMap shorelines &amp; islets — instant site-cached packs for Attu &amp; Corregidor, or live on-demand fetch anywhere.</p>
               <div class="field-stack">
+                <div class="field">
+                  <span class="field-mini-label">Site-Cached (Instant 1–5m HD)</span>
+                  <div class="segmented-control" role="group" aria-label="Instant site-cached HD coastline packs">
+                    <button id="btn-cached-hd-attu" class="seg-btn btn-cached-hd-pack" type="button" data-pack-id="attu_near_islands" title="Load cached 1–5m coastlines for Attu, Agattu, Shemya, Nizki, Alaid &amp; 121 surrounding islets">Attu &amp; Near Is.</button>
+                    <button id="btn-cached-hd-corregidor" class="seg-btn btn-cached-hd-pack" type="button" data-pack-id="corregidor_manila_bay" title="Load cached 1–5m coastlines for Corregidor, Caballo, Carabao, El Fraile (Fort Drum), La Monja &amp; Manila Bay mouth">Corregidor &amp; Bay</button>
+                  </div>
+                </div>
                 <div class="hd-coastline-meta-row">
                   <span id="hd-coastline-view-span" class="hd-coastline-span-badge">View: —</span>
                   <select id="hd-coastline-detail" class="mini-select" aria-label="HD coastline resolution" style="flex: 0 0 auto; width: 132px;">
@@ -1200,6 +1207,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app.js?v=31"></script>
+  <script type="module" src="./js/app.js?v=32"></script>
 </body>
 </html>

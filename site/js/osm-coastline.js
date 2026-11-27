@@ -1019,3 +1019,167 @@ export function polygonizeOverpassCoastlines(
     },
   };
 }
+
+/**
+ * Static site-cached hyper-accurate (Full 1–5m OSM) coastline packs served directly
+ * from `./data/hd_coastlines/` with zero Overpass API latency or rate limits.
+ *
+ * `coverageBBox` defines the geographic extent where the pack contains 100% of all
+ * real-world shorelines (for isolated archipelagos like Attu/Near Islands, this safely
+ * extends across surrounding pure ocean where no other islands exist).
+ */
+export const CACHED_HD_COASTLINE_PACKS = [
+  {
+    id: 'attu_near_islands',
+    name: 'Attu & Near Islands',
+    shortLabel: 'Attu Island',
+    description:
+      'Attu Island, Agattu, Semichi Islands (Shemya, Nizki, Alaid), and all 121 surrounding Aleutian islets & sea stacks (1–5m OSM).',
+    url: './data/hd_coastlines/attu_near_islands.geojson',
+    bbox: { south: 52.28, west: 172.30, north: 53.12, east: 174.26 },
+    // Pure Bering Sea / North Pacific ocean surrounds the Near Islands (>115 km to Buldir East, >300 km to Commander Islands West)
+    coverageBBox: { south: 51.80, west: 171.20, north: 53.60, east: 175.40 },
+    defaultView: {
+      center: { lat: 52.89, lon: 172.92 },
+      span: { lonDeg: 1.05, latDeg: 0.42 },
+    },
+    hostCountryId: '840',
+    hostCountryName: 'United States of America',
+    scaleUnits: 'mi',
+  },
+  {
+    id: 'corregidor_manila_bay',
+    name: 'Corregidor & Manila Bay Mouth',
+    shortLabel: 'Corregidor',
+    description:
+      'Corregidor, Caballo (Fort Hughes), Carabao (Fort Frank), El Fraile (Fort Drum), La Monja, Limbones, southern Bataan Peninsula, and Cavite mouth (1–5m OSM).',
+    url: './data/hd_coastlines/corregidor_manila_bay.geojson',
+    bbox: { south: 14.12, west: 120.38, north: 14.62, east: 120.92 },
+    coverageBBox: { south: 14.12, west: 120.38, north: 14.62, east: 120.92 },
+    defaultView: {
+      center: { lat: 14.37, lon: 120.585 },
+      span: { lonDeg: 0.24, latDeg: 0.20 },
+    },
+    hostCountryId: '608',
+    hostCountryName: 'Philippines',
+    scaleUnits: 'km',
+  },
+];
+
+export function getCachedCoastlinePackById(packId) {
+  if (!packId) return null;
+  return CACHED_HD_COASTLINE_PACKS.find((p) => p.id === packId) || null;
+}
+
+export function isCachedCoastlinePackUrl(url) {
+  if (typeof url !== 'string' || !url.trim()) return false;
+  const cleaned = url.trim().split('?')[0];
+  return CACHED_HD_COASTLINE_PACKS.some(
+    (p) => cleaned === p.url || cleaned.endsWith(p.url.replace(/^\./, '')),
+  );
+}
+
+/**
+ * Return the site-cached HD coastline pack that completely covers `boundsOrBBox`
+ * (`[minLon, maxLon, minLat, maxLat]` or `{ south, west, north, east }`), or `null`.
+ */
+export function findMatchingCachedCoastlinePack(boundsOrBBox) {
+  if (!boundsOrBBox) return null;
+  let south;
+  let west;
+  let north;
+  let east;
+
+  if (Array.isArray(boundsOrBBox) && boundsOrBBox.length >= 4) {
+    [west, east, south, north] = boundsOrBBox.map(Number);
+  } else if (
+    Number.isFinite(Number(boundsOrBBox.south)) &&
+    Number.isFinite(Number(boundsOrBBox.west)) &&
+    Number.isFinite(Number(boundsOrBBox.north)) &&
+    Number.isFinite(Number(boundsOrBBox.east))
+  ) {
+    south = Number(boundsOrBBox.south);
+    west = Number(boundsOrBBox.west);
+    north = Number(boundsOrBBox.north);
+    east = Number(boundsOrBBox.east);
+  } else {
+    return null;
+  }
+
+  if (![south, west, north, east].every(Number.isFinite) || south >= north) {
+    return null;
+  }
+
+  const tol = 0.002;
+  for (let i = 0; i < CACHED_HD_COASTLINE_PACKS.length; i += 1) {
+    const pack = CACHED_HD_COASTLINE_PACKS[i];
+    const cov = pack.coverageBBox || pack.bbox;
+    if (south < cov.south - tol || north > cov.north + tol) continue;
+
+    const refLon = (cov.west + cov.east) / 2;
+    let uW = unwrapNear(west, refLon);
+    let uE = unwrapNear(east, refLon);
+    if (uE < uW) uE += 360;
+
+    if (uW >= cov.west - tol && uE <= cov.east + tol) {
+      return pack;
+    }
+  }
+  return null;
+}
+
+/**
+ * Optionally simplify a cached GeoJSON coastline FeatureCollection in local meters
+ * and recompute summary stats (`polygonCount`, `islandCount`, `mainlandCount`, `vertexCount`).
+ */
+export function simplifyGeoJsonCoastline(geojson, simplifyMeters = 0) {
+  const features = Array.isArray(geojson?.features) ? geojson.features : [];
+  const tol = Math.max(0, Number(simplifyMeters) || 0);
+  let islandCount = 0;
+  let mainlandCount = 0;
+  let vertexCount = 0;
+
+  const outFeatures = features.map((feat) => {
+    const kind = feat?.properties?.kind === 'mainland' ? 'mainland' : 'island';
+    if (kind === 'island') islandCount += 1;
+    else mainlandCount += 1;
+
+    if (feat?.geometry?.type !== 'Polygon' || !Array.isArray(feat.geometry.coordinates)) {
+      return feat;
+    }
+
+    const nextRings = feat.geometry.coordinates.map((ring) => {
+      const processed = tol > 0 ? simplifyPolylineMeters(ring, tol, true) : ring;
+      vertexCount += processed.length;
+      return processed;
+    });
+
+    return {
+      ...feat,
+      properties: {
+        ...(feat.properties || {}),
+        vertices: nextRings[0]?.length || 0,
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: nextRings,
+      },
+    };
+  });
+
+  return {
+    geojson: {
+      type: 'FeatureCollection',
+      ...(geojson?.metadata ? { metadata: geojson.metadata } : {}),
+      features: outFeatures,
+    },
+    stats: {
+      polygonCount: outFeatures.length,
+      islandCount,
+      mainlandCount,
+      vertexCount,
+      incompleteChains: 0,
+      bbox: geojson?.metadata?.bbox || null,
+    },
+  };
+}

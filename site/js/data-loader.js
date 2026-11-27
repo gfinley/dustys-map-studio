@@ -10,10 +10,13 @@ import {
   buildOverpassCoastlineQuery,
   computePaddedCoastlineBBox,
   encodeOsmCoastlineUrl,
+  findMatchingCachedCoastlinePack,
+  getCachedCoastlinePackById,
   isOsmCoastlineUrl,
   parseOsmCoastlineUrl,
   polygonizeOverpassCoastlines,
-} from './osm-coastline.js?v=31';
+  simplifyGeoJsonCoastline,
+} from './osm-coastline.js?v=32';
 
 const CACHE_NAME = 'dusty-mapmaker-v4';
 try {
@@ -1176,12 +1179,66 @@ async function fetchOverpassJson(query, { timeoutMs = 28000, onStatus = null } =
 }
 
 /**
+ * Load a static site-cached hyper-accurate OSM HD coastline pack from `./data/hd_coastlines/`
+ * with instant memory caching and optional local simplification.
+ */
+export async function fetchCachedCoastlinePack(
+  packOrId,
+  { simplifyMeters = 0, onStatus = null } = {},
+) {
+  const pack = typeof packOrId === 'string' ? getCachedCoastlinePackById(packOrId) : packOrId;
+  if (!pack || !pack.url) {
+    throw new Error(`Unknown cached HD coastline pack: "${packOrId}"`);
+  }
+
+  const simp = Math.max(0, Math.round(Number(simplifyMeters) || 0));
+  const cacheKey = `cached_hd_pack::${pack.id}::s=${simp}`;
+  if (jsonMemoryCache.has(cacheKey)) {
+    return jsonMemoryCache.get(cacheKey);
+  }
+
+  if (typeof onStatus === 'function') {
+    onStatus(`Loading cached HD coastlines (${pack.name})...`);
+  }
+
+  const rawKey = `cached_hd_pack_raw::${pack.id}`;
+  let rawGeoJson = jsonMemoryCache.get(rawKey);
+  if (!rawGeoJson) {
+    const res = await fetch(pack.url);
+    if (!res.ok) {
+      throw new Error(`Failed to load cached HD coastline pack (${res.status} ${res.statusText})`);
+    }
+    rawGeoJson = await res.json();
+    jsonMemoryCache.set(rawKey, rawGeoJson);
+  }
+
+  const { geojson, stats } = simplifyGeoJsonCoastline(rawGeoJson, simp);
+  const sanitized = attachFeatureBBoxes(sanitizeGeoJsonWinding(geojson));
+  const result = {
+    url: pack.url,
+    data: sanitized,
+    pack,
+    stats: {
+      ...stats,
+      simplifyMeters: simp,
+      endpoint: 'site-cache',
+      cachedPackId: pack.id,
+      cachedPackName: pack.name,
+    },
+  };
+
+  jsonMemoryCache.set(cacheKey, result);
+  return result;
+}
+
+/**
  * Fetch meter-accurate OpenStreetMap coastlines & islands for a padded bounding box
- * via the Overpass API, polygonize them into closed land Polygons, and cache the result.
+ * via site-cached static packs (when covered) or the Overpass API, polygonize them
+ * into closed land Polygons, and cache the result.
  */
 export async function fetchOsmCoastlineForBounds(
   bboxInput,
-  { simplifyMeters = 0, onStatus = null, forceRefresh = false } = {},
+  { simplifyMeters = 0, onStatus = null, forceRefresh = false, visibleBounds = null } = {},
 ) {
   const bbox =
     bboxInput &&
@@ -1204,6 +1261,16 @@ export async function fetchOsmCoastlineForBounds(
   }
 
   const simp = Math.max(0, Math.round(Number(simplifyMeters) || 0));
+
+  // Instant site-cache hit for bundled hyper-accurate island packs (e.g. Attu, Corregidor)
+  if (!forceRefresh) {
+    const matchedPack =
+      findMatchingCachedCoastlinePack(visibleBounds) || findMatchingCachedCoastlinePack(bbox);
+    if (matchedPack) {
+      return fetchCachedCoastlinePack(matchedPack, { simplifyMeters: simp, onStatus });
+    }
+  }
+
   const osmUrl = encodeOsmCoastlineUrl(bbox, { simplifyMeters: simp });
   const cacheKey = `osm_coastline::${osmUrl}`;
   const cacheReqUrl = buildOsmCacheRequestUrl(osmUrl);

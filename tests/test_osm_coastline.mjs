@@ -1,16 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
+  CACHED_HD_COASTLINE_PACKS,
   buildOverpassCoastlineQuery,
   computePaddedCoastlineBBox,
   encodeOsmCoastlineUrl,
+  findMatchingCachedCoastlinePack,
+  isCachedCoastlinePackUrl,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
   polygonizeOverpassCoastlines,
   signedRingArea,
+  simplifyGeoJsonCoastline,
 } from '../site/js/osm-coastline.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function makeWay(id, coords, nodeIds = null) {
   return {
@@ -285,5 +294,82 @@ test('URL codec, padded bbox calculation, and out-of-bounds view check round-tri
     isViewOutsideCoastlineBBox([120.0, 121.0, 14.2, 14.5], parsed),
     true,
     'Panned/zoomed-out view detected outside HD bounds',
+  );
+});
+
+test('Site-cached Attu & Corregidor HD coastline packs exist, validate, match view bounds, and simplify cleanly', () => {
+  assert.ok(CACHED_HD_COASTLINE_PACKS.length >= 2);
+
+  // Auto-match inside Attu & Near Islands (including pure ocean margin around Attu)
+  const attuMatch = findMatchingCachedCoastlinePack([172.35, 173.45, 52.65, 53.15]);
+  assert.equal(attuMatch?.id, 'attu_near_islands');
+  assert.equal(isCachedCoastlinePackUrl(attuMatch.url), true);
+
+  // Auto-match inside Corregidor & Manila Bay Mouth
+  const corrMatch = findMatchingCachedCoastlinePack([120.46, 120.72, 14.25, 14.50]);
+  assert.equal(corrMatch?.id, 'corregidor_manila_bay');
+  assert.equal(isCachedCoastlinePackUrl(corrMatch.url), true);
+
+  // Outside views return null so Overpass handles other regions
+  assert.equal(findMatchingCachedCoastlinePack([25, 36, 45, 52]), null);
+  assert.equal(findMatchingCachedCoastlinePack([119.5, 122.0, 13.5, 15.5]), null);
+
+  // Validate both static GeoJSON files on disk
+  for (const pack of CACHED_HD_COASTLINE_PACKS) {
+    const absPath = path.resolve(__dirname, '..', 'site', pack.url.replace(/^\.\//, ''));
+    assert.ok(fs.existsSync(absPath), `Missing cached pack file: ${absPath}`);
+    const parsed = JSON.parse(fs.readFileSync(absPath, 'utf8'));
+    assert.equal(parsed.type, 'FeatureCollection');
+    assert.ok(Array.isArray(parsed.features) && parsed.features.length >= 40);
+
+    const full = simplifyGeoJsonCoastline(parsed, 0);
+    const medium = simplifyGeoJsonCoastline(parsed, 15);
+    assert.equal(full.stats.polygonCount, parsed.features.length);
+    assert.equal(medium.stats.polygonCount, parsed.features.length);
+    assert.ok(medium.stats.vertexCount < full.stats.vertexCount, `${pack.id} simplification should reduce vertices`);
+    assert.ok(full.stats.islandCount >= 50, `${pack.id} should include surrounding islands & islets`);
+  }
+
+  // Spot-check key islands by point-in-polygon inside Corregidor & Attu packs
+  const corrGeo = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '..', 'site/data/hd_coastlines/corregidor_manila_bay.geojson'), 'utf8'),
+  );
+  const corrIslands = corrGeo.features.filter((f) => f.properties?.kind === 'island');
+  assert.ok(
+    corrIslands.some((f) => pointInPolygon([120.580, 14.386], f.geometry.coordinates)),
+    'Corregidor Island polygon contains Malinta/Topside',
+  );
+  assert.ok(
+    corrIslands.some((f) => pointInPolygon([120.618, 14.366], f.geometry.coordinates)),
+    'Caballo Island (Fort Hughes) polygon present',
+  );
+  assert.ok(
+    corrIslands.some((f) => pointInPolygon([120.61506, 14.2647], f.geometry.coordinates)),
+    'Carabao Island (Fort Frank) polygon present',
+  );
+  assert.ok(
+    corrIslands.some((f) => pointInPolygon([120.6305, 14.3050], f.geometry.coordinates)),
+    'El Fraile Island (Fort Drum) polygon present',
+  );
+  assert.ok(
+    corrIslands.some((f) => pointInPolygon([120.5222, 14.3756], f.geometry.coordinates)),
+    'La Monja Island polygon present',
+  );
+
+  const attuGeo = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '..', 'site/data/hd_coastlines/attu_near_islands.geojson'), 'utf8'),
+  );
+  const attuIslands = attuGeo.features.filter((f) => f.properties?.kind === 'island');
+  assert.ok(
+    attuIslands.some((f) => pointInPolygon([172.92, 52.89], f.geometry.coordinates)),
+    'Attu Island polygon contains central Attu',
+  );
+  assert.ok(
+    attuIslands.some((f) => pointInPolygon([173.60, 52.43], f.geometry.coordinates)),
+    'Agattu Island polygon present',
+  );
+  assert.ok(
+    attuIslands.some((f) => pointInPolygon([174.11, 52.72], f.geometry.coordinates)),
+    'Shemya Island polygon present',
   );
 });

@@ -6,7 +6,7 @@ import {
   PROJECTIONS,
   PROJECTION_LABELS,
   getPixelDimensions,
-} from './schema.js?v=31';
+} from './schema.js?v=32';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
@@ -14,23 +14,26 @@ import {
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=31';
-import { resolveLocatorGlobeZoom } from './ornaments.js?v=31';
-import { formatArea } from './shadow.js?v=31';
+} from './presets.js?v=32';
+import { resolveLocatorGlobeZoom } from './ornaments.js?v=32';
+import { formatArea } from './shadow.js?v=32';
 import {
+  CACHED_HD_COASTLINE_PACKS,
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
+  findMatchingCachedCoastlinePack,
+  isCachedCoastlinePackUrl,
   isOsmCoastlineUrl,
   isViewOutsideCoastlineBBox,
   parseOsmCoastlineUrl,
-} from './osm-coastline.js?v=31';
+} from './osm-coastline.js?v=32';
 import {
   TERRAIN_STYLES,
   TERRAIN_TONES,
   isViewOutsideTerrainBounds,
   resolveContourPalette,
   wantsTerrainContours,
-} from './terrain-relief.js?v=31';
+} from './terrain-relief.js?v=32';
 
 const controlsDrawerApi = {
   setSidebarOpen: () => {},
@@ -1615,6 +1618,16 @@ export function renderControls(callbacks) {
     boundCallbacks.onPickHdCoastlineColor?.(e.target.value, { commitHistory: true });
   });
 
+  document.querySelectorAll('.btn-cached-hd-pack').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const packId = e.currentTarget?.dataset?.packId;
+      if (!packId) return;
+      const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
+      const colorMode = $('hd-coastline-color-mode')?.value || 'host';
+      boundCallbacks.onLoadCachedOsmPack?.(packId, { asPrimaryLand: true, simplifyMeters, colorMode });
+    });
+  });
+
   $('btn-fetch-osm-coastline-land')?.addEventListener('click', () => {
     const simplifyMeters = Number($('hd-coastline-detail')?.value) || 0;
     const colorMode = $('hd-coastline-color-mode')?.value || 'host';
@@ -2130,7 +2143,11 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   if ($('layer-show-borders')) $('layer-show-borders').checked = Boolean(spec.layers.showBorders);
   const customLayers = spec.customGeoJsonLayers || [];
   const hdLayers = customLayers.filter(
-    (l) => l && (String(l.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(l.url)),
+    (l) =>
+      l &&
+      (String(l.id || '').startsWith('osm_hd_coastline') ||
+        isOsmCoastlineUrl(l.url) ||
+        isCachedCoastlinePackUrl(l.url)),
   );
   const visibleHdLayers = hdLayers.filter((l) => l.visible !== false);
   const gbLayers = customLayers.filter((l) => l && String(l.id || '').startsWith('gb_'));
@@ -2183,10 +2200,37 @@ export function syncControlsFromSpec(spec, uiState = {}) {
   const hdStatusText = $('hd-coastline-status-text');
   const hdToggleBtn = $('btn-toggle-osm-coastline');
   const hdBBox = computePaddedCoastlineBBox(spec);
+  const currentViewBounds = [
+    hdBBox.centerLon - hdBBox.rawSpanLon / 2,
+    hdBBox.centerLon + hdBBox.rawSpanLon / 2,
+    hdBBox.centerLat - hdBBox.rawSpanLat / 2,
+    hdBBox.centerLat + hdBBox.rawSpanLat / 2,
+  ];
+  const viewCachedPack = findMatchingCachedCoastlinePack(currentViewBounds);
+
+  const primaryHd = visibleHdLayers[0] || hdLayers[0] || null;
+  const activeCachedPack = primaryHd
+    ? CACHED_HD_COASTLINE_PACKS.find(
+        (p) =>
+          typeof primaryHd.url === 'string' &&
+          (primaryHd.url === p.url || primaryHd.url.endsWith(p.url.replace(/^\./, ''))),
+      ) || null
+    : null;
+
+  document.querySelectorAll('.btn-cached-hd-pack').forEach((btn) => {
+    const isActive = Boolean(activeCachedPack && visibleHdLayers.length > 0 && btn.dataset.packId === activeCachedPack.id);
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', String(isActive));
+  });
+
   if (hdSpanEl) {
     const lonStr = hdBBox.rawSpanLon < 1 ? hdBBox.rawSpanLon.toFixed(2) : hdBBox.rawSpanLon.toFixed(1);
     const latStr = hdBBox.rawSpanLat < 1 ? hdBBox.rawSpanLat.toFixed(2) : hdBBox.rawSpanLat.toFixed(1);
-    if (hdBBox.tooWide) {
+    if (viewCachedPack) {
+      hdSpanEl.textContent = `View: ${lonStr}° × ${latStr}° · Cached HD (${viewCachedPack.shortLabel})`;
+      hdSpanEl.classList.add('is-ready');
+      hdSpanEl.classList.remove('is-too-wide');
+    } else if (hdBBox.tooWide) {
       hdSpanEl.textContent = `View: ${lonStr}° × ${latStr}° · Zoom in ≤ ${OSM_COASTLINE_MAX_SPAN_DEG}°`;
       hdSpanEl.classList.remove('is-ready');
       hdSpanEl.classList.add('is-too-wide');
@@ -2216,14 +2260,7 @@ export function syncControlsFromSpec(spec, uiState = {}) {
     } else {
       hdStatusEl.hidden = false;
       const isVisible = visibleHdLayers.length > 0;
-      const primaryHd = visibleHdLayers[0] || hdLayers[0];
-      const parsedBBox = parseOsmCoastlineUrl(primaryHd.url);
-      const currentViewBounds = [
-        hdBBox.centerLon - hdBBox.rawSpanLon / 2,
-        hdBBox.centerLon + hdBBox.rawSpanLon / 2,
-        hdBBox.centerLat - hdBBox.rawSpanLat / 2,
-        hdBBox.centerLat + hdBBox.rawSpanLat / 2,
-      ];
+      const parsedBBox = parseOsmCoastlineUrl(primaryHd.url) || activeCachedPack?.coverageBBox || null;
       const isStale = isVisible && parsedBBox ? isViewOutsideCoastlineBBox(currentViewBounds, parsedBBox) : false;
       hdStatusEl.classList.toggle('is-stale', isStale);
       hdStatusEl.classList.toggle('is-paused', !isVisible);
@@ -2234,12 +2271,13 @@ export function syncControlsFromSpec(spec, uiState = {}) {
       }
       if (hdStatusText) {
         const polyCount = Array.isArray(primaryHd.data?.features) ? primaryHd.data.features.length : 0;
+        const sourceTag = activeCachedPack ? 'Cached HD' : 'OSM HD';
         if (!isVisible) {
-          hdStatusText.textContent = 'OSM HD Coastlines hidden — default map shown';
+          hdStatusText.textContent = `${sourceTag} Coastlines hidden — default map shown`;
         } else if (isStale) {
           hdStatusText.textContent = 'View moved outside HD bounds — refresh for current area';
         } else {
-          hdStatusText.textContent = `OSM HD active (${polyCount} shoreline shape${polyCount === 1 ? '' : 's'})`;
+          hdStatusText.textContent = `${sourceTag} active (${polyCount} shoreline shape${polyCount === 1 ? '' : 's'})`;
         }
       }
     }

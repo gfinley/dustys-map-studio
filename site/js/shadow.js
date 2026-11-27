@@ -7,7 +7,7 @@
  */
 
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
-import { extractAlaskaOnlyFeature, isAlaskaOnlySelection } from './data-loader.js?v=31';
+import { extractAlaskaOnlyFeature, isAlaskaOnlySelection } from './data-loader.js?v=32';
 
 const DEG2RAD = Math.PI / 180;
 const RAD2DEG = 180 / Math.PI;

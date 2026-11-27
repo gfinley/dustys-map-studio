@@ -7,9 +7,10 @@ import {
   normalizeMapSpec,
   sanitizeFilename,
   stripLegacyAutoPins,
-} from './schema.js?v=31';
+} from './schema.js?v=32';
 import {
   ensureDatasets,
+  fetchCachedCoastlinePack,
   fetchCustomGeoJson,
   fetchGeoBoundariesLayer,
   fetchOsmCoastlineForBounds,
@@ -22,7 +23,7 @@ import {
   resolveAdmin1Scale,
   resolveIso3FromNumericId,
   resolveResolution,
-} from './data-loader.js?v=31';
+} from './data-loader.js?v=32';
 import {
   buildProjection,
   computeVisibleBounds,
@@ -31,17 +32,20 @@ import {
   hitTestGeoJsonPoint,
   renderMapToCanvas,
   screenToLonLat,
-} from './cartography.js?v=31';
+} from './cartography.js?v=32';
 import {
   OSM_COASTLINE_MAX_SPAN_DEG,
   computePaddedCoastlineBBox,
+  findMatchingCachedCoastlinePack,
+  getCachedCoastlinePackById,
+  isCachedCoastlinePackUrl,
   isOsmCoastlineUrl,
-} from './osm-coastline.js?v=31';
+} from './osm-coastline.js?v=32';
 import {
   TERRAIN_STYLES,
   fetchTerrainDemForBounds,
   isViewOutsideTerrainBounds,
-} from './terrain-relief.js?v=31';
+} from './terrain-relief.js?v=32';
 import {
   checkPythonProHealth,
   exportBrowserPairWithWithoutBorders,
@@ -50,15 +54,15 @@ import {
   inspectGeoJsonViaPythonPro,
   renderBatchViaPythonPro,
   renderViaPythonPro,
-} from './exporter.js?v=31';
+} from './exporter.js?v=32';
 import {
   AIRFIELD_1941_LAYERS,
   ALASKA_AIRFIELDS_ALL_LAYER_DEFS,
   PHILIPPINES_RAIL_1942_LAYERS,
   REGION_PRESETS,
   buildAlaskaYearLayerDefs,
-} from './presets.js?v=31';
-import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=31';
+} from './presets.js?v=32';
+import { pickTopCitiesInExtent, searchPlaces } from './search.js?v=32';
 import {
   closeMobileDrawers,
   populateCountryCatalog,
@@ -69,13 +73,13 @@ import {
   showToast,
   syncControlsFromSpec,
   updateCursorCoordinates,
-} from './controls.js?v=31';
+} from './controls.js?v=32';
 import {
   computeRegionAreaKm2,
   findUnderlyingCountryAt,
   hitTestShadow,
   resolveShadowSourceFeature,
-} from './shadow.js?v=31';
+} from './shadow.js?v=32';
 import {
   ALASKA_AIRFIELDS_CSV_URL,
   TIMELINE_LAYER_PREFIX,
@@ -86,7 +90,7 @@ import {
   loadTimelineDataset,
   normalizeTimelineDataset,
   resolveSourceUrl,
-} from './timeline.js?v=31';
+} from './timeline.js?v=32';
 
 const IS_PREVIEW_PATH = /(?:^|\/)preview(?:\/|$)/.test(window.location.pathname || '');
 const STORAGE_KEY = IS_PREVIEW_PATH
@@ -311,7 +315,9 @@ function commitSpec(nextSpecRaw, { commitHistory = true, keepPreset = false, ski
 function isOsmHdLayer(layer) {
   return Boolean(
     layer &&
-      (String(layer.id || '').startsWith('osm_hd_coastline') || isOsmCoastlineUrl(layer.url)),
+      (String(layer.id || '').startsWith('osm_hd_coastline') ||
+        isOsmCoastlineUrl(layer.url) ||
+        isCachedCoastlinePackUrl(layer.url)),
   );
 }
 
@@ -3053,6 +3059,145 @@ function buildCallbacks() {
       showToast('Terrain relief removed', 'info', 2200);
     },
 
+    onLoadCachedOsmPack: async (
+      packId,
+      { asPrimaryLand = true, simplifyMeters = 0, colorMode = null } = {},
+    ) => {
+      const pack = getCachedCoastlinePackById(packId);
+      if (!pack) {
+        showToast(`Unknown cached HD coastline pack: "${packId}"`, 'error', 4000);
+        return;
+      }
+
+      const spec = state.spec;
+      if (colorMode && ['host', 'land', 'custom'].includes(colorMode)) {
+        state.hdCoastlineColorMode = colorMode;
+      }
+
+      try {
+        setLoadingProgress(true, `Loading cached HD coastlines (${pack.name})...`);
+        const result = await fetchCachedCoastlinePack(pack, {
+          simplifyMeters,
+          onStatus: (msg) => setLoadingProgress(true, msg),
+        });
+        setLoadingProgress(false);
+
+        const currentBounds = computeCurrentVisibleBounds(spec);
+        const alreadyInPack = findMatchingCachedCoastlinePack(currentBounds)?.id === pack.id;
+
+        const nextViewPatch = alreadyInPack
+          ? {}
+          : {
+              ...(spec.projection === 'orthographic' ? { projection: 'mercator' } : {}),
+              center: { ...pack.defaultView.center },
+              span: { ...pack.defaultView.span },
+              ...(pack.scaleUnits
+                ? { ornaments: { scaleBar: { units: pack.scaleUnits } } }
+                : {}),
+            };
+
+        const viewSpecForColor = alreadyInPack
+          ? spec
+          : {
+              ...spec,
+              center: nextViewPatch.center,
+              span: nextViewPatch.span,
+            };
+        const viewBoundsForColor = alreadyInPack
+          ? currentBounds
+          : [
+              pack.defaultView.center.lon - pack.defaultView.span.lonDeg / 2,
+              pack.defaultView.center.lon + pack.defaultView.span.lonDeg / 2,
+              pack.defaultView.center.lat - pack.defaultView.span.latDeg / 2,
+              pack.defaultView.center.lat + pack.defaultView.span.latDeg / 2,
+            ];
+
+        const colors = spec.colors || {};
+        const layersSpec = spec.layers || {};
+        const colorInfo = resolveHdCoastlineColorInfo(
+          viewSpecForColor,
+          state.hdCoastlineColorMode,
+          viewBoundsForColor,
+        );
+        const fillColor = colorInfo.color;
+        const fillIsNone = state.hdCoastlineColorMode === 'land' && isNoneColor(colors.land);
+        const wantCoastStroke =
+          Boolean(layersSpec.showCoastlines) &&
+          Boolean(colors.coastline) &&
+          !isNoneColor(colors.coastline);
+        const detailTag =
+          simplifyMeters >= 35 ? '~40m' : simplifyMeters >= 10 ? '~15m' : 'Full';
+        const label = `${pack.name} (Cached HD ${detailTag})`;
+
+        const layer = asPrimaryLand
+          ? {
+              id: 'osm_hd_coastline_land',
+              label,
+              url: result.url,
+              data: result.data,
+              visible: true,
+              role: 'land',
+              color: fillColor,
+              strokeColor: wantCoastStroke ? colors.coastline : 'none',
+              fillOpacity: fillIsNone ? 0 : 1.0,
+              strokeWidth: Number(layersSpec.coastlineWidth) || 0.75,
+              dashed: false,
+              hatch: 'none',
+            }
+          : {
+              id: `osm_hd_coastline_overlay_${Date.now()}`,
+              label,
+              url: result.url,
+              data: result.data,
+              visible: true,
+              role: 'overlay',
+              color: fillColor,
+              strokeColor: wantCoastStroke ? colors.coastline : 'none',
+              fillOpacity: fillIsNone ? 0 : 1.0,
+              strokeWidth: Number(layersSpec.coastlineWidth) || 0.75,
+              dashed: false,
+              hatch: 'none',
+            };
+
+        const existing = (spec.customGeoJsonLayers || []).filter(
+          (l) => !(asPrimaryLand && l?.id === 'osm_hd_coastline_land'),
+        );
+        const patch = {
+          ...nextViewPatch,
+          customGeoJsonLayers: [...existing, layer],
+        };
+        if (asPrimaryLand) {
+          patch.layers = { showLand: false };
+          if (colorInfo.liveHost) {
+            const normId = String(colorInfo.liveHost.id || '');
+            const normName = String(colorInfo.liveHost.name || '').trim().toLowerCase();
+            const currentHighlights = spec.highlightedCountries || [];
+            const removed = currentHighlights.find(
+              (hc) =>
+                (normId && String(hc.id || '') === normId) ||
+                (normName && String(hc.name || '').trim().toLowerCase() === normName),
+            );
+            if (removed) {
+              state.hdCoastlineReplacedHighlight = structuredClone(removed);
+              patch.highlightedCountries = currentHighlights.filter((hc) => hc !== removed);
+            }
+          }
+        }
+        patchSpec(patch);
+
+        const st = result.stats || {};
+        const summary = `${st.polygonCount || 0} shape${st.polygonCount === 1 ? '' : 's'} (${st.islandCount || 0} island${st.islandCount === 1 ? '' : 's'}, ${(st.vertexCount || 0).toLocaleString()} pts)`;
+        showToast(
+          `Loaded site-cached HD Coastlines (${pack.name}) — ${summary}`,
+          'success',
+          4200,
+        );
+      } catch (err) {
+        setLoadingProgress(false);
+        showToast(`Cached HD Coastlines error: ${err.message}`, 'error', 5400);
+      }
+    },
+
     onFetchOsmCoastlines: async ({
       asPrimaryLand = true,
       simplifyMeters = 0,
@@ -3076,10 +3221,11 @@ function buildCallbacks() {
       }
 
       try {
-        setLoadingProgress(true, 'Downloading OpenStreetMap HD coastlines...');
+        setLoadingProgress(true, 'Loading OpenStreetMap HD coastlines...');
         const result = await fetchOsmCoastlineForBounds(bbox, {
           simplifyMeters,
           forceRefresh,
+          visibleBounds,
           onStatus: (msg) => setLoadingProgress(true, msg),
         });
         setLoadingProgress(false);
@@ -3095,11 +3241,15 @@ function buildCallbacks() {
           !isNoneColor(colors.coastline);
         const detailTag =
           simplifyMeters >= 35 ? '~40m' : simplifyMeters >= 10 ? '~15m' : 'Full';
-        const areaTitle = String(spec.title || '')
-          .replace(/\bBriefing Map\b/i, '')
-          .trim();
+        const isSiteCached = result.stats?.endpoint === 'site-cache';
+        const areaTitle = isSiteCached && result.stats?.cachedPackName
+          ? result.stats.cachedPackName
+          : String(spec.title || '')
+              .replace(/\bBriefing Map\b/i, '')
+              .trim();
+        const sourceTag = isSiteCached ? `Cached HD ${detailTag}` : `OSM HD ${detailTag}`;
         const label = areaTitle
-          ? `${areaTitle} (OSM HD ${detailTag})`
+          ? `${areaTitle} (${sourceTag})`
           : `OSM HD Coastlines (${detailTag})`;
 
         const layer = asPrimaryLand
@@ -3163,10 +3313,11 @@ function buildCallbacks() {
         const matchNote = colorInfo.hostCountry && state.hdCoastlineColorMode === 'host'
           ? ` · matched ${colorInfo.hostCountry.name}`
           : '';
+        const cachePrefix = isSiteCached ? 'site-cached HD Coastlines' : 'OSM HD Coastlines';
         showToast(
           asPrimaryLand
-            ? `Loaded OSM HD Coastlines${matchNote} — ${summary}`
-            : `Added OSM HD Coastlines overlay${matchNote} — ${summary}`,
+            ? `Loaded ${cachePrefix}${matchNote} — ${summary}`
+            : `Added ${cachePrefix} overlay${matchNote} — ${summary}`,
           'success',
           4200,
         );
